@@ -156,6 +156,29 @@ ok('submitted dilemma appears in the main feed', html.includes('Should couples s
 r = await req('/?q=passwords');
 html = await r.text();
 ok('homepage search finds submitted dilemmas', html.includes('Should couples share their phone passwords?') && html.includes('1 result for'));
+r = await req('/api/submit', { method: 'POST', json: { question: 'Does coffee belong in the refrigerator?', sideA: 'Yes. It stays fresh and cold.', sideB: 'No. A sealed container keeps it fresh.' } });
+const hotSubmission = await r.json();
+ok('second dilemma accepted for pin test', r.status === 200 && hotSubmission.ok);
+for (let i = 0; i < 10; i++) {
+  r = await req('/api/vote', {
+    jar: new Jar(),
+    method: 'POST',
+    json: { slug: hotSubmission.slug, side: i % 2 === 0 ? 'a' : 'b' },
+  });
+  if (r.status !== 200) {
+    ok('hot dilemma received ten votes', false, String(r.status));
+    break;
+  }
+}
+r = await req('/');
+html = await r.text();
+const visibleHotHtml = html
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<script[\s\S]*?<\/script>/gi, '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ');
+const hotQuestionOccurrences = visibleHotHtml.split('Does coffee belong in the refrigerator?').length - 1;
+ok('high-vote dilemma is pinned and remains in the full feed', visibleHotHtml.includes('Hot · 10 votes') && hotQuestionOccurrences >= 2, String(hotQuestionOccurrences));
 r = await req('/api/submit', { method: 'POST', json: { question: 'Should couples share their phone passwords?', sideA: 'Email me at a@b.com', sideB: 'No. Privacy still matters.' } });
 ok('submission with email rejected', r.status === 422);
 r = await req('/api/submit', { method: 'POST', json: { question: '<script>alert(1)</script> is this ok??', sideA: 'x'.repeat(500), sideB: 'No.' } });

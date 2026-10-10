@@ -128,10 +128,22 @@ export class SupabaseStore implements Store {
 
   async listDilemmas(opts?: { status?: ContentStatus }) {
     await this.ensureSeed();
-    let q = this.sb.from('dilemmas').select('*');
-    if (opts?.status) q = q.eq('status', opts.status);
-    const rows = check(await q.order('published_at', { ascending: true, nullsFirst: false }).order('created_at'));
-    return (rows as any[]).map(toDilemma);
+    const pageSize = 1000;
+    const rows: any[] = [];
+    for (let from = 0; ; from += pageSize) {
+      let q = this.sb.from('dilemmas').select('*');
+      if (opts?.status) q = q.eq('status', opts.status);
+      const page = check(
+        await q
+          .order('published_at', { ascending: true, nullsFirst: false })
+          .order('created_at')
+          .order('id')
+          .range(from, from + pageSize - 1),
+      ) as any[];
+      rows.push(...page);
+      if (page.length < pageSize) break;
+    }
+    return rows.map(toDilemma);
   }
 
   async getDilemmaBySlug(slug: string) {

@@ -7,14 +7,14 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 ## What is in the box
 
 - Homepage with a shared dilemma of the day, a 24-hour vote window, and yesterday's public reveal. Daily assignments are persisted so visitors see the same prompt.
-- Searchable main feed includes every published dilemma, with high-vote picks pinned above the list.
+- Searchable main feed includes every published dilemma. The top three dilemmas with at least 10 votes and the closest qualifying dead heat are also featured above the list without disappearing from it.
 - Seven editorial dilemmas provide one week of daily prompts before the rotation repeats. Existing installs with the original five prompts receive the two new starters once by slug; existing content and votes are preserved.
 - A permanent page per dilemma at `/d/<slug>`: vote, split bar, discussion, share, report.
 - Results stay hidden until you vote (or the vote closes). One vote per browser.
 - Daily dilemmas close at midnight UTC after their featured day. Closed dilemmas show "The vote is in." and the final crowd verdict (never "X is correct"). Editors can still set an earlier close time.
 - Voting is still open to everyone, including the submitter. Voters may optionally attach a public nickname to a vote; no account is required and unnamed votes remain anonymous.
 - Before voting, visitors predict what percentage will choose side A. Their guess is saved with their one-time vote; the aggregate prediction appears only with the result. After voting, each visitor can post one short case for the side they did not choose. When the vote closes, the most-endorsed defense is featured; endorsements are one per voter and cannot be cast on your own defense.
-- Dilemmas with at least 10 votes and a 45–55 split receive a dead-heat badge; the closest split is pinned above the homepage list. The discussion opens with the prompt, "What would change your answer?"
+- Dilemmas with at least 10 votes and a 45–55 split receive a dead-heat badge; the closest split is pinned above the homepage list. The three highest-vote dilemmas with at least 10 votes are also pinned, and all pinned dilemmas remain in the full list. The discussion opens with the prompt, "What would change your answer?"
 - `/submit`: public dilemma submissions. Valid submissions are published immediately, appear in the searchable homepage feed, and get a shareable dilemma page.
 - `/admin`: editor desk (create, edit, publish, unpublish, remove, set closing date, review submissions, resolve reports, 7-day metrics).
 - `/guidelines`: community rules.

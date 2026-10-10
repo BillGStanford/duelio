@@ -63,11 +63,6 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
       return cb.a + cb.b - ca.a - ca.b;
     })
     .slice(0, 3);
-  const pinnedIds = new Set([
-    ...(pinnedDeadHeat && matchingDilemmas.some((d) => d.id === pinnedDeadHeat.id) ? [pinnedDeadHeat.id] : []),
-    ...pinnedHot.map((d) => d.id),
-  ]);
-  const feedDilemmas = matchingDilemmas.filter((d) => !pinnedIds.has(d.id));
   const n = dilemmas.length;
 
   return (
@@ -181,7 +176,7 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
       <section id="debates" aria-labelledby="debates-heading" className="mt-10 scroll-mt-4">
         <h2 id="debates-heading" className="text-3xl font-extrabold tracking-tight">Browse dilemmas</h2>
         <p className="mt-1 text-lg text-mute">
-          Browse all {countWord(n).toLowerCase()} {n === 1 ? 'dilemma' : 'dilemmas'}. Choose one to vote and read the discussion.
+          All {countWord(n).toLowerCase()} {n === 1 ? 'dilemma' : 'dilemmas'} are listed below. Pinned picks are featured above, too.
         </p>
         <form method="get" action="/" role="search" className="mt-5 flex flex-col gap-2 sm:flex-row">
           <label htmlFor="dilemma-search" className="sr-only">Search dilemmas</label>
@@ -239,8 +234,8 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
             <div className="border-t-4 border-ink py-8">
               <p className="text-lg">{query ? 'No dilemmas match that search. Try another phrase or submit your own.' : 'There are no published dilemmas yet. Check back soon or submit one below.'}</p>
             </div>
-          ) : feedDilemmas.length > 0 ? (
-            feedDilemmas.map((d) => {
+          ) : matchingDilemmas.length > 0 ? (
+            matchingDilemmas.map((d) => {
               const c = counts[d.id] ?? { a: 0, b: 0 };
               const scheduledClose = effectiveCloseAt(d.closesAt, dailyCloseById.get(d.id) ?? null);
               return (
