@@ -1,0 +1,17 @@
+export const EVENT_NAMES = new Set([
+  'page_view',
+  'dilemma_view',
+  'vote_started',
+  'vote_completed',
+  'second_dilemma_vote',
+  'share_clicked',
+  'share_completed',
+  'submission_started',
+  'submission_completed',
+  'report_submitted',
+  'discussion_loaded',
+  'group_created',
+  'group_joined',
+  'card_shared',
+  'take_shared',
+]);

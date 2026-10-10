@@ -1,0 +1,4 @@
+Bundled only to draw the shareable card images.
+
+Poppins-Bold.ttf: Poppins by Indian Type Foundry, SIL Open Font License 1.1 (https://openfontlicense.org).
+Pagella-Bold.otf: TeX Gyre Pagella by the GUST e-foundry, GUST Font License (free to use and redistribute).
