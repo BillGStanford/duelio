@@ -184,14 +184,19 @@ export class SupabaseStore implements Store {
       const selected = index >= 0 ? candidates[index] : null;
       if (!selected) return null;
 
-      const inserted = await this.sb.from('daily_dilemmas').upsert(
-        { daily_date: date, dilemma_id: selected.id, closes_at: dailyCloseAt(date) },
-        { onConflict: 'daily_date', ignoreDuplicates: true },
-      );
+      const inserted = await this.sb
+        .from('daily_dilemmas')
+        .upsert(
+          { daily_date: date, dilemma_id: selected.id, closes_at: dailyCloseAt(date) },
+          { onConflict: 'daily_date', ignoreDuplicates: true },
+        )
+        .select('dilemma_id, closes_at')
+        .maybeSingle();
       if (inserted.error) throw new Error(inserted.error.message);
-      assignment = await readAssignment(date);
+      assignment = inserted.data as { dilemma_id: string; closes_at: string } | null;
+      if (!assignment) assignment = await readAssignment(date);
     }
-    if (!assignment) throw new Error('Daily dilemma assignment was not persisted.');
+    if (!assignment) throw new Error(`Daily dilemma assignment for ${date} was not persisted or could not be read.`);
     const dilemma = await this.getDilemmaById(assignment.dilemma_id);
     return dilemma?.status === 'published' ? { dilemma, closesAt: assignment.closes_at } : null;
   }

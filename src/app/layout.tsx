@@ -9,8 +9,17 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'Duelio: the internet disagrees with you', template: '%s | Duelio' },
   description: 'Turn the argument your group chat can\u2019t settle into a question everyone can answer. Pick a side and see where everyone lands.',
-  openGraph: { siteName: 'Duelio', type: 'website', title: 'Duelio: the internet disagrees with you', description: 'Pick a side, make your case, and see where everyone lands.' },
-  twitter: { card: 'summary_large_image' },
+  openGraph: {
+    siteName: 'Duelio',
+    type: 'website',
+    title: 'Duelio: the internet disagrees with you',
+    description: 'Pick a side, make your case, and see where everyone lands.',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
+  },
 };
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#EEF0F6' };

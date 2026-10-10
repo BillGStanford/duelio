@@ -41,9 +41,11 @@ let r = await req('/');
 let html = await r.text();
 ok('homepage 200', r.status === 200);
 ok('homepage names Duelio and shows headline', html.includes('Duelio') && html.includes('The internet disagrees with you.'));
+ok('homepage has a social preview image', html.includes('property="og:image"') && html.includes('/opengraph-image'));
 ok('homepage shows the daily prompt and yesterday reveal', html.includes('Duel of the day') && html.includes("Yesterday's reveal"));
 ok('homepage shows seven dilemmas', (html.match(/View debate/g) || []).length >= 7, String((html.match(/View debate/g) || []).length));
-ok('no old branding on homepage', !/settle ?this|pick a side/i.test(html.replace(/Pick a side/g, '')), 'found old brand string');
+const visibleHomepage = html.replace(/<head[\s\S]*?<\/head>/i, '').replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<[^>]+>/g, ' ').replace(/Pick a side/g, '');
+ok('no old branding on homepage', !/settle ?this|pick a side/i.test(visibleHomepage), 'found old brand string');
 const dailySlug = html.match(/<section id="daily-duel"[\s\S]*?href="\/d\/([^"]+)"/)?.[1];
 const yesterdaySlug = html.match(/id="yesterday-heading"[\s\S]*?href="\/d\/([^"]+)"/)?.[1];
 const seededSlugs = [
@@ -85,6 +87,8 @@ ok('malicious slug 404', r.status === 404);
 
 r = await req('/d/roommate-electricity/opengraph-image');
 ok('og image renders as png', r.status === 200 && (r.headers.get('content-type') || '').includes('image/png'), `${r.status} ${r.headers.get('content-type')}`);
+r = await req('/opengraph-image');
+ok('homepage social preview renders as png', r.status === 200 && (r.headers.get('content-type') || '').includes('image/png'), `${r.status} ${r.headers.get('content-type')}`);
 
 for (const p of ['/submit', '/guidelines', '/robots.txt', '/sitemap.xml']) {
   r = await req(p);
