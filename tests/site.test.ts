@@ -3,7 +3,7 @@ import { resolveSiteUrl } from '@/lib/site';
 
 describe('site URL', () => {
   it('prefers an explicitly configured public domain', () => {
-    expect(resolveSiteUrl('https://duelio.ink/', 'duelio-five.vercel.app', true)).toBe('https://duelio.ink');
+    expect(resolveSiteUrl('https://duelio.live/', 'duelio-five.vercel.app', true)).toBe('https://duelio.live');
   });
 
   it('uses the Vercel production host when no public URL is configured', () => {

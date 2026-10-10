@@ -73,11 +73,12 @@ ok('og:title and og:image present', html.includes('og:title') && html.includes('
 ok('twitter card present', html.includes('twitter:card'));
 // next/script injects the <script> in the browser; the server HTML carries the mount point and a preload hint.
 ok('threadline mount point and script preload rendered from env', html.includes('id="threadline-comments"') && html.includes('https://www.threadline.ink/api/embed'));
-ok('defense prompt appears before the Threadline widget', html.indexOf('Defend the other side') < html.indexOf('id="threadline-comments"'));
+ok('discussion prompt appears before the comments widget', html.indexOf('Join the discussion') < html.indexOf('id="threadline-comments"'));
+ok('duplicate Threadline promotions are removed', !html.includes('Discussion powered by Threadline') && !html.includes('Want this discussion experience'));
 ok('defense text input is removed', !html.includes('The best case for'));
 ok('threadline fallback not shown when env is set', !html.includes('discussion is unavailable'));
 ok('results hidden before voting', !/\d+% Yes/.test(html));
-ok('Threadline attribution', html.includes('powered by Threadline') || html.includes('Powered by Threadline'));
+ok('Threadline attribution remains in the site footer', html.includes('Discussions powered by') && html.includes('href="https://www.threadline.ink"'));
 ok('specific opening discussion question is rendered', html.includes('What would change your answer?'));
 
 r = await req('/d/does-not-exist');

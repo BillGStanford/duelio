@@ -13,7 +13,7 @@ import { hashVoter, VOTER_COOKIE } from '@/lib/auth';
 import { effectiveCloseAt, previousUtcDate, utcDateKey } from '@/lib/daily';
 import { computeResults, isClosed } from '@/lib/results';
 import { parseRoom } from '@/lib/room';
-import { formatCloseDate, SITE_URL, THREADLINE_HOME } from '@/lib/site';
+import { formatCloseDate, SITE_URL } from '@/lib/site';
 import { getStore } from '@/lib/store';
 import { isValidSlug } from '@/lib/validate';
 
@@ -139,13 +139,9 @@ export default async function DebatePage({ params, searchParams }: { params: { s
       <ShareBar slug={d.slug} question={d.question} room={room} />
 
       <section aria-labelledby="discussion-heading" className="mt-10 border-t-4 border-ink pt-6">
-        <div className="mb-5">
-          <h2 className="text-2xl font-extrabold tracking-tight">Defend the other side</h2>
-          <p className="mt-1 text-mute">After voting, make the strongest one-line case for the side you didn&apos;t pick.</p>
-        </div>
-        <h2 id="discussion-heading" className="text-3xl font-extrabold tracking-tight">Make your case</h2>
-        <p className="mt-1 mb-5 text-mute">Be the first person to make the case, or answer someone who already did. Discussion powered by Threadline.</p>
-        <p className="mb-5 border-l-4 border-sidea bg-white px-4 py-3 font-bold">
+        <h2 id="discussion-heading" className="text-3xl font-extrabold tracking-tight">Join the discussion</h2>
+        <p className="mt-2 text-lg leading-relaxed text-mute">Share your take or reply to someone else&apos;s.</p>
+        <p className="my-5 border-l-4 border-sidea bg-white px-4 py-3 text-lg font-bold leading-relaxed">
           What would change your answer?
         </p>
         <ThreadlineComments slug={d.slug} />
@@ -162,13 +158,6 @@ export default async function DebatePage({ params, searchParams }: { params: { s
       />
 
       <ReportBox slug={d.slug} />
-
-      <p className="mt-10 text-[0.95rem] text-mute">
-        Want this discussion experience on your website?{' '}
-        <a href={THREADLINE_HOME} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4 hover:text-ink">
-          Powered by Threadline.
-        </a>
-      </p>
     </main>
   );
 }
