@@ -1,9 +1,11 @@
 'use client';
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { track } from '@/lib/analytics';
 
 export default function SubmitForm() {
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
   const [error, setError] = useState('');
   const started = useRef(false);
 
@@ -32,6 +34,7 @@ export default function SubmitForm() {
         return;
       }
       track('submission_completed');
+      setPublishedSlug(typeof data?.slug === 'string' ? data.slug : null);
       setState('sent');
     } catch {
       setError('We couldn\u2019t save your dilemma. Check your connection and try again.');
@@ -42,8 +45,13 @@ export default function SubmitForm() {
   if (state === 'sent') {
     return (
       <div role="status" className="border-t-4 border-ink pt-5">
-        <p className="text-3xl font-extrabold tracking-tight">Got it.</p>
-        <p className="mt-2 text-lg">We review every dilemma before it goes live. If it makes the cut, it gets its own page you can send to people.</p>
+        <p className="text-3xl font-extrabold tracking-tight">It&apos;s live.</p>
+        <p className="mt-2 text-lg">Your dilemma is published and included in the main feed.</p>
+        {publishedSlug && (
+          <Link href={`/d/${publishedSlug}`} className="mt-4 inline-flex min-h-12 items-center bg-ink px-5 py-3 font-bold text-white hover:bg-sidea">
+            View and share your dilemma
+          </Link>
+        )}
       </div>
     );
   }
@@ -82,7 +90,7 @@ export default function SubmitForm() {
         <textarea id="context" name="context" rows={2} maxLength={280} className={field} placeholder="One or two lines that set the scene." />
       </div>
       <div>
-        <label htmlFor="submitterName" className="font-bold">Your name <span className="font-normal text-mute">(optional, shown if your dilemma is published)</span></label>
+        <label htmlFor="submitterName" className="font-bold">Your name <span className="font-normal text-mute">(optional, shown publicly with your dilemma)</span></label>
         <input id="submitterName" name="submitterName" maxLength={40} autoComplete="nickname" className={field} />
       </div>
       {/* Honeypot: hidden from people and assistive tech */}

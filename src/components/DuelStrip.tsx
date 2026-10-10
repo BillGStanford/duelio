@@ -6,11 +6,13 @@ export default function DuelStrip({
   total,
   closed,
   deadHeat = false,
+  hot = false,
 }: {
   d: Dilemma;
   total: number;
   closed: boolean;
   deadHeat?: boolean;
+  hot?: boolean;
 }) {
   return (
     <article className="border-t-4 border-ink py-8 sm:py-10">
@@ -22,6 +24,11 @@ export default function DuelStrip({
       {deadHeat && (
         <p className="mt-3 inline-block bg-rule px-3 py-1 text-sm font-extrabold uppercase tracking-wide">
           Dead heat · 45–55%
+        </p>
+      )}
+      {hot && (
+        <p className="mt-3 inline-block bg-[#fff1f4] px-3 py-1 text-sm font-extrabold uppercase tracking-wide text-sideb">
+          Hot · {total} votes
         </p>
       )}
       <div className="mt-6 grid sm:grid-cols-2">

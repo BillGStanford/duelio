@@ -1,7 +1,7 @@
 import { clientIp, json, readJson, sameOrigin } from '@/lib/http';
 import { rateLimit } from '@/lib/rateLimit';
 import { getStore } from '@/lib/store';
-import { validateSubmission } from '@/lib/validate';
+import { containsPersonalInfo, slugify, validateSubmission } from '@/lib/validate';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,10 +25,28 @@ export async function POST(req: Request) {
 
   try {
     const store = getStore();
-    if ((await store.listSubmissions('pending')).length >= 500)
-      return json({ error: 'The review queue is full right now. Try again later.' }, 503);
-    await store.createSubmission(v.value);
-    return json({ ok: true });
+    const baseSlug = slugify(v.value.question);
+    let slug = baseSlug;
+    for (let suffix = 2; await store.slugExists(slug); suffix += 1) {
+      const ending = `-${suffix}`;
+      slug = `${baseSlug.slice(0, 80 - ending.length)}${ending}`;
+    }
+    const dilemma = await store.createDilemma({
+      slug,
+      question: v.value.question,
+      context: v.value.context,
+      sideALabel: 'Yes',
+      sideADescription: v.value.sideA,
+      sideBLabel: 'No',
+      sideBDescription: v.value.sideB,
+      status: 'published',
+      editorial: false,
+      submittedBy: v.value.submitterName && !containsPersonalInfo(v.value.submitterName)
+        ? v.value.submitterName
+        : null,
+      closesAt: null,
+    });
+    return json({ ok: true, slug: dilemma.slug });
   } catch {
     return json({ error: 'We couldn\u2019t save your dilemma. Try again.' }, 500);
   }

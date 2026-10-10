@@ -2,9 +2,12 @@
 import { useState } from 'react';
 import Script from 'next/script';
 import { track } from '@/lib/analytics';
+import { resolveThreadlineApiUrl } from '@/lib/site';
 
 const SITE_ID = process.env.NEXT_PUBLIC_THREADLINE_SITE_ID;
-const API_URL = process.env.NEXT_PUBLIC_THREADLINE_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_THREADLINE_API_URL
+  ? resolveThreadlineApiUrl(process.env.NEXT_PUBLIC_THREADLINE_API_URL)
+  : null;
 const EMBED_SRC = process.env.NEXT_PUBLIC_THREADLINE_EMBED_SRC;
 
 /**

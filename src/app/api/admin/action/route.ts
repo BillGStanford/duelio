@@ -99,13 +99,13 @@ export async function POST(req: Request) {
           sideADescription: s.sideA,
           sideBLabel: labelB,
           sideBDescription: s.sideB,
-          status: 'pending',
+          status: 'published',
           editorial: false,
           submittedBy: s.submitterName && !containsPersonalInfo(s.submitterName) ? s.submitterName : null,
           closesAt: null,
         });
         await store.updateSubmissionStatus(s.id, 'published');
-        return done(`Approved as a pending dilemma (/d/${slug}). Publish it when ready.`);
+        return done(`Approved and published as /d/${slug}.`);
       }
       case 'reject_submission':
         await store.updateSubmissionStatus(str(form, 'id'), 'rejected');

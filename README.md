@@ -7,6 +7,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 ## What is in the box
 
 - Homepage with a shared dilemma of the day, a 24-hour vote window, and yesterday's public reveal. Daily assignments are persisted so visitors see the same prompt.
+- Searchable main feed includes every published dilemma, with high-vote picks pinned above the list.
 - Seven editorial dilemmas provide one week of daily prompts before the rotation repeats. Existing installs with the original five prompts receive the two new starters once by slug; existing content and votes are preserved.
 - A permanent page per dilemma at `/d/<slug>`: vote, split bar, discussion, share, report.
 - Results stay hidden until you vote (or the vote closes). One vote per browser.
@@ -14,7 +15,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - Voting is still open to everyone, including the submitter. Voters may optionally attach a public nickname to a vote; no account is required and unnamed votes remain anonymous.
 - Before voting, visitors predict what percentage will choose side A. Their guess is saved with their one-time vote; the aggregate prediction appears only with the result. After voting, each visitor can post one short case for the side they did not choose. When the vote closes, the most-endorsed defense is featured; endorsements are one per voter and cannot be cast on your own defense.
 - Dilemmas with at least 10 votes and a 45–55 split receive a dead-heat badge; the closest split is pinned above the homepage list. The discussion opens with the prompt, "What would change your answer?"
-- `/submit`: public dilemma submissions. They land in a review queue and are never auto-published.
+- `/submit`: public dilemma submissions. Valid submissions are published immediately, appear in the searchable homepage feed, and get a shareable dilemma page.
 - `/admin`: editor desk (create, edit, publish, unpublish, remove, set closing date, review submissions, resolve reports, 7-day metrics).
 - `/guidelines`: community rules.
 - Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. Vercel deployments use the production host by default; set `NEXT_PUBLIC_SITE_URL` when attaching a custom domain.
@@ -70,7 +71,7 @@ Copy `.env.example` to `.env.local` and fill it in.
 | Variable | Needed | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_THREADLINE_SITE_ID` | yes | Threadline site id. Public by design (it appears in the page HTML). |
-| `NEXT_PUBLIC_THREADLINE_API_URL` | yes | Threadline comments API URL. |
+| `NEXT_PUBLIC_THREADLINE_API_URL` | yes | Threadline comments API URL. The redirecting `threadline.ink/api` alias is normalized to its direct API host. |
 | `NEXT_PUBLIC_THREADLINE_EMBED_SRC` | yes | Threadline embed script URL. |
 | `NEXT_PUBLIC_SITE_URL` | in production | Public URL without trailing slash, used for canonical and social URLs. |
 | `ADMIN_PASSWORD` | for /admin | Editor password. Choose a long one. |
@@ -84,7 +85,7 @@ Copy `.env.example` to `.env.local` and fill it in.
 
 ## Threadline discussion
 
-`src/components/ThreadlineComments.tsx` loads the Threadline embed with `next/script`, reading the three `NEXT_PUBLIC_THREADLINE_*` variables. If a variable is missing or the script fails to load, the page shows "The discussion is unavailable right now. Your vote still counts." and keeps working.
+`src/components/ThreadlineComments.tsx` loads the Threadline embed with `next/script`, reading the three `NEXT_PUBLIC_THREADLINE_*` variables. The API URL is normalized to avoid redirecting CORS preflights. If a variable is missing or the script fails to load, the page shows "The discussion is unavailable right now. Your vote still counts." and keeps working.
 
 Threadline provides the discussion only (comments, replies, reactions, comment moderation). Voting, submissions, reports, and analytics are Duelio's own.
 
@@ -109,7 +110,7 @@ Row level security is enabled on every table with no public policies, so the Sup
 
 ## Moderation workflow
 
-- Public submissions arrive in `/admin` under "Submissions waiting". Approve (choose short labels such as Yes and No) to create a **pending** dilemma, then press Publish. Reject discards it.
+- New public submissions are validated and published immediately with standard Yes/No labels. Editors can unpublish or remove them from `/admin`; legacy submissions waiting for review can still be approved or rejected there.
 - Dilemma states: `pending` (hidden), `published`, `rejected`, `removed` (page shows a removal notice).
 - Visitors report from any debate page, choosing "This dilemma" or "A comment in the discussion". Reports appear in `/admin` under "Open reports". Press Mark resolved when handled.
 - Comment moderation itself happens in Threadline. Duelio only collects reports about comments, and reporters are asked to name the author and quote a few words.

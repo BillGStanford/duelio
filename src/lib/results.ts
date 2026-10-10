@@ -12,6 +12,10 @@ export function isDeadHeat(counts: Counts, minimumVotes = 10): boolean {
   return results.total >= minimumVotes && results.pctA >= 45 && results.pctA <= 55;
 }
 
+export function isHot(counts: Counts, minimumVotes = 10): boolean {
+  return counts.a + counts.b >= minimumVotes;
+}
+
 export function isClosed(d: Pick<Dilemma, 'closesAt'>, now: Date = new Date()): boolean {
   return !!d.closesAt && new Date(d.closesAt).getTime() <= now.getTime();
 }

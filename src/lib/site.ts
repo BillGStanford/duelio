@@ -10,6 +10,23 @@ export function resolveSiteUrl(configuredUrl: string | undefined, deploymentHost
   return host ? `https://${host}` : 'http://localhost:3000';
 }
 
+export function resolveThreadlineApiUrl(configuredUrl: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(configuredUrl);
+  } catch {
+    return null;
+  }
+
+  if (url.hostname === 'threadline.ink' || url.hostname === 'www.threadline.ink') {
+    url.protocol = 'https:';
+    url.hostname = 'api.threadline.ink';
+    if (/^\/api\/?$/i.test(url.pathname)) url.pathname = '/';
+  }
+
+  return url.toString().replace(/\/+$/, '');
+}
+
 export const SITE_URL = resolveSiteUrl(
   process.env.NEXT_PUBLIC_SITE_URL,
   process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL,

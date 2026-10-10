@@ -146,7 +146,16 @@ ok('vote requires a crowd prediction first', r.status === 422, String(r.status))
 
 // submissions
 r = await req('/api/submit', { method: 'POST', json: { question: 'Should couples share their phone passwords?', sideA: 'Yes. Transparency matters.', sideB: 'No. Privacy still matters.', context: '', submitterName: 'Sam' } });
-ok('submission accepted', r.status === 200, String(r.status));
+let submission = await r.json();
+ok('submission accepted and published', r.status === 200 && submission.ok && submission.slug === 'should-couples-share-their-phone-passwords', JSON.stringify(submission));
+r = await req(`/d/${submission.slug}`);
+ok('submitted dilemma is immediately public', r.status === 200, String(r.status));
+r = await req('/');
+html = await r.text();
+ok('submitted dilemma appears in the main feed', html.includes('Should couples share their phone passwords?'));
+r = await req('/?q=passwords');
+html = await r.text();
+ok('homepage search finds submitted dilemmas', html.includes('Should couples share their phone passwords?') && html.includes('1 result for'));
 r = await req('/api/submit', { method: 'POST', json: { question: 'Should couples share their phone passwords?', sideA: 'Email me at a@b.com', sideB: 'No. Privacy still matters.' } });
 ok('submission with email rejected', r.status === 422);
 r = await req('/api/submit', { method: 'POST', json: { question: '<script>alert(1)</script> is this ok??', sideA: 'x'.repeat(500), sideB: 'No.' } });
@@ -268,23 +277,15 @@ if (ADMIN_PASSWORD) {
   ok('admin login sets cookie', !!admin.c.duelio_admin);
   r = await req('/admin', { jar: admin });
   html = await r.text();
-  ok('admin desk loads with metrics, submission and report', r.status === 200 && html.includes('Editor desk') && html.includes('Should couples share their phone passwords?') && html.includes('/d/next-episode'));
+  ok('admin desk loads with metrics, published dilemma and report', r.status === 200 && html.includes('Editor desk') && html.includes('Should couples share their phone passwords?') && html.includes('/d/next-episode'));
   ok('admin page is noindex', html.includes('noindex'));
 
-  // approve the submission, publish it, then close it
-  const subId = html.match(/name="action" value="approve_submission"\/><input type="hidden" name="id" value="([^"]+)"/)?.[1];
-  ok('found pending submission id', !!subId);
-  r = await req('/api/admin/action', { jar: admin, method: 'POST', form: { action: 'approve_submission', id: subId, labelA: 'Share', labelB: 'Keep private' } });
-  ok('approve submission', r.status === 303);
-  r = await req('/admin', { jar: admin });
-  html = await r.text();
-  const dilemmaId = html.match(/name="action" value="publish"\/><input type="hidden" name="id" value="([^"]+)"/)?.[1];
-  ok('approved dilemma is pending, not auto-published', !!dilemmaId);
-  r = await req('/d/should-couples-share-their-phone-passwords');
-  ok('pending dilemma is not public', r.status === 404, String(r.status));
-  r = await req('/api/admin/action', { jar: admin, method: 'POST', form: { action: 'publish', id: dilemmaId } });
-  r = await req('/d/should-couples-share-their-phone-passwords');
-  ok('published dilemma is public', r.status === 200, String(r.status));
+  // Confirm the public submission can still be managed from the editor desk.
+  const dilemmaStart = html.lastIndexOf('<li', html.indexOf('/d/should-couples-share-their-phone-passwords'));
+  const dilemmaEnd = html.indexOf('</li>', dilemmaStart);
+  const dilemmaRow = html.slice(dilemmaStart, dilemmaEnd);
+  const dilemmaId = dilemmaRow.match(/name="id" value="([^"]+)"/)?.[1];
+  ok('published submission is manageable in the editor desk', !!dilemmaId && dilemmaRow.includes('Status:') && dilemmaRow.includes('published'));
 
   // close it in the past -> results shown to everyone, voting rejected
   r = await req('/api/vote', { jar: new Jar(), method: 'POST', json: { slug: 'should-couples-share-their-phone-passwords', side: 'a' } });

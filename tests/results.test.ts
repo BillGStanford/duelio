@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeResults, isClosed, isDeadHeat, verdictLine, winnerLabel } from '@/lib/results';
+import { computeResults, isClosed, isDeadHeat, isHot, verdictLine, winnerLabel } from '@/lib/results';
 
 const labels = { sideALabel: 'Yes', sideBLabel: 'No' };
 
@@ -21,6 +21,10 @@ describe('results', () => {
     expect(isDeadHeat({ a: 4, b: 5 })).toBe(false);
     expect(isDeadHeat({ a: 45, b: 55 })).toBe(true);
     expect(isDeadHeat({ a: 44, b: 56 })).toBe(false);
+  });
+  it('pins hot dilemmas once they reach ten votes', () => {
+    expect(isHot({ a: 4, b: 5 })).toBe(false);
+    expect(isHot({ a: 5, b: 5 })).toBe(true);
   });
   it('never calls a side objectively correct', () => {
     expect(verdictLine(computeResults({ a: 3, b: 1 }), labels)).toBe('The crowd picked Yes.');
