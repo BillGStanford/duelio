@@ -188,7 +188,7 @@ export class SupabaseStore implements Store {
         .from('daily_dilemmas')
         .upsert(
           { daily_date: date, dilemma_id: selected.id, closes_at: dailyCloseAt(date) },
-          { onConflict: 'daily_date', ignoreDuplicates: true },
+          { onConflict: 'daily_date' },
         )
         .select('dilemma_id, closes_at')
         .maybeSingle();
