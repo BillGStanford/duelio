@@ -17,8 +17,8 @@ export default function VoteShare({
   closesAt: string | null;
 }) {
   return (
-    <details className="mt-6 border-t-2 border-rule pt-4">
-      <summary className="cursor-pointer font-bold underline decoration-2 underline-offset-4">Make a vote card (optional)</summary>
+    <section aria-labelledby="vote-card-heading" className="mt-6 border-t-2 border-rule pt-4">
+      <h3 id="vote-card-heading" className="text-xl font-extrabold tracking-tight">Make a vote card <span className="text-base font-normal text-mute">(optional)</span></h3>
       <p className="mt-2 text-mute">
         Post it and let your friends try to change your mind.{closesAt ? ` Voting closes ${formatCloseDate(closesAt)}.` : ''}
       </p>
@@ -30,6 +30,6 @@ export default function VoteShare({
         event="card_shared"
         slug={slug}
       />
-    </details>
+    </section>
   );
 }

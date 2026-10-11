@@ -69,6 +69,7 @@ ok('yesterday daily vote is closed', r.status === 409, String(r.status));
 r = await req(`/d/${primarySlug}`, { jar: voter });
 html = await r.text();
 ok('dilemma page 200', r.status === 200);
+ok('dilemma artwork is always rendered', html.includes('/debate-mural.svg'));
 ok('canonical tag', html.includes('rel="canonical"') && html.includes(`/d/${primarySlug}`));
 ok('og:title and og:image present', html.includes('og:title') && html.includes('og:image'));
 ok('twitter card present', html.includes('twitter:card'));
@@ -124,6 +125,12 @@ ok('second voter counted, 50/50 split', data.results.total === 2 && data.results
 r = await req(`/d/${primarySlug}`, { jar: voter });
 html = await r.text();
 ok('after refresh, vote state persists and result shown', html.includes('Your pick') && html.includes('50%'));
+ok(
+  'vote card preview is visible without opening a disclosure',
+  html.includes('Make a vote card') &&
+    html.includes(`/card/${primarySlug}/a?fmt=square`) &&
+    !/<details[^>]*>[\s\S]*?Make a vote card/.test(html),
+);
 const visibleHtml = html.replace(/<!--.*?-->/g, '');
 ok('public voter name is rendered beside the selected side', visibleHtml.includes('Votes by name') && visibleHtml.includes('Rae picked'));
 

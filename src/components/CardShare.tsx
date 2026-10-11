@@ -78,7 +78,7 @@ export default function CardShare({ src, filename, shareText, alt, event, slug, 
         width={cur.w}
         height={cur.h}
         alt={alt}
-        loading="lazy"
+        loading="eager"
         style={{ aspectRatio: `${cur.w} / ${cur.h}` }}
         className={`mt-4 w-full ${PREVIEW_MAX[fmt]} border-2 border-ink bg-white`}
       />

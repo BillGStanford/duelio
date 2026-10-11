@@ -155,7 +155,7 @@ export default function VoteBox({
   }
 
   return (
-    <section aria-labelledby="vote-heading" className="mt-8">
+    <section aria-labelledby="vote-heading" className="mt-0">
       <h2 id="vote-heading" className="sr-only">
         {closed ? 'Final result' : voted ? 'Current result' : 'Pick a side'}
       </h2>
@@ -168,46 +168,45 @@ export default function VoteBox({
       )}
 
       {!voted && !closed && (
-        <div className="mb-5 max-w-md">
-          <label htmlFor="voter-name" className="font-bold">Vote with a name <span className="font-normal text-mute">(optional)</span></label>
-          <input
-            id="voter-name"
-            name="voterName"
-            value={voterName}
-            onChange={(event) => setVoterName(event.target.value)}
-            maxLength={32}
-            autoComplete="nickname"
-            className="mt-1 w-full border-2 border-ink bg-white p-3 text-base"
-            placeholder="Your nickname"
-          />
-          <p className="mt-1 text-sm text-mute">No account needed. If you add a name, your nickname and side are public.</p>
-        </div>
-      )}
-
-      {!voted && !closed && (
-        <div className="mb-5 max-w-xl border-l-4 border-sideb bg-white px-4 py-3">
-          <label htmlFor="crowd-guess" className="font-bold">Predict the crowd before you vote</label>
-          <p className="mt-1 text-sm text-mute">What percentage do you think will choose {sideA.label}?</p>
-          <div className="mt-2 flex items-center gap-3">
-            <span className="text-sm font-bold">0%</span>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="mb-3">
+            <label htmlFor="voter-name" className="font-bold">Vote with a name <span className="font-normal text-mute">(optional)</span></label>
             <input
-              id="crowd-guess"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={guessedPctA}
-              onPointerDown={() => setHasGuessed(true)}
-              onKeyDown={() => setHasGuessed(true)}
-              onChange={(event) => {
-                setGuessedPctA(Number(event.target.value));
-                setHasGuessed(true);
-              }}
-              className="w-full accent-sidea"
+              id="voter-name"
+              name="voterName"
+              value={voterName}
+              onChange={(event) => setVoterName(event.target.value)}
+              maxLength={32}
+              autoComplete="nickname"
+              className="mt-1 w-full border-2 border-ink bg-white p-3 text-base"
+              placeholder="Your nickname"
             />
-            <span className="min-w-12 text-right text-lg font-extrabold">{guessedPctA}%</span>
+            <p className="mt-1 text-xs text-mute">No account needed. Your nickname and side are public.</p>
           </div>
-          {!hasGuessed && <p className="mt-2 text-sm font-semibold text-sideb">Move the slider to lock in your prediction before voting.</p>}
+          <div className="mb-3 border-l-4 border-sideb bg-white px-3 py-2">
+            <label htmlFor="crowd-guess" className="font-bold">Predict the crowd</label>
+            <p className="text-xs text-mute">What percentage will choose {sideA.label}?</p>
+            <div className="mt-2 flex items-center gap-3">
+              <span className="text-sm font-bold">0%</span>
+              <input
+                id="crowd-guess"
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={guessedPctA}
+                onPointerDown={() => setHasGuessed(true)}
+                onKeyDown={() => setHasGuessed(true)}
+                onChange={(event) => {
+                  setGuessedPctA(Number(event.target.value));
+                  setHasGuessed(true);
+                }}
+                className="w-full accent-sidea"
+              />
+              <span className="min-w-12 text-right text-lg font-extrabold">{guessedPctA}%</span>
+            </div>
+            {!hasGuessed && <p className="mt-2 text-sm font-semibold text-sideb">Move the slider to lock in your prediction before voting.</p>}
+          </div>
         </div>
       )}
 

@@ -9,7 +9,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - Homepage with a shared dilemma of the day, a 24-hour vote window, and yesterday's public reveal. Daily assignments are persisted so visitors see the same prompt.
 - Searchable main feed includes every published dilemma. The top three dilemmas with at least 10 votes and the closest qualifying dead heat are also featured above the list without disappearing from it.
 - Seven editorial dilemmas provide one week of daily prompts before the rotation repeats. Existing installs with the original five prompts receive the two new starters once by slug; existing content and votes are preserved.
-- A permanent page per dilemma at `/d/<slug>`: vote, split bar, discussion, share, report.
+- A permanent page per dilemma at `/d/<slug>`: a full-width original Duelio illustration behind the prompt, then vote, split bar, discussion, share, and report. After voting, the image card preview is open on the page rather than hidden in a dropdown.
 - Results stay hidden until you vote (or the vote closes). One vote per browser.
 - After the result reveal, one prominent group-chat share button sends a prewritten message and creates a live group tally. Three copy variants are randomly tested and their started/completed rates are shown in `/admin`.
 - Daily dilemmas close at midnight UTC after their featured day. Closed dilemmas show "The vote is in." and the final crowd verdict (never "X is correct"). Editors can still set an earlier close time.

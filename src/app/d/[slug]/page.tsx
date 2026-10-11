@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -93,36 +94,55 @@ export default async function DebatePage({ params, searchParams }: { params: { s
   ]);
 
   return (
-    <main className="mx-auto max-w-3xl px-5 pb-8">
-      <nav aria-label="Breadcrumb" className="pt-2 text-[0.95rem]">
+    <main className="w-full px-5 pb-8">
+      <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl pt-2 text-[0.95rem]">
         <Link href="/" className="underline underline-offset-4 hover:text-sidea">All dilemmas</Link>
         <span aria-hidden="true" className="px-2 text-mute">/</span>
         <span aria-current="page" className="text-mute">This debate</span>
       </nav>
 
-      <p className="mt-6 text-[0.95rem] font-semibold text-mute">
-        {d.editorial ? 'Editorial prompt from the Duelio team' : `Submitted by ${d.submittedBy || 'a reader'}`}
-        {dilemma.closesAt && !closed ? `. Voting closes ${formatCloseDate(dilemma.closesAt)}.` : ''}
-      </p>
-      <h1 className="mt-2 text-[2.1rem] font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-5xl">{d.question}</h1>
-      {d.context && <p className="mt-4 max-w-xl text-lg leading-relaxed text-mute">{d.context}</p>}
+      <section
+        aria-labelledby="dilemma-heading"
+        className="relative -mx-5 mt-4 grid w-[calc(100%+2.5rem)] items-center overflow-hidden border-y-4 border-ink bg-paper px-5 py-6 sm:px-8 sm:py-8 lg:min-h-[calc(100svh-12rem)] lg:px-12"
+      >
+        <Image
+          src="/debate-mural.svg"
+          alt=""
+          fill
+          priority
+          aria-hidden="true"
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-8">
+          <div className="border-4 border-ink bg-white/95 p-5 shadow-[8px_8px_0_#14162b] sm:p-8">
+            <p className="text-[0.95rem] font-semibold text-mute">
+              {d.editorial ? 'Editorial prompt from the Duelio team' : `Submitted by ${d.submittedBy || 'a reader'}`}
+              {dilemma.closesAt && !closed ? `. Voting closes ${formatCloseDate(dilemma.closesAt)}.` : ''}
+            </p>
+            <h1 id="dilemma-heading" className="mt-3 text-3xl font-extrabold leading-[1.05] tracking-[-0.03em] sm:text-4xl xl:text-5xl">{d.question}</h1>
+            {d.context && <p className="mt-4 text-lg leading-relaxed text-mute">{d.context}</p>}
+          </div>
+          <div className="border-4 border-ink bg-white/95 p-4 shadow-[8px_8px_0_#14162b] sm:p-6">
+            <VoteBox
+              key={`${d.slug}-${closed ? 'closed' : 'open'}`}
+              slug={d.slug}
+              question={d.question}
+              room={room}
+              sideA={{ label: d.sideALabel, description: d.sideADescription }}
+              sideB={{ label: d.sideBLabel, description: d.sideBDescription }}
+              initialVoted={voted}
+              initialResults={results}
+              initialNamedVotes={namedVotes}
+              initialGuessedPctA={detail?.guessedPctA ?? null}
+              initialCrowdPrediction={crowdPrediction}
+              closesAt={dilemma.closesAt}
+              closed={closed}
+            />
+          </div>
+        </div>
+      </section>
       <EventOnMount name="dilemma_view" props={{ slug: d.slug }} />
-
-      <VoteBox
-        key={`${d.slug}-${closed ? 'closed' : 'open'}`}
-        slug={d.slug}
-        question={d.question}
-        room={room}
-        sideA={{ label: d.sideALabel, description: d.sideADescription }}
-        sideB={{ label: d.sideBLabel, description: d.sideBDescription }}
-        initialVoted={voted}
-        initialResults={results}
-        initialNamedVotes={namedVotes}
-        initialGuessedPctA={detail?.guessedPctA ?? null}
-        initialCrowdPrediction={crowdPrediction}
-        closesAt={dilemma.closesAt}
-        closed={closed}
-      />
 
       {room && roomCounts && (
         <GroupPanel
@@ -135,7 +155,7 @@ export default async function DebatePage({ params, searchParams }: { params: { s
         />
       )}
 
-      <section aria-labelledby="discussion-heading" className="mt-10 border-t-4 border-ink pt-6">
+      <section aria-labelledby="discussion-heading" className="mx-auto mt-10 max-w-7xl border-t-4 border-ink pt-6">
         <h2 id="discussion-heading" className="text-3xl font-extrabold tracking-tight">Join the discussion</h2>
         <p className="mt-2 text-lg leading-relaxed text-mute">Share your take or reply to someone else&apos;s.</p>
         <p className="my-5 border-l-4 border-sidea bg-white px-4 py-3 text-lg font-bold leading-relaxed">
@@ -144,17 +164,18 @@ export default async function DebatePage({ params, searchParams }: { params: { s
         <ThreadlineComments slug={d.slug} />
       </section>
 
-      <DefenseBox
-        slug={d.slug}
-        hasVoted={!!voted}
-        sideALabel={d.sideALabel}
-        sideBLabel={d.sideBLabel}
-        closed={closed}
-        initialDefense={ownDefense}
-        featuredDefense={featuredDefense}
-      />
-
-      <ReportBox slug={d.slug} />
+      <div className="mx-auto max-w-7xl">
+        <DefenseBox
+          slug={d.slug}
+          hasVoted={!!voted}
+          sideALabel={d.sideALabel}
+          sideBLabel={d.sideBLabel}
+          closed={closed}
+          initialDefense={ownDefense}
+          featuredDefense={featuredDefense}
+        />
+        <ReportBox slug={d.slug} />
+      </div>
     </main>
   );
 }
