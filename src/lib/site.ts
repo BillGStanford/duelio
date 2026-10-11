@@ -3,9 +3,10 @@ export function resolveSiteUrl(configuredUrl: string | undefined, deploymentHost
   if (configured) {
     const hostname = new URL(configured).hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
-    if (!onVercel || !isLocalhost) return configured;
+    if (!onVercel || !isLocalhost) return onVercel ? configured.replace(/^http:/, 'https:') : configured;
   }
 
+  if (onVercel) return 'https://duelio.ink';
   const host = deploymentHost?.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
   return host ? `https://${host}` : 'http://localhost:3000';
 }

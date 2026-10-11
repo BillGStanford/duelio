@@ -15,6 +15,7 @@ import type {
 } from '../types';
 import type { Store } from './types';
 import { dailyCloseAt, dailyIndex, previousUtcDate } from '../daily';
+import { aggregateVoteCounts } from '../results';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const toDilemma = (r: any): Dilemma => ({
@@ -444,23 +445,29 @@ export class SupabaseStore implements Store {
   }
 
   async getCounts(ids: string[]) {
-    const out: Record<string, Counts> = {};
-    await Promise.all(
-      ids.map(async (id) => {
-        const count = async (side: Side) => {
-          const { count: c, error } = await this.sb
-            .from('votes')
-            .select('id', { count: 'exact', head: true })
-            .eq('dilemma_id', id)
-            .eq('side', side);
-          if (error) throw new Error(error.message);
-          return c ?? 0;
-        };
-        const [a, b] = await Promise.all([count('a'), count('b')]);
-        out[id] = { a, b };
-      }),
-    );
-    return out;
+    if (ids.length === 0) return {};
+
+    const pageSize = 1000;
+    const fetchPage = (from: number) =>
+      this.sb
+        .from('votes')
+        .select('dilemma_id, side', from === 0 ? { count: 'exact' } : undefined)
+        .in('dilemma_id', ids)
+        .order('id')
+        .range(from, from + pageSize - 1);
+    const firstPage = await fetchPage(0);
+    const firstRows = check(firstPage) as { dilemma_id: string; side: Side }[];
+    if (firstPage.count === null) throw new Error('Supabase did not return the exact vote count.');
+
+    const rows = [...firstRows];
+    const expectedRows = firstPage.count;
+    while (rows.length < expectedRows) {
+      const page = check(await fetchPage(rows.length)) as { dilemma_id: string; side: Side }[];
+      if (page.length === 0) throw new Error('Supabase returned an incomplete vote-count page.');
+      rows.push(...page);
+    }
+
+    return aggregateVoteCounts(ids, rows);
   }
 
   async createSubmission(input: Parameters<Store['createSubmission']>[0]) {

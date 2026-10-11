@@ -1,4 +1,17 @@
-import type { Counts, Dilemma, Results } from './types';
+import type { Counts, Dilemma, Results, Side } from './types';
+
+export function aggregateVoteCounts(
+  dilemmaIds: string[],
+  votes: { dilemma_id: string; side: Side }[],
+): Record<string, Counts> {
+  const counts: Record<string, Counts> = {};
+  for (const id of dilemmaIds) counts[id] = { a: 0, b: 0 };
+  for (const vote of votes) {
+    const tally = counts[vote.dilemma_id];
+    if (tally) tally[vote.side] += 1;
+  }
+  return counts;
+}
 
 export function computeResults(counts: Counts): Results {
   const total = counts.a + counts.b;

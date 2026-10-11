@@ -21,14 +21,15 @@ describe('site URL', () => {
     });
   });
 
-  it('uses the Vercel production host when no public URL is configured', () => {
-    expect(resolveSiteUrl(undefined, 'duelio-five.vercel.app', true)).toBe('https://duelio-five.vercel.app');
+  it('uses the Duelio custom domain when no public URL is configured on Vercel', () => {
+    expect(resolveSiteUrl(undefined, 'duelio-five.vercel.app', true)).toBe('https://duelio.ink');
   });
 
-  it('ignores a localhost URL accidentally configured in Vercel', () => {
+  it('ignores localhost and forces HTTPS for the configured Vercel URL', () => {
     expect(resolveSiteUrl('http://localhost:3000', 'duelio-five.vercel.app', true)).toBe(
-      'https://duelio-five.vercel.app',
+      'https://duelio.ink',
     );
+    expect(resolveSiteUrl('http://duelio.ink', 'duelio-five.vercel.app', true)).toBe('https://duelio.ink');
   });
 
   it('keeps localhost for local development without a deployment host', () => {

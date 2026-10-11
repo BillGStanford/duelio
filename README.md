@@ -18,7 +18,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - `/submit`: public dilemma submissions. Valid submissions are published immediately, appear in the searchable homepage feed, and get a shareable dilemma page.
 - `/admin`: editor desk (create, edit, publish, unpublish, remove, set closing date, review submissions, resolve reports, 7-day metrics).
 - `/guidelines`: community rules.
-- Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. Vercel deployments use the production host by default; set `NEXT_PUBLIC_SITE_URL` when attaching a custom domain.
+- Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. Vercel deployments use `https://duelio.ink` by default; set `NEXT_PUBLIC_SITE_URL` when attaching a different custom domain.
 - Discussion by the Threadline embed.
 - The share loop (below): vote cards, group chat rooms, and a "how often do you side with the crowd" take.
 

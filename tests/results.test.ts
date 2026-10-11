@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { computeResults, isClosed, isDeadHeat, isHot, verdictLine, winnerLabel } from '@/lib/results';
+import { aggregateVoteCounts, computeResults, isClosed, isDeadHeat, isHot, verdictLine, winnerLabel } from '@/lib/results';
 
 const labels = { sideALabel: 'Yes', sideBLabel: 'No' };
 
 describe('results', () => {
+  it('aggregates actual votes by dilemma and side', () => {
+    expect(aggregateVoteCounts(['one', 'two'], [
+      { dilemma_id: 'one', side: 'a' },
+      { dilemma_id: 'one', side: 'b' },
+      { dilemma_id: 'one', side: 'a' },
+      { dilemma_id: 'two', side: 'b' },
+    ])).toEqual({ one: { a: 2, b: 1 }, two: { a: 0, b: 1 } });
+  });
   it('handles zero votes without dividing by zero', () => {
     expect(computeResults({ a: 0, b: 0 })).toEqual({ a: 0, b: 0, total: 0, pctA: 50, pctB: 50 });
   });
