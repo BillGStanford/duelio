@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import Script from 'next/script';
 import './globals.css';
 import Logo from '@/components/Logo';
 import PageView from '@/components/PageView';
@@ -28,6 +29,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="font-sans">
+        <Script id="google-analytics-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){window.dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-5HEWDYYCEC');`}
+        </Script>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-5HEWDYYCEC"
+          strategy="afterInteractive"
+        />
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-ink focus:px-3 focus:py-2 focus:text-white">
           Skip to content
         </a>
