@@ -3,66 +3,156 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { track } from '@/lib/analytics';
 import { newRoomCode } from '@/lib/room';
+import { shareCopy, SHARE_COPY_VARIANTS, type ShareCopyVariant } from '@/lib/shareCopy';
+import type { Results, Side } from '@/lib/types';
 
-export default function ShareBar({ slug, question, room }: { slug: string; question: string; room: string | null }) {
+const VARIANT_STORAGE_KEY = 'duelio-share-copy-v1';
+
+function getCopyVariant(): ShareCopyVariant {
+  try {
+    const saved = localStorage.getItem(VARIANT_STORAGE_KEY);
+    if (SHARE_COPY_VARIANTS.includes(saved as ShareCopyVariant)) return saved as ShareCopyVariant;
+    const variant = SHARE_COPY_VARIANTS[Math.floor(Math.random() * SHARE_COPY_VARIANTS.length)];
+    localStorage.setItem(VARIANT_STORAGE_KEY, variant);
+    return variant;
+  } catch {
+    return SHARE_COPY_VARIANTS[Math.floor(Math.random() * SHARE_COPY_VARIANTS.length)];
+  }
+}
+
+export default function ShareBar({
+  slug,
+  question,
+  room,
+  side,
+  labelA,
+  labelB,
+  results,
+}: {
+  slug: string;
+  question: string;
+  room: string | null;
+  side: Side | null;
+  labelA: string;
+  labelB: string;
+  results: Results;
+}) {
   const router = useRouter();
   const [status, setStatus] = useState('');
+  const [manualMessage, setManualMessage] = useState('');
 
-  async function copy(text: string, ok: string) {
+  async function copyMessage(message: string, link: string) {
+    const fullMessage = `${message} ${link}`;
     try {
-      await navigator.clipboard.writeText(text);
-      setStatus(ok);
+      await navigator.clipboard.writeText(fullMessage);
+      setStatus('Chat message copied. Paste it to the person you had in mind.');
       return true;
     } catch {
-      setStatus(`Copy this link: ${text}`);
+      setManualMessage(fullMessage);
+      setStatus('Copy didn’t work here. Select the message below and copy it.');
       return false;
     }
   }
 
-  async function groupChat() {
+  async function sendToSomeone() {
+    const variant = getCopyVariant();
     const code = room ?? newRoomCode();
     const link = `${window.location.origin}/d/${slug}?g=${code}`;
-    track(room ? 'share_clicked' : 'group_created', { slug, method: 'group' });
-    if (!room) {
-      // If the creator already voted, count that vote toward the new group. Ignored if they haven't voted yet.
-      await fetch('/api/room', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, room: code }),
-      }).catch(() => undefined);
-      router.replace(`/d/${slug}?g=${code}`, { scroll: false });
-    }
-    const text = `Group chat verdict pending: ${question} Vote before you see what everyone else said.`;
+    const message = shareCopy(variant, question, side, labelA, labelB, results);
+    const variantProps = { slug, copyVariant: variant };
+
+    track('share_clicked', { ...variantProps, method: 'group' });
+    track(`share_copy_${variant}_started`);
+    if (!room) track('group_created', { slug, method: 'group' });
+
+    let nativeShare: Promise<void> | null = null;
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'Group chat verdict pending', text, url: link });
-        track('share_completed', { slug, method: 'group-native' });
-        return;
-      } catch (e) {
-        if ((e as Error)?.name === 'AbortError') return;
+        nativeShare = navigator.share({ title: question, text: message, url: link });
+      } catch {
+        nativeShare = null;
       }
     }
-    if (await copy(link, 'Group link copied. Paste it in the chat.')) track('share_completed', { slug, method: 'group-copy' });
+
+    const attachVote = room
+      ? Promise.resolve()
+      : fetch('/api/room', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug, room: code }),
+        }).then(async (response) => {
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data?.error || 'We couldn’t add your vote to the group yet.');
+          }
+        }).catch((error: unknown) => error instanceof Error ? error : new Error('We couldn’t add your vote to the group yet.'));
+
+    if (nativeShare) {
+      try {
+        await nativeShare;
+        track('share_completed', { ...variantProps, method: 'group-native' });
+        track(`share_copy_${variant}_completed`);
+        setStatus('Sent. Keep this page open to see votes come in.');
+      } catch (error) {
+        setManualMessage(`${message} ${link}`);
+        setStatus((error as Error)?.name === 'AbortError'
+          ? 'Share cancelled. You can still copy the group message below.'
+          : 'Could not open the share sheet. Copy the group message below instead.');
+      }
+    } else {
+      const copied = await copyMessage(message, link);
+      if (copied) {
+        track('share_completed', { ...variantProps, method: 'group-copy' });
+        track(`share_copy_${variant}_completed`);
+      }
+    }
+
+    const attachError = await attachVote;
+    if (attachError instanceof Error) {
+      setStatus(attachError.message);
+      return;
+    }
+    if (!room) router.replace(`/d/${slug}?g=${code}`, { scroll: false });
   }
 
-  async function plain() {
-    track('share_clicked', { slug, method: 'copy' });
-    if (await copy(`${window.location.origin}/d/${slug}`, 'Link copied.')) track('share_completed', { slug, method: 'copy' });
+  async function copyLink() {
+    const link = room
+      ? `${window.location.origin}/d/${slug}?g=${room}`
+      : `${window.location.origin}/d/${slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setStatus('Link copied.');
+    } catch {
+      setManualMessage(link);
+      setStatus('Copy didn’t work here. Select the link below and copy it.');
+    }
   }
 
   return (
-    <div className="mt-8 border-t-4 border-ink pt-5">
-      <p className="text-2xl font-extrabold tracking-tight">Settle it in your group chat.</p>
-      <p className="mt-1 text-mute">One link. Everyone votes. The group&apos;s own split shows up here, live.</p>
+    <section aria-labelledby="share-heading" className="mt-6 border-l-8 border-sidea bg-white p-5 sm:p-6">
+      <h3 id="share-heading" className="text-2xl font-extrabold tracking-tight">Your result is in. Who did you have in mind?</h3>
+      <p className="mt-1 text-mute">Send this to the person you argue with about this. Their vote joins your private group tally.</p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button type="button" onClick={groupChat} className="bg-ink px-5 py-3 text-lg font-bold text-white hover:bg-sidea">
-          Settle it in your group chat
+        <button type="button" onClick={sendToSomeone} className="min-h-12 bg-ink px-5 py-3 text-lg font-bold text-white hover:bg-sidea">
+          Send to the person you argue with
         </button>
-        <button type="button" onClick={plain} className="border-2 border-ink px-5 py-3 font-bold hover:bg-white">
-          Copy plain link
+        <button type="button" onClick={copyLink} className="min-h-11 border-2 border-ink px-4 py-2 text-sm font-bold hover:bg-[#f2f3ff]">
+          Copy link
         </button>
-        <span role="status" className="text-sm font-medium">{status}</span>
       </div>
-    </div>
+      <p role="status" aria-live="polite" className="mt-3 text-sm font-semibold">{status}</p>
+      {manualMessage && (
+        <label className="mt-2 block text-sm font-bold">
+          Message and group link
+          <textarea
+            readOnly
+            rows={3}
+            value={manualMessage}
+            onFocus={(event) => event.currentTarget.select()}
+            className="mt-1 w-full border-2 border-ink bg-[#f2f3ff] p-3 font-normal"
+          />
+        </label>
+      )}
+    </section>
   );
 }

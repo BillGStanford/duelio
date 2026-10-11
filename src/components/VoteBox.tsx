@@ -7,6 +7,7 @@ import { formatCloseDate } from '@/lib/site';
 import type { CrowdPrediction, Results, Side } from '@/lib/types';
 import TakeCard from './TakeCard';
 import VoteShare from './VoteShare';
+import ShareBar from './ShareBar';
 
 interface SideInfo {
   label: string;
@@ -263,6 +264,18 @@ export default function VoteBox({
             )}
           </p>
         </div>
+      )}
+
+      {showResults && results && (
+        <ShareBar
+          slug={slug}
+          question={question}
+          room={room}
+          side={voted}
+          labelA={sideA.label}
+          labelB={sideB.label}
+          results={results}
+        />
       )}
 
       {showResults && namedVotes.length > 0 && (

@@ -63,6 +63,7 @@ interface Parts {
   foot?: string;
   subfoot?: string;
   cta?: string;
+  minimal?: boolean;
 }
 
 async function compose(fmt: Fmt, tone: Tone, p: Parts, cache: string) {
@@ -147,7 +148,7 @@ async function compose(fmt: Fmt, tone: Tone, p: Parts, cache: string) {
   if (p.subfoot) foot.push(line(p.subfoot, Math.round(s.foot * 0.82), MUTE, 'Poppins', 1.2, 'subfoot'));
   if (p.cta) foot.push(<div key="cta" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: p.foot ? s.gap * 0.3 : 0 }}>{line(p.cta, s.big, INK, 'Pagella', 1.1)}</div>);
   const h = host();
-  if (h) foot.push(<div key="host" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: s.gap * 0.4 }}>{line(h, s.foot * 0.85, MUTE, 'Poppins', 1.2)}</div>);
+  if (h && !p.minimal) foot.push(<div key="host" style={{ display: 'flex', justifyContent: 'center', width: '100%', marginTop: s.gap * 0.4 }}>{line(h, s.foot * 0.85, MUTE, 'Poppins', 1.2)}</div>);
 
   const node = (
     <div style={{ width: s.width, height: s.height, display: 'flex', position: 'relative', background: '#EEF0F6' }}>
@@ -167,11 +168,13 @@ async function compose(fmt: Fmt, tone: Tone, p: Parts, cache: string) {
           padding: `${s.padY}px ${s.padX}px`,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', fontFamily: 'Poppins', fontSize: s.brand, color: INK }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`data:image/svg+xml;utf8,${LOGO}`} width={s.brand * 1.1} height={s.brand * 1.1} alt="" style={{ marginRight: s.brand * 0.4 }} />
-          Duelio
-        </div>
+        {!p.minimal && (
+          <div style={{ display: 'flex', alignItems: 'center', fontFamily: 'Poppins', fontSize: s.brand, color: INK }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`data:image/svg+xml;utf8,${LOGO}`} width={s.brand * 1.1} height={s.brand * 1.1} alt="" style={{ marginRight: s.brand * 0.4 }} />
+            Duelio
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>{center}</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>{foot}</div>
       </div>
@@ -230,6 +233,22 @@ export function pageCard(o: { fmt: Fmt; question: string; labelA: string; labelB
     o.fmt,
     'n',
     { kicker: 'Pick a side', body: o.question, pills: { a: o.labelA, b: o.labelB }, cta: 'Which side are you on?' },
+    CACHE,
+  );
+}
+
+export function resultCard(o: { question: string; labelA: string; labelB: string; pctA: number; pctB: number; total: number }) {
+  return compose(
+    'wide',
+    'n',
+    {
+      body: o.question,
+      pills: {
+        a: o.total ? `${o.labelA} ${o.pctA}%` : 'No votes yet',
+        b: o.total ? `${o.labelB} ${o.pctB}%` : 'No votes yet',
+      },
+      minimal: true,
+    },
     CACHE,
   );
 }

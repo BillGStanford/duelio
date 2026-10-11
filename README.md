@@ -11,6 +11,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - Seven editorial dilemmas provide one week of daily prompts before the rotation repeats. Existing installs with the original five prompts receive the two new starters once by slug; existing content and votes are preserved.
 - A permanent page per dilemma at `/d/<slug>`: vote, split bar, discussion, share, report.
 - Results stay hidden until you vote (or the vote closes). One vote per browser.
+- After the result reveal, one prominent group-chat share button sends a prewritten message and creates a live group tally. Three copy variants are randomly tested and their started/completed rates are shown in `/admin`.
 - Daily dilemmas close at midnight UTC after their featured day. Closed dilemmas show "The vote is in." and the final crowd verdict (never "X is correct"). Editors can still set an earlier close time.
 - Voting is still open to everyone, including the submitter. Voters may optionally attach a public nickname to a vote; no account is required and unnamed votes remain anonymous.
 - Before voting, visitors predict what percentage will choose side A. Their guess is saved with their one-time vote; the aggregate prediction appears only with the result. After voting, each visitor can post one short case for the side they did not choose. When the vote closes, the most-endorsed defense is featured; endorsements are one per voter and cannot be cast on your own defense.
@@ -18,7 +19,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - `/submit`: public dilemma submissions. Valid submissions are published immediately, appear in the searchable homepage feed, and get a shareable dilemma page.
 - `/admin`: editor desk (create, edit, publish, unpublish, remove, set closing date, review submissions, resolve reports, 7-day metrics).
 - `/guidelines`: community rules.
-- Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. Vercel deployments use `https://duelio.ink` by default; set `NEXT_PUBLIC_SITE_URL` when attaching a different custom domain.
+- Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. A dilemma preview shows its question and current vote split; social platforms may cache that split. Vercel deployments use `https://duelio.ink` by default; set `NEXT_PUBLIC_SITE_URL` when attaching a different custom domain.
 - Discussion by the Threadline embed.
 - The share loop (below): vote cards, group chat rooms, and a "how often do you side with the crowd" take.
 

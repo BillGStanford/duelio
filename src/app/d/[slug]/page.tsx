@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { EventOnMount } from '@/components/PageView';
 import ReportBox from '@/components/ReportBox';
-import ShareBar from '@/components/ShareBar';
 import GroupPanel from '@/components/GroupPanel';
 import ThreadlineComments from '@/components/ThreadlineComments';
 import DefenseBox from '@/components/DefenseBox';
@@ -135,8 +134,6 @@ export default async function DebatePage({ params, searchParams }: { params: { s
           initial={{ total: roomCounts.a + roomCounts.b, voted: !!voted, inRoom, results: inRoom ? computeResults(roomCounts) : null }}
         />
       )}
-
-      <ShareBar slug={d.slug} question={d.question} room={room} />
 
       <section aria-labelledby="discussion-heading" className="mt-10 border-t-4 border-ink pt-6">
         <h2 id="discussion-heading" className="text-3xl font-extrabold tracking-tight">Join the discussion</h2>

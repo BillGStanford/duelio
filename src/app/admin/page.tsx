@@ -22,6 +22,12 @@ const METRICS: [string, string][] = [
   ['discussion_loaded', 'Discussion loads'],
 ];
 
+const SHARE_COPY_VARIANTS: [string, string][] = [
+  ['a', '“Only X% agree with me. Prove me wrong.”'],
+  ['b', '“X% picked the other side. Is the crowd right?”'],
+  ['c', '“The vote is X%–Y%. What would you choose?”'],
+];
+
 const toLocalInput = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 16) : '');
 const inp = 'mt-1 w-full border-2 border-ink bg-white p-2';
 
@@ -93,6 +99,38 @@ export default async function AdminPage({ searchParams }: { searchParams: { msg?
             <div key={k} className="bg-white p-3"><dt className="text-sm text-mute">{label}</dt><dd className="text-3xl font-extrabold">{events[k] ?? 0}</dd></div>
           ))}
         </dl>
+      </section>
+
+      <section className="mt-8" aria-labelledby="share-copy-results">
+        <h2 id="share-copy-results" className="text-2xl font-extrabold">Share message test · last 7 days</h2>
+        <p className="mt-1 text-sm text-mute">Visitors are randomly assigned one version, then kept in that version on this browser. Compare completed shares to find the strongest message.</p>
+        <div className="mt-3 overflow-x-auto bg-white">
+          <table className="w-full min-w-[36rem] text-left">
+            <thead>
+              <tr className="border-b-2 border-ink">
+                <th scope="col" className="p-3">Message</th>
+                <th scope="col" className="p-3">Started</th>
+                <th scope="col" className="p-3">Completed</th>
+                <th scope="col" className="p-3">Completion rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {SHARE_COPY_VARIANTS.map(([variant, copy]) => {
+                const started = events[`share_copy_${variant}_started`] ?? 0;
+                const completed = events[`share_copy_${variant}_completed`] ?? 0;
+                const rate = started ? `${Math.round((completed / started) * 100)}%` : '—';
+                return (
+                  <tr key={variant} className="border-b border-rule">
+                    <th scope="row" className="p-3 font-semibold">{copy}</th>
+                    <td className="p-3">{started}</td>
+                    <td className="p-3">{completed}</td>
+                    <td className="p-3">{rate}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="mt-10" aria-labelledby="s">

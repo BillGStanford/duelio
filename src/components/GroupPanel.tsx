@@ -85,7 +85,12 @@ export default function GroupPanel({ slug, room, labelA, labelB, initial }: Prop
               <span className="font-normal">{res.total} {res.total === 1 ? 'vote' : 'votes'}</span>
               <span>{res.b} {labelB}</span>
             </p>
-            <p className="mt-1 text-sm text-rule">Updates live. Send the link to anyone who hasn&apos;t voted.</p>
+            <p className="mt-1 text-sm text-rule">
+              {res.total === 1
+                ? 'You’re first in. Send the link to your person and see their vote come in.'
+                : `${res.total - 1} ${res.total === 2 ? 'friend has' : 'friends have'} voted so far.`}
+              {' '}Updates live. Send the link to anyone who hasn&apos;t voted.
+            </p>
           </div>
         )}
       </div>

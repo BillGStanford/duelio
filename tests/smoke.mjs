@@ -195,6 +195,8 @@ ok('bad report rejected', r.status === 422);
 // events
 r = await req('/api/events', { method: 'POST', json: { name: 'share_clicked', props: { slug: 'next-episode', method: 'copy' } } });
 ok('event accepted', r.status === 200);
+r = await req('/api/events', { method: 'POST', json: { name: 'share_copy_a_started' } });
+ok('share-copy experiment event accepted', r.status === 200);
 r = await req('/api/events', { method: 'POST', json: { name: 'second_dilemma_vote', props: { slug: secondSlug } } });
 ok('second-dilemma retention event accepted', r.status === 200);
 r = await req('/api/events', { method: 'POST', json: { name: 'not_allowed' } });

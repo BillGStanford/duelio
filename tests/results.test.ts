@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateVoteCounts, computeResults, isClosed, isDeadHeat, isHot, verdictLine, winnerLabel } from '@/lib/results';
+import { shareCopy } from '@/lib/shareCopy';
 
 const labels = { sideALabel: 'Yes', sideBLabel: 'No' };
 
 describe('results', () => {
+  it('prepares distinct share messages using the revealed split', () => {
+    const results = computeResults({ a: 63, b: 37 });
+    expect(shareCopy('a', 'Question?', 'a', 'Yes', 'No', results)).toContain('only 63% agree');
+    expect(shareCopy('b', 'Question?', 'a', 'Yes', 'No', results)).toContain('37% picked No');
+    expect(shareCopy('c', 'Question?', 'a', 'Yes', 'No', results)).toContain('63%–37%');
+    expect(shareCopy('a', 'Question?', 'b', 'Yes', 'No', results)).toContain('only 37% agree');
+  });
+
   it('aggregates actual votes by dilemma and side', () => {
     expect(aggregateVoteCounts(['one', 'two'], [
       { dilemma_id: 'one', side: 'a' },
