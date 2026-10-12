@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import DuelStrip from '@/components/DuelStrip';
+import MatchupHome from '@/components/MatchupHome';
 import { dailyCloseAt, effectiveCloseAt, previousUtcDate, utcDateKey } from '@/lib/daily';
 import { computeResults, isClosed, isDeadHeat, isHot, verdictLine } from '@/lib/results';
 import { countWord, formatCloseDate } from '@/lib/site';
@@ -97,6 +98,8 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
           </nav>
         </div>
       </section>
+
+      <MatchupHome />
 
       {daily && dailyClosesAt && (
         <section id="daily-duel" aria-labelledby="daily-heading" className="scroll-mt-4 border-t-4 border-ink bg-white px-5 py-7 sm:px-8 sm:py-9">

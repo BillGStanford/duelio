@@ -344,3 +344,13 @@ body main p { text-wrap: pretty; }
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Matchup winner reveal: deliberately page-only, with reduced-motion support. */
+@keyframes duelio-winner-enter {
+  0% { opacity: 0; transform: translateY(18px) scale(.92); filter: blur(8px); }
+  60% { opacity: 1; transform: translateY(-3px) scale(1.015); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.winner-reveal { animation: duelio-winner-enter 650ms cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) { .winner-reveal { animation: none !important; } }

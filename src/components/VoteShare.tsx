@@ -9,12 +9,16 @@ export default function VoteShare({
   label,
   question,
   closesAt,
+  shareUrl,
+  matchup,
 }: {
   slug: string;
   side: Side;
   label: string;
   question: string;
   closesAt: string | null;
+  shareUrl?: string;
+  matchup?: { nameA: string; nameB: string };
 }) {
   return (
     <section aria-labelledby="vote-card-heading" className="mt-6 border-t-2 border-rule pt-4">
@@ -23,12 +27,13 @@ export default function VoteShare({
         Post it and let your friends try to change your mind.{closesAt ? ` Voting closes ${formatCloseDate(closesAt)}.` : ''}
       </p>
       <CardShare
-        src={(f) => `/card/${slug}/${side}?fmt=${f}`}
+        src={(f) => matchup ? `/matchup-card/${slug}/${side}?fmt=${f}` : `/card/${slug}/${side}?fmt=${f}`}
         filename={`duelio-${slug}`}
         shareText={`I picked ${label}. Do you agree? ${question}`}
         alt={`Vote card: I picked ${label}. ${question} Do you agree?`}
         event="card_shared"
         slug={slug}
+        shareUrl={shareUrl}
       />
     </section>
   );
