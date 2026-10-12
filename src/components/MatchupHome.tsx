@@ -25,16 +25,16 @@ export default async function MatchupHome() {
         <Link href="/#matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">Explore matchups</Link>
       </div>
       {matchups.length ? (
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid auto-rows-fr gap-4 md:grid-cols-2">
           {matchups.map((m, i) => {
             const { round, counts } = data[i];
             const total = counts.a + counts.b;
             const pctA = total ? Math.round(counts.a / total * 100) : 50;
             const pctB = 100 - pctA;
             return (
-              <article key={m.id} className="overflow-hidden rounded-2xl border border-rule bg-white p-4 shadow-sm sm:p-5">
+              <article key={m.id} className="flex h-full flex-col overflow-hidden rounded-2xl border border-rule bg-white p-4 shadow-sm sm:p-5">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-                  <div><EntityImage src={m.imageA} name={m.nameA} className="h-28 w-full rounded-xl border border-rule bg-paper p-1 sm:h-36" /><h3 className="mt-2 line-clamp-2 font-extrabold">{m.nameA}</h3><p className="mt-1 line-clamp-2 text-xs text-mute">{m.descriptionA}</p></div>
+                  <div><EntityImage src={m.imageA} name={m.nameA} className="h-32 w-full rounded-xl border border-rule bg-paper sm:h-40" /><h3 className="mt-2 line-clamp-2 font-extrabold">{m.nameA}</h3><p className="mt-1 line-clamp-2 text-xs text-mute">{m.descriptionA}</p></div>
                   <span className="mt-12 text-xs font-black uppercase text-mute">vs</span>
                   <div><EntityImage src={m.imageB} name={m.nameB} className="h-28 w-full rounded-xl border border-rule bg-paper p-1 sm:h-36" /><h3 className="mt-2 line-clamp-2 text-right font-extrabold">{m.nameB}</h3><p className="mt-1 line-clamp-2 text-right text-xs text-mute">{m.descriptionB}</p></div>
                 </div>
@@ -44,7 +44,7 @@ export default async function MatchupHome() {
                   <span className="text-sideb">{pctB}% · {counts.b}</span>
                 </div>
                 <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea transition-all" style={{ width: `${pctA}%` }} /><span className="bg-sideb transition-all" style={{ width: `${pctB}%` }} /></div>
-                <Link href={`/matchup/${m.slug}`} className="mt-4 flex min-h-11 items-center justify-center rounded-xl bg-ink px-4 py-3 text-center font-extrabold text-white hover:bg-sidea">Vote and make your case <span className="ml-2" aria-hidden="true">→</span></Link>
+                <Link href={`/matchup/${m.slug}`} className="mt-auto flex min-h-12 w-full items-center justify-center rounded-xl bg-ink px-4 py-3 text-center font-extrabold text-white hover:bg-sidea">Vote and make your case <span className="ml-2" aria-hidden="true">→</span></Link>
               </article>
             );
           })}
