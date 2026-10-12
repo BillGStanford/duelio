@@ -28,9 +28,10 @@ interface Props {
   event: 'card_shared' | 'take_shared';
   slug?: string;
   defaultFmt?: Fmt;
+  shareUrl?: string;
 }
 
-export default function CardShare({ src, filename, shareText, alt, event, slug, defaultFmt = 'square' }: Props) {
+export default function CardShare({ src, filename, shareText, alt, event, slug, defaultFmt = 'square', shareUrl }: Props) {
   const [fmt, setFmt] = useState<Fmt>(defaultFmt);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
@@ -42,7 +43,7 @@ export default function CardShare({ src, filename, shareText, alt, event, slug, 
     setNote('');
     track(event, slug ? { slug, fmt } : { fmt });
     try {
-      const r = await shareImage(src(fmt), `${filename}-${fmt}.png`, { text: shareText, link: window.location.href.split('?')[0] });
+      const r = await shareImage(src(fmt), `${filename}-${fmt}.png`, { text: shareText, link: shareUrl ? new URL(shareUrl, window.location.origin).toString() : window.location.href.split('?')[0] });
       if (r === 'downloaded') setNote('Saved to your device. Post it anywhere.');
     } catch {
       setNote('We couldn\u2019t make the card. Try again.');

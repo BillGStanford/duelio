@@ -21,6 +21,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - `/guidelines`: community rules.
 - Social previews: Open Graph and Twitter tags plus generated 1200×630 share images for the homepage and every dilemma. A dilemma preview shows its question and current vote split; social platforms may cache that split. Vercel deployments use `https://duelio.ink` by default; set `NEXT_PUBLIC_SITE_URL` when attaching a different custom domain.
 - Discussion by the Threadline embed.
+- **Permanent matchups:** visitors can create any two-name matchup without accounts; names are enriched with short Wikipedia summaries and thumbnails when available. Each matchup has one canonical URL, anonymous one-vote-per-browser-per-round voting, automatic 14-day rounds, a recorded result history, a reigning champion, live vote totals, and downloadable “I voted for” share cards with custom social previews. Matchups and votes are managed in the existing authenticated admin workflow via `/admin/matchups`.
 - The share loop (below): vote cards, group chat rooms, and a "how often do you side with the crowd" take.
 
 Not built on purpose: profiles, followers, feeds, streaks, leaderboards, AI judges, notifications.
@@ -96,6 +97,10 @@ Two things the embed snippet does not document, so check them on your deployed s
 2. **Navigation between dilemmas.** The script tag id includes the dilemma slug so Next.js re-runs the embed after client-side navigation. If a thread fails to appear after clicking from one dilemma to another, tell Threadline or switch dilemma links to full page loads.
 
 The "Be the first person to make the case" line is shown above the embed on every dilemma. Duelio cannot tell whether a thread has comments, so it does not hide that line.
+
+## Permanent matchups setup
+
+Before enabling matchup voting in production, run `supabase/matchups.sql` in the Supabase SQL Editor. This adds the matchup, round, and vote tables plus server-only functions for atomic voting and round rollover. It does not delete or rewrite existing polls or votes. The feature uses the existing `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `VOTE_SALT`, and Threadline environment variables; no new secrets are required. After the migration, deploy the branch and test creating the same pair in both orders, voting twice in one round, closing a round from `/admin/matchups`, and confirming that the share URL preview includes the chosen competitor.
 
 ## Production setup (Vercel + Supabase)
 
