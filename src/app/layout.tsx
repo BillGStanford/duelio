@@ -47,11 +47,7 @@ gtag('config', 'G-5HEWDYYCEC');`}
             <Logo />
             Duelio
           </Link>
-          <nav aria-label="Main">
-            <Link href="/submit" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">
-              Submit a dilemma
-            </Link>
-          </nav>
+          <nav aria-label="Main" className="flex items-center gap-2 sm:gap-3"><Link href="/polls" className="font-bold hover:text-sidea">Polls &amp; matchups</Link><Link href="/submit" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">Submit a poll</Link></nav>
         </header>
         <div id="main">{children}</div>
         <footer className="mx-auto mt-24 max-w-5xl border-t-4 border-ink px-5 py-8 text-[0.95rem] text-mute">
