@@ -70,12 +70,12 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
     <main className="mx-auto max-w-5xl px-5">
       <section aria-labelledby="home-heading" className="grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_0.8fr] md:items-center">
         <div>
-          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">Everyday questions. Two sides. Your call.</p>
+          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">POLLS · MATCHUPS · PUBLIC OPINION</p>
           <h1 id="home-heading" className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-[-0.035em] sm:text-6xl">
-            The internet disagrees with you.
+            Every debate deserves a verdict.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl">
-            Pick a side on a small everyday dilemma, see how others voted, and join the conversation. No account needed.
+            Vote on everyday dilemmas or create a matchup between any two people, ideas, teams, or things. See public opinion shift live, make your case, and share the debate. No account or money needed.
           </p>
         </div>
         <div className="grid justify-items-center gap-3">
@@ -89,11 +89,11 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
             className="h-auto w-full max-w-sm"
           />
           <nav aria-label="Explore Duelio" className="grid w-full gap-2 sm:grid-cols-2">
-            <a href="#daily-duel" className="inline-flex min-h-12 items-center justify-center bg-ink px-5 py-3 text-base font-bold text-white hover:bg-sidea">
-              Today&apos;s dilemma
+            <a href="/polls#daily-duel" className="inline-flex min-h-12 items-center justify-center bg-ink px-5 py-3 text-base font-bold text-white hover:bg-sidea">
+              Daily polls
             </a>
-            <a href="#debates" className="inline-flex min-h-12 items-center justify-center border-2 border-ink px-5 py-3 text-base font-bold hover:bg-white">
-              Browse dilemmas
+            <a href="/polls" className="inline-flex min-h-12 items-center justify-center border-2 border-ink px-5 py-3 text-base font-bold hover:bg-white">
+              All polls
             </a>
           </nav>
         </div>
