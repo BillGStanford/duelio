@@ -149,14 +149,14 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           const champion = championSide === side;
           const picked = snapshot.votedSide === side;
           return (
-            <article key={side} className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition sm:p-5 ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
+            <article key={side} className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition sm:p-5 ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
               {champion && <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#2433E0] px-3 py-2 text-xs font-black tracking-[0.14em] text-white shadow-md"><span>♛ REIGNING CHAMPION</span><span>ROUND {snapshot.champion?.roundNumber}</span></div>}
               {picked && <div className="mb-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black tracking-[0.14em] text-white">YOUR PICK ✓</div>}
               <Portrait src={image} name={name} large />
               <div className="mt-4 flex items-start justify-between gap-3"><h2 className="text-2xl font-black tracking-tight">{name}</h2><span className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${isA ? 'bg-[#f2f3ff] text-sidea' : 'bg-[#fff1f4] text-sideb'}`}>{pct}%</span></div>
               <p className="mt-2 min-h-12 leading-relaxed text-mute">{description}</p>
               {source && <a href={source} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold underline underline-offset-4 text-mute">Source / learn more ↗</a>}
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-paper"><div className={`h-full rounded-full transition-all duration-500 ${isA ? 'bg-sidea' : 'bg-sideb'}`} style={{ width: `${pct}%` }} /></div>
+              <div className="mt-4 h-2 shrink-0 overflow-hidden rounded-full bg-paper"><div className={`h-full rounded-full transition-all duration-500 ${isA ? 'bg-sidea' : 'bg-sideb'}`} style={{ width: `${pct}%` }} /></div>
               <p className="mt-2 text-sm font-semibold text-mute">{votes.toLocaleString()} vote{votes === 1 ? '' : 's'}</p>
               <button type="button" onClick={() => vote(side)} disabled={busy || !!snapshot.votedSide} className={`mt-4 min-h-12 w-full rounded-xl px-4 py-3 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isA ? 'bg-sidea hover:brightness-90' : 'bg-sideb hover:brightness-90'}`}>{snapshot.votedSide ? (picked ? 'You voted for this' : 'Vote recorded') : busy ? 'Recording vote…' : `I vote for ${name}`}</button>
             </article>
