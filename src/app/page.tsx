@@ -70,12 +70,12 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
     <main className="mx-auto max-w-5xl px-5">
       <section aria-labelledby="home-heading" className="grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_0.8fr] md:items-center">
         <div>
-          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">Dilemmas and matchups. Your call.</p>
+          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">DUELIO · THE MATCHUP ARENA</p>
           <h1 id="home-heading" className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-[-0.035em] sm:text-6xl">
-            Every debate has two sides.
+            Who wins? Let the crowd decide.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl">
-            Settle everyday dilemmas or go head-to-head on bigger matchups. Cast your vote, make your case, and see where public opinion lands.
+            Head-to-head matchups for people, teams, characters, and ideas. Pick your side, make your case, and see public opinion move.
           </p>
         </div>
         <div className="grid justify-items-center gap-3">
@@ -93,7 +93,7 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
               Today&apos;s dilemma
             </a>
             <a href="/matchups" className="inline-flex min-h-12 items-center justify-center border-2 border-ink px-5 py-3 text-base font-bold hover:bg-white">
-              Explore matchups
+              Explore all matchups
             </a>
           </nav>
         </div>
