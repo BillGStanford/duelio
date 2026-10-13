@@ -42,6 +42,16 @@ export default async function MatchupAdmin({ searchParams }: { searchParams: { m
                 <div className="sm:col-span-2"><button className="rounded-lg bg-ink px-4 py-2 font-bold text-white hover:bg-sidea" type="submit">Save details</button></div>
               </form>
             </details>
+            <details className="mt-4 rounded-xl border border-rule bg-paper p-4">
+              <summary className="cursor-pointer font-bold">Moderate votes for this round</summary>
+              <p className="mt-2 text-sm text-mute">Add votes to correct an undercount, or remove recent votes from a side to reduce spam. Positive numbers add; negative numbers remove.</p>
+              <form method="post" action="/api/admin/matchups" className="mt-3 flex flex-wrap items-end gap-3">
+                <Hidden action="adjust_votes" id={m.id}/>
+                <label className="text-sm font-bold">Side<select name="side" className={field}><option value="a">Blue · {m.nameA}</option><option value="b">Red · {m.nameB}</option></select></label>
+                <label className="text-sm font-bold">Vote change<input className={field} type="number" name="delta" min="-500" max="500" step="1" required placeholder="e.g. -4 or 10"/></label>
+                <button className="min-h-10 rounded-lg bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-sidea" type="submit">Apply adjustment</button>
+              </form>
+            </details>
             <div className="mt-4 flex flex-wrap gap-2">
               <form method="post" action="/api/admin/matchups"><Hidden action="status" id={m.id}/><input type="hidden" name="status" value={m.status==='published'?'removed':'published'}/><button className="rounded-lg border border-rule px-3 py-2 text-sm font-bold hover:bg-paper" type="submit">{m.status==='published'?'Remove from public view':'Restore public page'}</button></form>
               <form method="post" action="/api/admin/matchups"><Hidden action="close_round" id={m.id}/><button className="rounded-lg border border-rule px-3 py-2 text-sm font-bold hover:bg-paper" type="submit">Close round and start next</button></form>
