@@ -604,3 +604,162 @@ body > header nav a {
   .matchup-carousel-rail { scroll-behavior: auto; }
   .carousel-dot, .matchup-slide-cta { transition: none; }
 }
+
+
+/* Conversion-first matchup creation: visible before browsing the board. */
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] {
+  margin: 0 0 clamp(2rem, 4vw, 3rem) !important;
+  padding: clamp(1.25rem, 3.2vw, 2rem) !important;
+  border: 1px solid #dce1ef !important;
+  border-top: 4px solid #4e5cf0 !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(78,92,240,.09), transparent 42%),
+    #fff !important;
+  box-shadow: 0 14px 36px rgba(24,31,59,.065) !important;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] h2 {
+  margin-top: .4rem;
+  color: #111426;
+  font-size: clamp(1.8rem, 3.8vw, 2.65rem);
+  font-weight: 950;
+  letter-spacing: -.055em;
+  line-height: 1.03;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] p {
+  line-height: 1.6;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form {
+  align-items: end;
+  gap: .75rem;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] label {
+  color: #252d42;
+  font-size: .83rem;
+  font-weight: 850;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] input {
+  min-height: 54px;
+  border: 1px solid #d5dbea;
+  border-radius: 12px;
+  background: rgba(255,255,255,.96);
+  box-shadow: inset 0 1px 2px rgba(17,20,38,.025);
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] input:focus {
+  border-color: #6975f5;
+  outline: 3px solid rgba(78,92,240,.13);
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form button {
+  min-height: 54px;
+  border-radius: 12px;
+  background: #4e5cf0;
+  box-shadow: 0 7px 18px rgba(78,92,240,.2);
+  white-space: nowrap;
+}
+body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form button:hover {
+  background: #3e49d5;
+}
+@media (max-width: 767px) {
+  body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: .8rem;
+  }
+  body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form > span {
+    padding: 0;
+    text-align: left;
+  }
+  body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"] form button {
+    width: 100%;
+  }
+}
+
+/* Elevated matchup slides: two clear competitor panels and a readable vote summary. */
+.matchup-slide-card {
+  border-color: #d9deeb;
+  border-radius: 23px;
+  background: linear-gradient(155deg, #fff 0%, #fff 58%, #f5f6ff 100%);
+  box-shadow: 0 12px 34px rgba(24,31,59,.075), inset 0 1px 0 rgba(255,255,255,.96);
+}
+.matchup-slide-card .matchup-competitor {
+  padding: .65rem;
+  border: 1px solid #e2e6f0;
+  border-radius: 17px;
+  background: linear-gradient(180deg, #f8f9ff 0%, #fff 100%);
+}
+.matchup-slide-card .matchup-competitor-b {
+  background: linear-gradient(180deg, #fff5f7 0%, #fff 100%);
+}
+.matchup-slide-card .matchup-portrait {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 0 !important;
+  border-radius: 11px !important;
+  object-fit: cover;
+  object-position: center 25%;
+  background: #e8ebf5;
+  box-shadow: none;
+}
+.matchup-slide-card .matchup-name {
+  min-height: 2.35em;
+  margin-top: .7rem;
+  font-size: clamp(1rem, 1.65vw, 1.28rem);
+  line-height: 1.13;
+  letter-spacing: -.035em;
+}
+.matchup-slide-card .matchup-competitor p {
+  min-height: 2.8em;
+  font-size: .8rem;
+  line-height: 1.4;
+  color: #697185 !important;
+}
+.matchup-slide-card .matchup-vs-badge {
+  align-self: center;
+  margin-top: 0 !important;
+  padding: .45rem .5rem;
+  border: 1px solid #e0e3ee;
+  background: #fff !important;
+  color: #71788b !important;
+  box-shadow: 0 3px 9px rgba(17,20,38,.05);
+}
+.matchup-slide-card > .mt-5.flex.items-center.justify-between {
+  margin-top: 1.1rem;
+  padding: .8rem .9rem;
+  border: 1px solid #e6e8f0;
+  border-radius: 12px;
+  background: rgba(255,255,255,.82);
+}
+.matchup-slide-card > .mt-2.flex.h-2 {
+  height: 7px;
+  margin-top: .5rem;
+}
+.matchup-slide-cta {
+  margin-top: 1rem !important;
+  border-radius: 13px;
+  background: #171b31;
+  letter-spacing: -.01em;
+}
+.matchup-slide-card:not(.matchup-more-card) .matchup-slide-cta {
+  justify-content: space-between;
+  padding-inline: 1.1rem;
+}
+.matchup-slide-card:not(.matchup-more-card) .matchup-slide-cta span {
+  display: inline-grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.13);
+}
+.matchup-slide-card:hover {
+  transform: none !important;
+  box-shadow: 0 12px 34px rgba(24,31,59,.075), inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+@media (max-width: 480px) {
+  .matchup-slide-card { padding: .85rem; }
+  .matchup-slide-card .matchup-competitor { padding: .45rem; border-radius: 13px; }
+  .matchup-slide-card .matchup-portrait { aspect-ratio: 3 / 3.2; }
+  .matchup-slide-card .matchup-name { font-size: .98rem; }
+  .matchup-slide-card .matchup-competitor p { font-size: .74rem; }
+  .matchup-slide-card .matchup-vs-badge { padding: .35rem .4rem; font-size: .58rem; }
+}
