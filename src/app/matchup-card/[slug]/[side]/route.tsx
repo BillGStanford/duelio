@@ -59,4 +59,6 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
       </div>
     </div>,
     { ...dims, headers: { "Cache-Control": "public, max-age=0, s-maxage=60, must-revalidate", "CDN-Cache-Control": "public, max-age=60" } },
-  );}
+  );
+}
+
