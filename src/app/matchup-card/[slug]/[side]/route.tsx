@@ -35,16 +35,16 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
   };
   const [safeImage, safeOtherImage] = await Promise.all([photo(image, name), photo(otherImage, other)]);
   return new ImageResponse(
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: wide ? '44px 54px' : '64px 58px', background: 'linear-gradient(135deg,#f7f8ff 0%,#ffffff 52%,#fff0f4 100%)', color: '#14162B', fontFamily: 'Arial, sans-serif', border: '14px solid #2433E0' }}>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: wide ? '44px 54px' : '64px 58px', background: 'linear-gradient(135deg,#f7f8ff 0%,#ffffff 52%,#fff0f4 100%)', color: '#14162B', fontFamily: 'Arial, sans-serif', border: '10px solid #2433E0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: wide ? 22 : 28, fontWeight: 800, letterSpacing: 3, color: '#2433E0' }}><span>DUELIO · PUBLIC OPINION</span><span>NO MONEY. JUST OPINIONS.</span></div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: wide ? 30 : 38, flex: 1, marginTop: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%', minWidth: 0 }}>
-          <img src={safeImage} width={wide ? 200 : 340} height={wide ? 200 : 340} style={{ width: wide ? 200 : 340, height: wide ? 200 : 340, objectFit: 'contain', borderRadius: 24, border: '3px solid #2433E0', background: 'white' }} />
-          <div style={{ fontSize: wide ? 26 : 42, fontWeight: 900, textAlign: 'center', marginTop: 16 }}>{name.slice(0, 64)}</div>
+          <img src={safeImage} width={wide ? 200 : 340} height={wide ? 200 : 340} style={{ width: wide ? 200 : 340, height: wide ? 200 : 340, objectFit: 'cover', borderRadius: 24, border: '3px solid #2433E0', background: '#eef0ff' }} />
+          <div style={{ fontSize: wide ? 25 : 42, fontWeight: 900, textAlign: 'center', marginTop: 16, lineHeight: 1.12 }}>{name.slice(0, 64)}</div>
         </div>
-        <div style={{ fontSize: wide ? 28 : 44, fontWeight: 900, color: '#7c8496' }}>VS</div>
+        <div style={{ fontSize: wide ? 26 : 44, fontWeight: 900, color: '#7c8496', flexShrink: 0 }}>VS</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%', minWidth: 0 }}>
-          <img src={safeOtherImage} width={wide ? 200 : 340} height={wide ? 200 : 340} style={{ width: wide ? 200 : 340, height: wide ? 200 : 340, objectFit: 'contain', borderRadius: 24, border: '3px solid #C81E4B', background: 'white' }} />
+          <img src={safeOtherImage} width={wide ? 200 : 340} height={wide ? 200 : 340} style={{ width: wide ? 200 : 340, height: wide ? 200 : 340, objectFit: 'cover', borderRadius: 24, border: '3px solid #C81E4B', background: '#fff0f4' }} />
           <div style={{ fontSize: wide ? 26 : 42, fontWeight: 900, textAlign: 'center', marginTop: 16 }}>{other.slice(0, 64)}</div>
         </div>
       </div>
