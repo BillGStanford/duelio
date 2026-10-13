@@ -34,6 +34,7 @@ export default function VoteShare({
         event="card_shared"
         slug={slug}
         shareUrl={shareUrl}
+        defaultFmt={matchup ? 'wide' : 'square'}
       />
     </section>
   );
