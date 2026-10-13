@@ -34,7 +34,8 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
     .slice(0, isDirectory ? limit : 10);
 
   return (
-    <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-10 sm:mt-16 sm:pt-12">
+    <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-8 sm:mt-16 sm:pt-10">
+      <MatchupCreator />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">The matchup board</p>
@@ -82,7 +83,6 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
           No published matchups are available right now. Check back shortly, or create a matchup below.
         </div>
       )}
-      <MatchupCreator />
     </section>
   );
 }
