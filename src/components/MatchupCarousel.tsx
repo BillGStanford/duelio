@@ -142,13 +142,13 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
                   <span className="text-xs font-bold text-mute">{m.roundNumber ? `Round ${m.roundNumber}` : 'Round starting soon'}</span>
                 </div>
                 <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3">
-                  <div className="min-w-0">
+                  <div className="matchup-competitor matchup-competitor-a min-w-0">
                     <EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full border border-rule bg-[#11172a] object-cover" />
                     <h3 className="matchup-name mt-3 line-clamp-2">{m.nameA}</h3>
                     <p className="mt-1 line-clamp-2 text-sm text-mute">{m.descriptionA}</p>
                   </div>
-                  <span className="mt-12 rounded-full bg-[#f0f1f7] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-mute">VS</span>
-                  <div className="min-w-0">
+                  <span className="matchup-vs-badge mt-12 rounded-full bg-[#f0f1f7] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-mute">VS</span>
+                  <div className="matchup-competitor matchup-competitor-b min-w-0">
                     <EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full border border-rule bg-[#fff0f4] object-cover" />
                     <h3 className="matchup-name mt-3 line-clamp-2 text-right">{m.nameB}</h3>
                     <p className="mt-1 line-clamp-2 text-right text-sm text-mute">{m.descriptionB}</p>
