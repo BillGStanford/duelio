@@ -21,7 +21,7 @@ async function cardData(matchup: Matchup) {
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   // Do not gate rendering on a separate schema probe: it can fail even when
   // the matchup table is readable, which made the whole board disappear.
-  const matchups = await listMatchups(limit > 3 ? 1000 : 100);
+  const matchups = await listMatchups(limit > 3 ? 10000 : 100);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
