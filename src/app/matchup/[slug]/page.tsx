@@ -10,8 +10,8 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const matchup = await getMatchup(params.slug);
   if (!matchup || matchup.status !== 'published') return { title: 'Matchup not found', robots: { index: false, follow: false } };
-  const description = `Who wins: ${matchup.nameA} or ${matchup.nameB}? Vote in this free public-opinion matchup on Duelio. No accounts, no money.`;
-  const image = `${SITE_URL}/matchup-card/${matchup.slug}/a?fmt=wide&share=1`;
+  const description = `Who wins: ${matchup.nameA} or ${matchup.nameB}? Vote in this free public-opinion matchup on Duelio. Cast your vote and make your case.`;
+  const image = `${SITE_URL}/matchup-card/${matchup.slug}/a?fmt=wide&share=1&v=2`;
   return {
     title: `${matchup.nameA} vs. ${matchup.nameB}`,
     description,
