@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { getMatchup } from '@/lib/matchups';
+import { getMatchup, resolveEntity } from '@/lib/matchups';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -39,7 +39,17 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
       return 'data:' + type + ';base64,' + btoa(binary);
     } catch { return fallback; }
   };
-  const [safeImage, safeOtherImage] = await Promise.all([photo(image, name), photo(otherImage, other)]);
+  // Re-resolve portraits from each displayed name so stale/swapped database image
+  // fields cannot put one contender's face under the other contender's name.
+  const [entityA, entityB] = matchup
+    ? await Promise.all([resolveEntity(matchup.nameA), resolveEntity(matchup.nameB)])
+    : [null, null];
+  const correctImageA = entityA?.image || image;
+  const correctImageB = entityB?.image || otherImage;
+  const [safeImageA, safeImageB] = await Promise.all([
+    photo(correctImageA, matchup?.nameA || name),
+    photo(correctImageB, matchup?.nameB || other),
+  ]);
   const pad = story ? '72px 68px' : wide ? '42px 48px' : '56px';
   const photoSize = story ? 300 : wide ? 180 : fmt === 'portrait' ? 250 : 280;
   const nameSize = story ? 44 : wide ? 27 : fmt === 'portrait' ? 36 : 38;
@@ -61,11 +71,11 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
         <span style={{ display: 'flex', alignItems: 'center', gap: 9, color: '#55576c', fontSize: wide ? 12 : 15, fontWeight: 700, letterSpacing: 1.5 }}>PUBLIC MATCHUP</span>
       </div>
       <div style={{ display: 'flex', flexDirection: story ? 'column' : 'row', alignItems: 'stretch', justifyContent: 'center', gap: story ? 24 : 18, flex: 1, marginTop: 24, marginBottom: 24 }}>
-        {contender(matchup?.nameA || name, safeImage, 'SIDE A  /  BLUE', '#3548b8', photoSize)}
+        {contender(matchup?.nameA || name, safeImageA, 'SIDE A  /  BLUE', '#3548b8', photoSize)}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: story ? '2px 0' : '0 2px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: wide ? 48 : 62, height: wide ? 48 : 62, background: '#20233a', color: '#ffffff', fontSize: wide ? 15 : 18, fontWeight: 800, letterSpacing: 1 }}>VS</div>
         </div>
-        {contender(matchup?.nameB || other, safeOtherImage, 'SIDE B  /  RED', '#b33c58', photoSize)}
+        {contender(matchup?.nameB || other, safeImageB, 'SIDE B  /  RED', '#b33c58', photoSize)}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: wide ? '20px 24px' : '28px 24px', background: '#ffffff', borderTop: '3px solid #20233a', textAlign: 'center' }}>
         <div style={{ fontSize: wide ? 12 : 16, fontWeight: 800, letterSpacing: 2, color: '#55576c' }}>{neutralShare ? 'THE PEOPLE DECIDE' : 'I PICKED MY SIDE'}</div>
