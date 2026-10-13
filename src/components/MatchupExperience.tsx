@@ -198,7 +198,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
         <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Your vote is in</p><h2 id="your-link-card-heading" className="mt-1 text-2xl font-black">Your Link Card</h2></div><span aria-hidden="true" className="text-2xl font-black text-sidea">↓</span></div>
         <p className="mt-2 text-sm leading-relaxed text-mute">Your share card is ready below. Choose a format to download or share it.</p>
         <VoteShare slug={snapshot.matchup.slug} side={shareSide} label={shareSide === 'a' ? snapshot.matchup.nameA : snapshot.matchup.nameB} question={`${snapshot.matchup.nameA} vs. ${snapshot.matchup.nameB}`} closesAt={snapshot.round.closesAt} shareUrl={`/matchup/${snapshot.matchup.slug}`} matchup={{ nameA: snapshot.matchup.nameA, nameB: snapshot.matchup.nameB }} />
-      </section>
+      </section>}
       <section className="mt-6 rounded-2xl border border-rule bg-white p-5 sm:p-7">
         <h2 className="text-2xl font-black">Round history</h2><p className="mt-1 text-sm text-mute">Every result stays on this page. A new round opens automatically every 14 days.</p>
         {history.length ? <ol className="mt-4 space-y-3">{history.map(r => {
