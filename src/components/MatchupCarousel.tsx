@@ -41,6 +41,7 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
     const rail = railRef.current;
     if (!rail) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
     dragRef.current = {
       active: true, startX: event.clientX, startScroll: rail.scrollLeft,
       lastX: event.clientX, lastTime: performance.now(), velocity: 0, moved: false,
