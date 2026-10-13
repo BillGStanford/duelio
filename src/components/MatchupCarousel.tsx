@@ -38,6 +38,8 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
   }
 
   function onPointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    // Interactive controls must receive normal pointer/click behavior, not carousel drag capture.
+    if ((event.target as HTMLElement).closest('a, button, input, textarea, select')) return;
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
     const rail = railRef.current;
     if (!rail) return;
@@ -160,7 +162,7 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
                   <span className="text-sideb">{pctB}% <span className="font-semibold text-mute">· {m.votesB}</span></span>
                 </div>
                 <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
-                <a href={`/matchup/${m.slug}`} data-enter-matchup="true" draggable={false} onClick={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); return; } window.location.assign(`/matchup/${m.slug}`); }} className="matchup-slide-cta mt-5">Enter matchup <span aria-hidden="true">→</span></a>
+                <a href={`/matchup/${m.slug}`} data-enter-matchup="true" draggable={false} onClick={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); } }} className="matchup-slide-cta mt-5">Enter matchup <span aria-hidden="true">→</span></a>
               </article>
             );
           })}
