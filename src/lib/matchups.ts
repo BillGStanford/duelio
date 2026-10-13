@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
 import { slugify } from './validate';
 
 export type DuelSide = 'a' | 'b';
@@ -211,6 +212,32 @@ export async function adminUpdateMatchup(id: string, patch: Record<string, unkno
   safe.updated_at = new Date().toISOString();
   const row = check(await db().from('duel_matchups').update(safe).eq('id', id).select('*').single()) as any;
   return toMatchup(row);
+}
+/** Admin moderation: add synthetic counted votes or remove existing votes from the active round. */
+export async function adminAdjustVotes(matchupId: string, side: DuelSide, delta: number) {
+  if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 500) throw new Error('Adjustment must be between -500 and 500 votes.');
+  const client = db();
+  const round = await getActiveRound(matchupId);
+  if (round.status !== 'active') throw new Error('No active round to adjust.');
+  if (delta > 0) {
+    const rows = Array.from({ length: delta }, () => ({
+      round_id: round.id,
+      voter_hash: `admin-adjust:${randomUUID()}`,
+      side,
+    }));
+    const result = await client.from('duel_votes').insert(rows);
+    if (result.error) throw new Error(result.error.message);
+  } else {
+    const count = Math.abs(delta);
+    const rows = check(await client.from('duel_votes').select('id').eq('round_id', round.id).eq('side', side).order('created_at', { ascending: false }).limit(count)) as { id: string }[];
+    if (!rows.length) throw new Error('There are no votes on that side to remove.');
+    const result = await client.from('duel_votes').delete().in('id', rows.map(row => row.id));
+    if (result.error) throw new Error(result.error.message);
+  }
+  const counts = await getRoundCounts(round.id);
+  const update = await client.from('duel_rounds').update({ votes_a: counts.a, votes_b: counts.b }).eq('id', round.id);
+  if (update.error) throw new Error(update.error.message);
+  return counts;
 }
 export async function adminCloseRound(id: string) {
   const rows = check(await db().rpc('duel_admin_close_round', { p_matchup_id: id })) as any[];
