@@ -57,7 +57,8 @@ gtag('config', 'G-5HEWDYYCEC');`}
         <footer className="mx-auto mt-24 max-w-5xl border-t-4 border-ink px-5 py-8 text-[0.95rem] text-mute">
           <p className="flex flex-wrap gap-x-6 gap-y-2">
             <Link href="/guidelines" className="underline underline-offset-4 hover:text-ink">Community guidelines</Link>
-            <Link href="/submit" className="underline underline-offset-4 hover:text-ink">Submit a dilemma</Link>\n            <Link href="/matchups" className="underline underline-offset-4 hover:text-ink">Matchup board</Link>
+            <Link href="/submit" className="underline underline-offset-4 hover:text-ink">Submit a dilemma</Link>
+            <Link href="/matchups" className="underline underline-offset-4 hover:text-ink">Matchup board</Link>
             <span>
               Discussions powered by{' '}
               <a href={THREADLINE_HOME} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-ink">Threadline</a>.
