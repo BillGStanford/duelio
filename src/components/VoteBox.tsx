@@ -155,8 +155,8 @@ export default function VoteBox({
 
   return (
     <section aria-labelledby="vote-heading" className="mt-0">
-      <h2 id="vote-heading" className="mb-4 text-xl font-extrabold tracking-tight sm:text-2xl">
-        {closed ? 'Final result' : voted ? 'Current result' : 'Pick a side'}
+      <h2 id="vote-heading" className="mb-4 text-2xl font-black tracking-tight sm:text-3xl">
+        {closed ? 'The debate is decided' : voted ? 'Who is winning the debate?' : 'Who wins the debate?'}
       </h2>
 
       {closed && results && (
