@@ -166,6 +166,23 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           );
         })}
       </section>
+      <section aria-label="Contender background information" className="mt-5 grid gap-4 md:grid-cols-2">
+        {(['a', 'b'] as DuelSide[]).map((side) => {
+          const isA = side === 'a';
+          const name = isA ? snapshot.matchup.nameA : snapshot.matchup.nameB;
+          const description = isA ? snapshot.matchup.descriptionA : snapshot.matchup.descriptionB;
+          const source = isA ? snapshot.matchup.sourceUrlA : snapshot.matchup.sourceUrlB;
+          const expanded = expandedInfo[side];
+          return <article key={side} className={"overflow-hidden rounded-2xl border border-rule border-t-4 " + (isA ? "border-t-sidea" : "border-t-sideb") + " bg-white p-5 shadow-sm sm:p-6"}>
+            <div className="flex items-center justify-between gap-3"><div><p className={"text-xs font-black uppercase tracking-[0.15em] " + (isA ? "text-sidea" : "text-sideb")}>{isA ? "Blue side · A" : "Red side · B"} · Background</p><h2 className="mt-1 text-xl font-black tracking-tight">{name}</h2></div><button type="button" aria-expanded={expanded} onClick={() => setExpandedInfo(previous => ({ ...previous, [side]: !previous[side] }))} className={"flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-2xl font-black " + (isA ? "bg-[#eef0ff] text-sidea" : "bg-[#fff0f4] text-sideb")}><span aria-hidden="true">{expanded ? "−" : "+"}</span><span className="sr-only">{expanded ? "Collapse" : "Expand"} background information for {name}</span></button></div>
+            <div className={"relative mt-4 " + (expanded ? "" : "max-h-28 overflow-hidden")}>
+              <p className={"text-sm leading-7 text-mute " + (expanded ? "" : "line-clamp-4 blur-[1.5px]")}>{description || ("Background information for " + name + " has not been added yet.")}</p>
+              {!expanded && <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-white/10 via-white/80 to-white" />}
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-3"><button type="button" onClick={() => setExpandedInfo(previous => ({ ...previous, [side]: !previous[side] }))} className="text-sm font-extrabold underline underline-offset-4">{expanded ? "Show less" : "Read background"}</button>{source && <a href={source} target="_blank" rel="noreferrer" className={"text-xs font-bold underline underline-offset-4 " + (isA ? "text-sidea" : "text-sideb")}>Wikipedia / source ↗</a>}</div>
+          </article>;
+        })}
+      </section>
       <details className="mt-5 overflow-hidden rounded-2xl border border-rule bg-white shadow-sm">
         <summary className="group flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6">
           <span><span className="block text-xs font-black uppercase tracking-[0.16em] text-sidea">The crowd</span><span className="mt-1 block text-xl font-black">Where the vote stands</span><span className="mt-1 block text-sm font-semibold text-mute">{total.toLocaleString()} total votes · {pctA}% Blue / {pctB}% Red</span></span>
@@ -190,11 +207,12 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           return <li key={r.id} className="flex items-center gap-3 rounded-xl border border-rule p-3"><div className="w-16 shrink-0"><Portrait src={winImage} name={winName} /></div><div className="min-w-0 flex-1"><p className="text-xs font-black uppercase tracking-widest text-mute">Round {r.roundNumber} · Final</p><p className="font-extrabold">{winName === 'Tie' ? 'Round ended in a tie' : `${winName} won`}</p><p className="text-sm text-mute">{r.votesA} for {snapshot.matchup.nameA} · {r.votesB} for {snapshot.matchup.nameB}</p></div><span className="text-xs font-bold text-mute">{r.closedAt ? new Date(r.closedAt).toLocaleDateString() : ''}</span></li>;
         })}</ol> : <p className="mt-4 rounded-xl bg-paper p-4 text-mute">No completed rounds yet. The first champion will be recorded when this round closes.</p>}
       </section>
-      <section id="community-case-building" aria-labelledby="community-case-heading" className="mt-8 grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)]">
-  <article className="overflow-hidden rounded-2xl border border-rule border-t-4 border-t-sidea bg-white p-5 shadow-sm"><p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">Blue side · A</p><h2 className="mt-2 text-xl font-black tracking-tight">{snapshot.matchup.nameA}</h2><p className="mt-3 text-sm leading-relaxed text-mute">{snapshot.matchup.descriptionA || (snapshot.matchup.nameA + " is one side of this public matchup.")}</p>{snapshot.matchup.sourceUrlA && <a href={snapshot.matchup.sourceUrlA} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-sidea underline underline-offset-4">Source / learn more ↗</a>}</article>
-  <article className="min-w-0 overflow-hidden rounded-2xl border border-rule border-t-4 border-t-ink bg-white p-5 shadow-sm sm:p-6"><p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">Community case-building</p><h2 id="community-case-heading" className="mt-2 text-2xl font-black tracking-tight">Make the argument.</h2><p className="mt-2 text-sm leading-relaxed text-mute">The vote shows the split. Threadline is where the community builds its case.</p><div className="mt-5 min-w-0"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div></article>
-  <article className="overflow-hidden rounded-2xl border border-rule border-t-4 border-t-sideb bg-white p-5 shadow-sm"><p className="text-xs font-black uppercase tracking-[0.15em] text-sideb">Red side · B</p><h2 className="mt-2 text-xl font-black tracking-tight">{snapshot.matchup.nameB}</h2><p className="mt-3 text-sm leading-relaxed text-mute">{snapshot.matchup.descriptionB || (snapshot.matchup.nameB + " is the other side of this public matchup.")}</p>{snapshot.matchup.sourceUrlB && <a href={snapshot.matchup.sourceUrlB} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-sideb underline underline-offset-4">Source / learn more ↗</a>}</article>
-</section>
+      <section id="community-case-building" aria-labelledby="community-case-heading" className="mt-8 min-w-0 rounded-2xl border border-rule border-t-4 border-t-ink bg-white p-5 shadow-sm sm:p-8">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Community case-building</p>
+        <h2 id="community-case-heading" className="mt-2 text-3xl font-black tracking-tight">Make the argument.</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-mute">The vote shows the split. Threadline is where the community builds its case.</p>
+        <div className="mt-6 min-w-0"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div>
+      </section>
       <p className="mt-6 text-center text-xs text-mute">Duelio measures the people who vote here—not a scientific or representative poll.</p>
     </div>
   );
