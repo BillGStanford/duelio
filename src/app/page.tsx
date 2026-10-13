@@ -92,8 +92,8 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
             <a href="#daily-duel" className="inline-flex min-h-12 items-center justify-center bg-ink px-5 py-3 text-base font-bold text-white hover:bg-sidea">
               Today&apos;s dilemma
             </a>
-            <a href="#debates" className="inline-flex min-h-12 items-center justify-center border-2 border-ink px-5 py-3 text-base font-bold hover:bg-white">
-              Browse dilemmas
+            <a href="/matchups" className="inline-flex min-h-12 items-center justify-center border-2 border-ink px-5 py-3 text-base font-bold hover:bg-white">
+              Explore matchups
             </a>
           </nav>
         </div>
