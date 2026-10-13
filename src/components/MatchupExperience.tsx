@@ -13,8 +13,8 @@ function Portrait({ src, name, large = false }: { src: string; name: string; lar
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={image} alt={name} onError={() => { const fallback = `/api/entity-image?name=${encodeURIComponent(name)}`; if (image !== fallback) setImage(fallback); }}
-      className={`${large ? 'h-48 sm:h-64' : 'h-20'} w-full rounded-xl border border-rule bg-paper p-1`}
-      style={{ objectFit: 'contain', objectPosition: 'center' }} />
+      className={`${large ? 'h-56 sm:h-72' : 'h-20'} w-full rounded-xl border border-rule bg-[#11172a] object-cover object-center`}
+      style={{ objectFit: 'cover', objectPosition: 'center' }} />
   );
 }
 function percent(n: number, total: number) { return total ? Math.round(n / total * 100) : 50; }
@@ -98,7 +98,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
   const winnerDescription = latestClosedRound?.winnerSide === 'a' ? snapshot.matchup.descriptionA : latestClosedRound?.winnerSide === 'b' ? snapshot.matchup.descriptionB : '';
   const history = useMemo(() => snapshot.history.filter(r => r.status === 'closed').slice(0, 12), [snapshot.history]);
   return (
-    <div className="mx-auto max-w-4xl px-4 pb-12 sm:px-5">
+    <div className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
       {winnerStage && winnerName && (
         <div role="status" aria-live="polite" className="fixed inset-0 z-50 flex items-center justify-center bg-[#11172a]/95 p-5 text-center text-white backdrop-blur-sm">
           {winnerStage === 'title' ? (
@@ -133,11 +133,11 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           <span className="rounded-full bg-paper px-3 py-2">{total.toLocaleString()} votes this round</span>
         </div>
       </header>
-      <div className="mt-5 flex items-start gap-3 rounded-xl border border-rule bg-white px-4 py-3" aria-live="polite">
+      <div className="mt-5 flex items-start gap-3 rounded-xl border border-rule bg-white px-4 py-3 sm:rounded-2xl" aria-live="polite">
         <span className="mt-1 h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
         <div><p className="text-xs font-black uppercase tracking-widest text-sidea">Live rally ticker</p><p className="mt-1 font-semibold">{ticker}</p><p className="mt-1 text-xs text-mute">Calculated from recorded vote totals · refreshes every 8 seconds.</p></div>
       </div>
-      <section aria-label="Competitors and voting" className="mt-5 grid gap-4 md:grid-cols-2">
+      <section aria-label="Competitors and voting" className="mt-5 grid items-stretch gap-4 md:grid-cols-2">
         {(['a','b'] as DuelSide[]).map(side => {
           const isA = side === 'a';
           const name = isA ? snapshot.matchup.nameA : snapshot.matchup.nameB;
@@ -149,7 +149,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           const champion = championSide === side;
           const picked = snapshot.votedSide === side;
           return (
-            <article key={side} className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition sm:p-5 ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
+            <article key={side} className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition sm:p-5 ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
               {champion && <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#2433E0] px-3 py-2 text-xs font-black tracking-[0.14em] text-white shadow-md"><span>♛ REIGNING CHAMPION</span><span>ROUND {snapshot.champion?.roundNumber}</span></div>}
               {picked && <div className="mb-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black tracking-[0.14em] text-white">YOUR PICK ✓</div>}
               <Portrait src={image} name={name} large />
@@ -158,7 +158,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
               {source && <a href={source} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold underline underline-offset-4 text-mute">Source / learn more ↗</a>}
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-paper"><div className={`h-full rounded-full transition-all duration-500 ${isA ? 'bg-sidea' : 'bg-sideb'}`} style={{ width: `${pct}%` }} /></div>
               <p className="mt-2 text-sm font-semibold text-mute">{votes.toLocaleString()} vote{votes === 1 ? '' : 's'}</p>
-              <button type="button" onClick={() => vote(side)} disabled={busy || !!snapshot.votedSide} className={`mt-4 min-h-12 w-full rounded-xl px-4 py-3 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isA ? 'bg-sidea hover:brightness-90' : 'bg-sideb hover:brightness-90'}`}>{snapshot.votedSide ? (picked ? 'You voted for this' : 'Vote recorded') : busy ? 'Recording vote…' : `I vote for ${name}`}</button>
+              <button type="button" onClick={() => vote(side)} disabled={busy || !!snapshot.votedSide} className={`mt-auto mt-4 min-h-12 w-full rounded-xl px-4 py-3 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isA ? 'bg-sidea hover:brightness-90' : 'bg-sideb hover:brightness-90'}`}>{snapshot.votedSide ? (picked ? 'You voted for this' : 'Vote recorded') : busy ? 'Recording vote…' : `I vote for ${name}`}</button>
             </article>
           );
         })}
@@ -178,7 +178,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           return <li key={r.id} className="flex items-center gap-3 rounded-xl border border-rule p-3"><div className="w-16 shrink-0"><Portrait src={winImage} name={winName} /></div><div className="min-w-0 flex-1"><p className="text-xs font-black uppercase tracking-widest text-mute">Round {r.roundNumber} · Final</p><p className="font-extrabold">{winName === 'Tie' ? 'Round ended in a tie' : `${winName} won`}</p><p className="text-sm text-mute">{r.votesA} for {snapshot.matchup.nameA} · {r.votesB} for {snapshot.matchup.nameB}</p></div><span className="text-xs font-bold text-mute">{r.closedAt ? new Date(r.closedAt).toLocaleDateString() : ''}</span></li>;
         })}</ol> : <p className="mt-4 rounded-xl bg-paper p-4 text-mute">No completed rounds yet. The first champion will be recorded when this round closes.</p>}
       </section>
-      <section className="mt-8 rounded-2xl border border-rule bg-paper p-5 sm:p-7"><h2 className="text-2xl font-black">Make your case</h2><p className="mt-2 text-mute">The vote shows the split. The discussion is where people argue it out. No account needed for the vote; guest discussion depends on the Threadline embed settings.</p><div className="mt-5"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div></section>
+      <section className="mt-8 rounded-2xl border border-rule bg-white p-5 shadow-sm sm:p-7"><h2 className="text-2xl font-black">Make your case</h2><p className="mt-2 text-mute">The vote shows the split. The discussion is where people argue it out. No account needed for the vote; guest discussion depends on the Threadline embed settings.</p><div className="mt-5"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div></section>
       <p className="mt-6 text-center text-xs text-mute">Duelio measures the people who vote here—not a scientific or representative poll.</p>
     </div>
   );
