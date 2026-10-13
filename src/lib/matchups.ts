@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { randomUUID } from 'crypto';
 import { slugify } from './validate';
 
 export type DuelSide = 'a' | 'b';
@@ -222,7 +221,7 @@ export async function adminAdjustVotes(matchupId: string, side: DuelSide, delta:
   if (delta > 0) {
     const rows = Array.from({ length: delta }, () => ({
       round_id: round.id,
-      voter_hash: `admin-adjust:${randomUUID()}`,
+      voter_hash: `admin-adjust:${globalThis.crypto.randomUUID()}`,
       side,
     }));
     const result = await client.from('duel_votes').insert(rows);
