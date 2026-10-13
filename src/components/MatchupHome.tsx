@@ -32,7 +32,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
     )
     .slice(0, limit);
   return (
-    <section id="matchups" className="mt-12 scroll-mt-5 border-t border-rule pt-10 sm:mt-16 sm:pt-12">
+    <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-10 sm:mt-16 sm:pt-12">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">The matchup board</p>
@@ -48,11 +48,11 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
             const pctA = total ? Math.round(counts.a / total * 100) : 50;
             const pctB = 100 - pctA;
             return (
-              <article key={m.id} className="flex h-full flex-col overflow-hidden rounded-2xl border border-rule bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+              <article key={m.id} className="matchup-card flex h-full flex-col overflow-hidden border border-rule bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg sm:p-5">
                 <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-                  <div><EntityImage src={m.imageA} name={m.nameA} className="aspect-[4/3] h-auto w-full rounded-xl border border-rule bg-[#11172a] object-cover sm:aspect-[5/4]" /><h3 className="mt-2 line-clamp-2 font-extrabold">{m.nameA}</h3><p className="mt-1 line-clamp-2 text-xs text-mute">{m.descriptionA}</p></div>
+                  <div><EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full border border-rule bg-[#11172a] object-cover sm:aspect-[5/4]" /><h3 className="matchup-name mt-2 line-clamp-2 font-extrabold">{m.nameA}</h3><p className="mt-1 line-clamp-2 text-xs text-mute">{m.descriptionA}</p></div>
                   <span className="mt-12 text-xs font-black uppercase text-mute">vs</span>
-                  <div><EntityImage src={m.imageB} name={m.nameB} className="aspect-[4/3] h-auto w-full rounded-xl border border-rule bg-[#fff0f4] object-cover sm:aspect-[5/4]" /><h3 className="mt-2 line-clamp-2 text-right font-extrabold">{m.nameB}</h3><p className="mt-1 line-clamp-2 text-right text-xs text-mute">{m.descriptionB}</p></div>
+                  <div><EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full border border-rule bg-[#fff0f4] object-cover sm:aspect-[5/4]" /><h3 className="matchup-name mt-2 line-clamp-2 text-right font-extrabold">{m.nameB}</h3><p className="mt-1 line-clamp-2 text-right text-xs text-mute">{m.descriptionB}</p></div>
                 </div>
                 <div className="mt-4 flex items-center justify-between gap-2 text-sm font-bold">
                   <span className="text-sidea">{pctA}% · {counts.a}</span>
