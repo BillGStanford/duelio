@@ -47,10 +47,10 @@ gtag('config', 'G-5HEWDYYCEC');`}
             <Logo />
             Duelio
           </Link>
-          <nav aria-label="Main">
-            <Link href="/submit" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">
-              Submit a dilemma
-            </Link>
+          <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
+            <Link href="/#debates" className="font-bold">Dilemma</Link>
+            <Link href="/matchups" className="font-bold">Duel</Link>
+            <Link href="/submit" className="font-bold">Submit</Link>
           </nav>
         </header>
         <div id="main">{children}</div>
