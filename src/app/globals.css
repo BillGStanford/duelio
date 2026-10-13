@@ -354,3 +354,27 @@ body main p { text-wrap: pretty; }
 }
 .winner-reveal { animation: duelio-winner-enter 650ms cubic-bezier(.2,.8,.2,1) both; }
 @media (prefers-reduced-motion: reduce) { .winner-reveal { animation: none !important; } }
+
+
+/* Matchups: editorial cards, balanced actions, and navigation that reads clearly */
+body > header nav a {
+  background: transparent;
+  color: var(--ink);
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: none;
+}
+body > header nav a:hover { background: #fff; color: var(--blue); transform: none; }
+body > header nav a:last-child {
+  background: var(--ink);
+  color: #fff;
+}
+body > header nav a:last-child:hover { background: var(--blue); color: #fff; }
+body #matchups article img { display: block; width: 100%; object-fit: cover; }
+body #matchups article a { text-decoration: none; }
+body #matchups article a:hover { filter: brightness(.96); }
+body main img { max-width: 100%; }
+@media (max-width: 640px) {
+  body > header nav { display: flex; align-items: center; gap: .25rem; }
+  body > header nav a { padding-left: .7rem; padding-right: .7rem; font-size: .78rem; }
+}
