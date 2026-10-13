@@ -138,7 +138,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
         <div><p className="text-xs font-black uppercase tracking-widest text-sidea">Live rally ticker</p><p className="mt-1 font-semibold">{ticker}</p><p className="mt-1 text-xs text-mute">Calculated from recorded vote totals · refreshes every 8 seconds.</p></div>
       </div>
       <section aria-label="Competitors and voting" className="mt-5 grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1fr)]">
-        <section aria-label="Round information" style={{ gridColumn: "2", gridRow: "1" }} className="flex flex-col rounded-2xl border border-rule bg-white p-4 shadow-sm sm:p-5">
+        <section aria-label="Round information" className="order-2 flex flex-col rounded-2xl border border-rule bg-white p-4 shadow-sm md:col-start-2 md:row-start-1 sm:p-5">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Round {snapshot.round.roundNumber}</p>
           <h2 className="mt-2 text-2xl font-black tracking-tight">The public verdict</h2>
           <p className="mt-2 text-sm leading-relaxed text-mute">Two sides. One community decision. Cast your vote, see the split, and build your case below.</p>
@@ -159,7 +159,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           const champion = championSide === side;
           const picked = snapshot.votedSide === side;
           return (
-            <article key={side} style={{ gridColumn: isA ? "1" : "3", gridRow: "1" }} className={`relative flex h-full flex-col overflow-hidden rounded-2xl border-t-4 bg-white p-4 shadow-sm transition sm:p-5 ${isA ? "border-t-sidea" : "border-t-sideb"} ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
+            <article key={side} className={`relative flex h-full flex-col order-1 md:row-start-1 overflow-hidden rounded-2xl border-t-4 bg-white p-4 shadow-sm transition sm:p-5 ${isA ? "border-t-sidea md:col-start-1 md:order-1" : "order-3 border-t-sideb md:col-start-3 md:order-3"} ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
               {champion && <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#2433E0] px-3 py-2 text-xs font-black tracking-[0.14em] text-white shadow-md"><span>♛ REIGNING CHAMPION</span><span>ROUND {snapshot.champion?.roundNumber}</span></div>}
               {picked && <div className="mb-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black tracking-[0.14em] text-white">YOUR PICK ✓</div>}
               <Portrait src={image} name={name} large />
