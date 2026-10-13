@@ -111,9 +111,27 @@ export async function resolveEntity(name: string): Promise<EntityInfo> {
 
 export async function listMatchups(limit = 12): Promise<Matchup[]> {
   try {
-    const rows = check(await db().from('duel_matchups').select('*').eq('status', 'published').order('created_at', { ascending: false }).limit(limit)) as any[];
-    return rows.map(toMatchup);
-  } catch { return []; }
+    const client = db();
+    const pageSize = 500;
+    const requested = Math.max(0, Math.min(limit, 10000));
+    const all: any[] = [];
+    // Explicitly paginate. A single Supabase select can be capped by project API
+    // row limits, which otherwise silently truncates the matchup catalog.
+    for (let offset = 0; offset < requested; offset += pageSize) {
+      const take = Math.min(pageSize, requested - offset);
+      const rows = check(await client.from('duel_matchups')
+        .select('*')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + take - 1)) as any[];
+      all.push(...rows);
+      if (rows.length < take) break;
+    }
+    return all.map(toMatchup);
+  } catch (error) {
+    console.error('[Duelio] Failed to list published matchups:', error);
+    return [];
+  }
 }
 export async function getMatchup(slug: string): Promise<Matchup | null> {
   try {
