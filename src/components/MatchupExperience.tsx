@@ -133,10 +133,6 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           <span className="rounded-full bg-paper px-3 py-2">{total.toLocaleString()} votes this round</span>
         </div>
       </header>
-      <div className="mt-5 flex items-start gap-3 rounded-xl border border-rule bg-white px-4 py-3 sm:rounded-2xl" aria-live="polite">
-        <span className="mt-1 h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
-        <div><p className="text-xs font-black uppercase tracking-widest text-sidea">Live rally ticker</p><p className="mt-1 font-semibold">{ticker}</p><p className="mt-1 text-xs text-mute">Calculated from recorded vote totals · refreshes every 8 seconds.</p></div>
-      </div>
       <section aria-label="Competitors and voting" className="mt-5 grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1fr)]">
         <section aria-label="Round information" className="order-2 flex flex-col rounded-2xl border border-rule bg-white p-4 shadow-sm md:col-start-2 md:row-start-1 sm:p-5">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Round {snapshot.round.roundNumber}</p>
@@ -151,9 +147,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
         {(['a','b'] as DuelSide[]).map(side => {
           const isA = side === 'a';
           const name = isA ? snapshot.matchup.nameA : snapshot.matchup.nameB;
-          const description = isA ? snapshot.matchup.descriptionA : snapshot.matchup.descriptionB;
           const image = isA ? snapshot.matchup.imageA : snapshot.matchup.imageB;
-          const source = isA ? snapshot.matchup.sourceUrlA : snapshot.matchup.sourceUrlB;
           const votes = isA ? snapshot.counts.a : snapshot.counts.b;
           const pct = isA ? pctA : pctB;
           const champion = championSide === side;
@@ -164,8 +158,6 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
               {picked && <div className="mb-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black tracking-[0.14em] text-white">YOUR PICK ✓</div>}
               <Portrait src={image} name={name} large />
               <div className="mt-4 flex items-start justify-between gap-3"><h2 className="text-2xl font-black tracking-tight">{name}</h2><span className={`shrink-0 rounded-full px-3 py-1 text-sm font-black ${isA ? 'bg-[#f2f3ff] text-sidea' : 'bg-[#fff1f4] text-sideb'}`}>{pct}%</span></div>
-              <p className="mt-2 min-h-12 leading-relaxed text-mute">{description}</p>
-              {source && <a href={source} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold underline underline-offset-4 text-mute">Source / learn more ↗</a>}
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-paper"><div className={`h-full rounded-full transition-all duration-500 ${isA ? 'bg-sidea' : 'bg-sideb'}`} style={{ width: `${pct}%` }} /></div>
               <p className="mt-2 text-sm font-semibold text-mute">{votes.toLocaleString()} vote{votes === 1 ? '' : 's'}</p>
               <button type="button" onClick={() => vote(side)} disabled={busy || !!snapshot.votedSide} className={`mt-auto mt-4 min-h-12 w-full rounded-xl px-4 py-3 font-black text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${isA ? 'bg-sidea hover:brightness-90' : 'bg-sideb hover:brightness-90'}`}>{snapshot.votedSide ? (picked ? 'You voted for this' : 'Vote recorded') : busy ? 'Recording vote…' : `I vote for ${name}`}</button>
