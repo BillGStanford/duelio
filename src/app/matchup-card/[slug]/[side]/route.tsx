@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { getMatchup, resolveEntity } from '@/lib/matchups';
+import { getBackground, getCardFonts } from '@/lib/cardFonts';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -46,9 +47,11 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
     : [null, null];
   const correctImageA = entityA?.image || image;
   const correctImageB = entityB?.image || otherImage;
-  const [safeImageA, safeImageB] = await Promise.all([
+  const [safeImageA, safeImageB, bg, fonts] = await Promise.all([
     photo(correctImageA, matchup?.nameA || name),
     photo(correctImageB, matchup?.nameB || other),
+    getBackground(side, fmt),
+    getCardFonts(),
   ]);
   const pad = story ? '72px 68px' : wide ? '42px 48px' : '56px';
   const photoSize = story ? 300 : wide ? 180 : fmt === 'portrait' ? 250 : 280;
@@ -58,8 +61,8 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
     <div style={{ display: 'flex', flexDirection: story ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minWidth: 0, gap: story ? 28 : 16, padding: story ? '26px 18px' : '18px 12px', background: '#ffffff', border: '1px solid #d5d4e6' }}>
       <img src={src} width={size} height={size} style={{ width: size, height: size, objectFit: 'cover', objectPosition: 'center', border: '1px solid #d5d4e6', flexShrink: 0 }} />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: story ? 'flex-start' : 'center', justifyContent: 'center', minWidth: 0, flex: 1 }}>
-        <div style={{ fontSize: wide ? 12 : 16, fontFamily: 'Arial, sans-serif', fontWeight: 700, letterSpacing: 2, color, marginBottom: 10 }}>{label}</div>
-        <div style={{ fontSize: nameSize, fontFamily: 'Georgia, Times New Roman, serif', fontWeight: 700, textAlign: story ? 'left' : 'center', lineHeight: 1.08, color: '#17182a', overflowWrap: 'break-word' }}>{person.slice(0, 64)}</div>
+        <div style={{ fontSize: wide ? 12 : 16, fontFamily: 'Poppins', fontWeight: 700, letterSpacing: 2, color, marginBottom: 10 }}>{label}</div>
+        <div style={{ fontSize: nameSize, fontFamily: 'Pagella', fontWeight: 700, textAlign: story ? 'left' : 'center', lineHeight: 1.08, color: '#17182a', overflowWrap: 'break-word' }}>{person.slice(0, 64)}</div>
       </div>
     </div>
   );
@@ -83,6 +86,6 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
         <div style={{ fontSize: wide ? 15 : 20, fontWeight: 500, marginTop: 10, color: '#55576c' }}>{neutralShare ? 'Cast your vote at duelio.ink' : 'Make your case at duelio.ink.'}</div>
       </div>
     </div>,
-    { ...dims, headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate', 'CDN-Cache-Control': 'public, max-age=60' } },
+    { ...dims, fonts: [{ name: 'Pagella', data: fonts.display.data, weight: 700, style: 'normal' }, { name: 'Poppins', data: fonts.ui.data, weight: 700, style: 'normal' }], headers: { 'Cache-Control': 'public, max-age=0, s-maxage=60, must-revalidate', 'CDN-Cache-Control': 'public, max-age=60' } },
   );
 }
