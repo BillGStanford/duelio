@@ -378,3 +378,13 @@ body main img { max-width: 100%; }
   body > header nav { display: flex; align-items: center; gap: .25rem; }
   body > header nav a { padding-left: .7rem; padding-right: .7rem; font-size: .78rem; }
 }
+
+
+/* Refined type and responsive matchup layout */
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+#community-case-building > article { min-width: 0; }
+#community-case-building h2 { text-wrap: balance; }
+@media (max-width: 767px) {
+  #community-case-building { grid-template-columns: minmax(0, 1fr); }
+  #community-case-building > article { width: 100%; }
+}
