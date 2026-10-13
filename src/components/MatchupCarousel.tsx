@@ -166,7 +166,7 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
           <article data-carousel-slide className="matchup-slide-card matchup-more-card">
             <div className="more-glow" aria-hidden="true" />
             <span className="carousel-kicker">THAT’S JUST THE START</span>
-            <p className="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-5xl">10 matchups down. More to settle.</p>
+            <p className="mt-5 text-4xl font-black leading-tight tracking-tight sm:text-5xl">{total} matchups explored. More to settle.</p>
             <p className="mt-4 max-w-sm text-base leading-relaxed text-mute">Explore the full arena, discover new face-offs, and cast your vote on every published matchup.</p>
             <Link href="/matchups" draggable={false} className="matchup-slide-cta mt-7">Explore all matchups <span aria-hidden="true">→</span></Link>
           </article>
