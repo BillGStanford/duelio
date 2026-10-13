@@ -122,7 +122,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
       <nav aria-label="Breadcrumb" className="pt-3 text-sm"><a href="/#matchups" className="font-bold underline underline-offset-4 hover:text-sidea">Matchup board</a><span className="px-2 text-mute">/</span><span className="text-mute">{snapshot.matchup.nameA} vs {snapshot.matchup.nameB}</span></nav>
       <header className="mt-5 rounded-2xl border border-rule border-t-4 border-t-sidea bg-white p-5 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="rounded-full bg-[#f2f3ff] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-sidea">Public opinion · no money</span>
+          <span className="rounded-full bg-[#f2f3ff] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-sidea">Public matchup</span>
           <span className="rounded-full border border-rule px-3 py-1 text-xs font-bold text-mute">ROUND {snapshot.round.roundNumber}</span>
         </div>
         <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight sm:text-5xl">{snapshot.matchup.nameA} <span className="text-sidea">vs.</span> {snapshot.matchup.nameB}</h1>
@@ -137,7 +137,17 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
         <span className="mt-1 h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
         <div><p className="text-xs font-black uppercase tracking-widest text-sidea">Live rally ticker</p><p className="mt-1 font-semibold">{ticker}</p><p className="mt-1 text-xs text-mute">Calculated from recorded vote totals · refreshes every 8 seconds.</p></div>
       </div>
-      <section aria-label="Competitors and voting" className="mt-5 grid items-stretch gap-4 md:grid-cols-2">
+      <section aria-label="Competitors and voting" className="mt-5 grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.12fr)_minmax(0,1fr)]">
+        <section aria-label="Round information" style={{ gridColumn: "2", gridRow: "1" }} className="flex flex-col rounded-2xl border border-rule bg-white p-4 shadow-sm sm:p-5">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Round {snapshot.round.roundNumber}</p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight">The public verdict</h2>
+          <p className="mt-2 text-sm leading-relaxed text-mute">Two sides. One community decision. Cast your vote, see the split, and build your case below.</p>
+          <div className="mt-5 rounded-xl bg-paper p-3"><p className="text-xs font-black uppercase tracking-wider text-mute">Voting closes in</p><p className="mt-1 text-lg font-black">{formatRemaining(snapshot.round.closesAt, now)}</p></div>
+          <div className="mt-4 flex items-center justify-between gap-2 text-xs font-black"><span className="text-sidea">{pctA}%</span><span className="text-mute">{total.toLocaleString()} votes</span><span className="text-sideb">{pctB}%</span></div>
+          <div className="mt-2 flex h-3 overflow-hidden rounded-full bg-paper"><span className="bg-sidea" style={{ width: (pctA + "%") }} /><span className="bg-sideb" style={{ width: (pctB + "%") }} /></div>
+          <div className="mt-5 rounded-xl border border-rule p-3" aria-live="polite"><p className="text-xs font-black uppercase tracking-widest text-sidea">Live update</p><p className="mt-1 text-sm font-semibold leading-relaxed">{ticker}</p><p className="mt-2 text-xs text-mute">Vote totals refresh automatically.</p></div>
+          <a href="#community-case-building" className="mt-auto inline-flex min-h-11 items-center justify-center rounded-xl bg-ink px-4 py-3 text-center font-black text-white hover:bg-sidea">Join the discussion ↓</a>
+        </section>
         {(['a','b'] as DuelSide[]).map(side => {
           const isA = side === 'a';
           const name = isA ? snapshot.matchup.nameA : snapshot.matchup.nameB;
@@ -149,7 +159,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           const champion = championSide === side;
           const picked = snapshot.votedSide === side;
           return (
-            <article key={side} className={`relative flex h-full flex-col overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition sm:p-5 ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
+            <article key={side} style={{ gridColumn: isA ? "1" : "3", gridRow: "1" }} className={`relative flex h-full flex-col overflow-hidden rounded-2xl border-t-4 bg-white p-4 shadow-sm transition sm:p-5 ${isA ? "border-t-sidea" : "border-t-sideb"} ${champion ? 'border-2 border-[#2433E0] ring-4 ring-[#2433E0]/10' : 'border-rule'}`}>
               {champion && <div className="mb-3 flex items-center justify-between gap-2 rounded-lg bg-[#2433E0] px-3 py-2 text-xs font-black tracking-[0.14em] text-white shadow-md"><span>♛ REIGNING CHAMPION</span><span>ROUND {snapshot.champion?.roundNumber}</span></div>}
               {picked && <div className="mb-3 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-black tracking-[0.14em] text-white">YOUR PICK ✓</div>}
               <Portrait src={image} name={name} large />
@@ -168,7 +178,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
         <div className="mt-4 flex h-4 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea transition-all duration-500" style={{ width: `${pctA}%` }} /><span className="bg-sideb transition-all duration-500" style={{ width: `${pctB}%` }} /></div>
         <div className="mt-3 flex justify-between gap-3 text-sm font-black"><span className="text-sidea">{snapshot.matchup.nameA}: {pctA}%</span><span className="text-right text-sideb">{snapshot.matchup.nameB}: {pctB}%</span></div>
         {message && <p role="status" className="mt-4 rounded-lg bg-paper p-3 text-sm font-semibold">{message}</p>}
-        {shareSide && <div className="mt-5 border-t border-rule pt-5"><h3 className="text-xl font-black">Rally your side</h3><p className="mt-1 text-mute">Download your “I voted for” card or share it with the matchup link. The link preview shows the full Duelio card.</p><VoteShare slug={snapshot.matchup.slug} side={shareSide} label={shareSide === 'a' ? snapshot.matchup.nameA : snapshot.matchup.nameB} question={`${snapshot.matchup.nameA} vs. ${snapshot.matchup.nameB}`} closesAt={snapshot.round.closesAt} shareUrl={`/matchup/${snapshot.matchup.slug}?voted=${shareSide}`} matchup={{ nameA: snapshot.matchup.nameA, nameB: snapshot.matchup.nameB }} /></div>}
+        {shareSide && <div className="mt-5 border-t border-rule pt-5"><h3 className="text-xl font-black">Rally your side</h3><p className="mt-1 text-mute">Download your “I voted for” card or share it with the matchup link. The link preview shows the full Duelio card.</p><VoteShare slug={snapshot.matchup.slug} side={shareSide} label={shareSide === 'a' ? snapshot.matchup.nameA : snapshot.matchup.nameB} question={`${snapshot.matchup.nameA} vs. ${snapshot.matchup.nameB}`} closesAt={snapshot.round.closesAt} shareUrl={`/matchup/${snapshot.matchup.slug}`} matchup={{ nameA: snapshot.matchup.nameA, nameB: snapshot.matchup.nameB }} /></div>}
       </section>
       <section className="mt-6 rounded-2xl border border-rule bg-white p-5 sm:p-7">
         <h2 className="text-2xl font-black">Round history</h2><p className="mt-1 text-sm text-mute">Every result stays on this page. A new round opens automatically every 14 days.</p>
@@ -178,7 +188,11 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           return <li key={r.id} className="flex items-center gap-3 rounded-xl border border-rule p-3"><div className="w-16 shrink-0"><Portrait src={winImage} name={winName} /></div><div className="min-w-0 flex-1"><p className="text-xs font-black uppercase tracking-widest text-mute">Round {r.roundNumber} · Final</p><p className="font-extrabold">{winName === 'Tie' ? 'Round ended in a tie' : `${winName} won`}</p><p className="text-sm text-mute">{r.votesA} for {snapshot.matchup.nameA} · {r.votesB} for {snapshot.matchup.nameB}</p></div><span className="text-xs font-bold text-mute">{r.closedAt ? new Date(r.closedAt).toLocaleDateString() : ''}</span></li>;
         })}</ol> : <p className="mt-4 rounded-xl bg-paper p-4 text-mute">No completed rounds yet. The first champion will be recorded when this round closes.</p>}
       </section>
-      <section className="mt-8 rounded-2xl border border-rule bg-white p-5 shadow-sm sm:p-7"><h2 className="text-2xl font-black">Make your case</h2><p className="mt-2 text-mute">The vote shows the split. The discussion is where people argue it out. No account needed for the vote; guest discussion depends on the Threadline embed settings.</p><div className="mt-5"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div></section>
+      <section id="community-case-building" aria-labelledby="community-case-heading" className="mt-8 grid items-stretch gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)_minmax(0,1fr)]">
+  <article className="overflow-hidden rounded-2xl border border-rule border-t-4 border-t-sidea bg-white p-5 shadow-sm"><p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">Blue side · A</p><h2 className="mt-2 text-xl font-black tracking-tight">{snapshot.matchup.nameA}</h2><p className="mt-3 text-sm leading-relaxed text-mute">{snapshot.matchup.descriptionA || (snapshot.matchup.nameA + " is one side of this public matchup.")}</p>{snapshot.matchup.sourceUrlA && <a href={snapshot.matchup.sourceUrlA} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-sidea underline underline-offset-4">Source / learn more ↗</a>}</article>
+  <article className="min-w-0 overflow-hidden rounded-2xl border border-rule border-t-4 border-t-ink bg-white p-5 shadow-sm sm:p-6"><p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">Community case-building</p><h2 id="community-case-heading" className="mt-2 text-2xl font-black tracking-tight">Make the argument.</h2><p className="mt-2 text-sm leading-relaxed text-mute">The vote shows the split. Threadline is where the community builds its case.</p><div className="mt-5 min-w-0"><ThreadlineComments slug={`matchup-${snapshot.matchup.slug}`} /></div></article>
+  <article className="overflow-hidden rounded-2xl border border-rule border-t-4 border-t-sideb bg-white p-5 shadow-sm"><p className="text-xs font-black uppercase tracking-[0.15em] text-sideb">Red side · B</p><h2 className="mt-2 text-xl font-black tracking-tight">{snapshot.matchup.nameB}</h2><p className="mt-3 text-sm leading-relaxed text-mute">{snapshot.matchup.descriptionB || (snapshot.matchup.nameB + " is the other side of this public matchup.")}</p>{snapshot.matchup.sourceUrlB && <a href={snapshot.matchup.sourceUrlB} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm font-bold text-sideb underline underline-offset-4">Source / learn more ↗</a>}</article>
+</section>
       <p className="mt-6 text-center text-xs text-mute">Duelio measures the people who vote here—not a scientific or representative poll.</p>
     </div>
   );
