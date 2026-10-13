@@ -25,11 +25,11 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
-    .filter((item) => item.round?.status === 'active')
-    .sort((left, right) =>
-      (right.counts.a + right.counts.b) - (left.counts.a + left.counts.b) ||
-      right.matchup.createdAt.localeCompare(left.matchup.createdAt)
-    )
+    .filter((item) => limit > 3 || item.round?.status === 'active')
+    .sort((left, right) => {
+      if (limit > 3) return right.matchup.createdAt.localeCompare(left.matchup.createdAt);
+      return (right.counts.a + right.counts.b) - (left.counts.a + left.counts.b) || right.matchup.createdAt.localeCompare(left.matchup.createdAt);
+    })
     .slice(0, limit);
   return (
     <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-10 sm:mt-16 sm:pt-12">
@@ -67,7 +67,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
         </div>
       ) : (
         <div className="mt-5 rounded-2xl border border-dashed border-rule bg-white p-6 text-mute">
-          No published matchups with an active round are available right now. Check back shortly, or create a matchup below.
+          No published matchups are available right now. Check back shortly, or create a matchup below.
         </div>
       )}
       <MatchupCreator />
