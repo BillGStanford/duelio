@@ -70,12 +70,12 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
     <main className="mx-auto max-w-5xl px-5">
       <section aria-labelledby="home-heading" className="grid gap-8 py-10 sm:py-14 md:grid-cols-[1fr_0.8fr] md:items-center">
         <div>
-          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">Everyday questions. Two sides. Your call.</p>
+          <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-sidea">Dilemmas and matchups. Your call.</p>
           <h1 id="home-heading" className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-[-0.035em] sm:text-6xl">
-            The internet disagrees with you.
+            Every debate has two sides.
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed sm:text-xl">
-            Pick a side on a small everyday dilemma, see how others voted, and join the conversation. No account needed.
+            Settle everyday dilemmas or go head-to-head on bigger matchups. Cast your vote, make your case, and see where public opinion lands.
           </p>
         </div>
         <div className="grid justify-items-center gap-3">
