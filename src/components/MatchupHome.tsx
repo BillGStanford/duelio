@@ -4,11 +4,19 @@ import MatchupCreator from './MatchupCreator';
 import EntityImage from './EntityImage';
 
 async function cardData(matchup: Matchup) {
+  let round;
   try {
-    const round = await getActiveRound(matchup.id);
+    round = await getActiveRound(matchup.id);
+  } catch {
+    return { round: null, counts: { a: 0, b: 0 } };
+  }
+  // A vote-count query failure must not hide an otherwise open matchup.
+  try {
     const counts = await getRoundCounts(round.id);
     return { round, counts };
-  } catch { return { round: null, counts: { a: 0, b: 0 } }; }
+  } catch {
+    return { round, counts: { a: 0, b: 0 } };
+  }
 }
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   // Do not gate rendering on a separate schema probe: it can fail even when
