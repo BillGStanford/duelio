@@ -31,6 +31,7 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [expandedInfo, setExpandedInfo] = useState<{ a: boolean; b: boolean }>({ a: false, b: false });
+  const [crowdOpen, setCrowdOpen] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [ticker, setTicker] = useState('LIVE · Vote totals refresh automatically.');
   const [winnerStage, setWinnerStage] = useState<'title' | 'card' | null>(initial.showWinnerAnimation ? 'title' : null);
@@ -183,17 +184,29 @@ export default function MatchupExperience({ initial }: { initial: Snapshot }) {
           </article>;
         })}
       </section>
-      <details className="mt-5 overflow-hidden rounded-2xl border border-rule bg-white shadow-sm">
-        <summary className="group flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6">
-          <span><span className="block text-xs font-black uppercase tracking-[0.16em] text-sidea">The crowd</span><span className="mt-1 block text-xl font-black">Where the vote stands</span><span className="mt-1 block text-sm font-semibold text-mute">{total.toLocaleString()} total votes · {pctA}% Blue / {pctB}% Red</span></span>
-          <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-paper text-2xl font-black transition-transform group-open:rotate-180">⌄</span>
-        </summary>
-        <div className="border-t border-rule px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-          <div className="flex h-4 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea transition-all duration-500" style={{ width: `${pctA}%` }} /><span className="bg-sideb transition-all duration-500" style={{ width: `${pctB}%` }} /></div>
-          <div className="mt-3 flex justify-between gap-3 text-sm font-black"><span className="text-sidea">{snapshot.matchup.nameA}: {pctA}%</span><span className="text-right text-sideb">{snapshot.matchup.nameB}: {pctB}%</span></div>
-          {message && <p role="status" className="mt-4 rounded-lg bg-paper p-3 text-sm font-semibold">{message}</p>}
-        </div>
-      </details>
+      <section className="mt-5 overflow-hidden rounded-2xl border border-rule bg-white shadow-sm">
+        <button
+          type="button"
+          aria-expanded={crowdOpen}
+          aria-controls="crowd-vote-details"
+          onClick={() => setCrowdOpen(open => !open)}
+          className="flex w-full cursor-pointer items-center justify-between gap-4 p-5 text-left sm:p-6"
+        >
+          <span>
+            <span className="block text-xs font-black uppercase tracking-[0.16em] text-sidea">The crowd</span>
+            <span className="mt-1 block text-xl font-black">Where the vote stands</span>
+            <span className="mt-1 block text-sm font-semibold text-mute">{total.toLocaleString()} total votes · {pctA}% Blue / {pctB}% Red</span>
+          </span>
+          <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center border border-rule bg-paper text-2xl font-black">{crowdOpen ? '−' : '+'}</span>
+        </button>
+        {crowdOpen && (
+          <div id="crowd-vote-details" className="border-t border-rule px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+            <div className="flex h-4 overflow-hidden bg-[#fff1f4]"><span className="bg-sidea transition-all duration-500" style={{ width: `${pctA}%` }} /><span className="bg-sideb transition-all duration-500" style={{ width: `${pctB}%` }} /></div>
+            <div className="mt-3 flex justify-between gap-3 text-sm font-black"><span className="text-sidea">{snapshot.matchup.nameA}: {pctA}%</span><span className="text-right text-sideb">{snapshot.matchup.nameB}: {pctB}%</span></div>
+            {message && <p role="status" className="mt-4 bg-paper p-3 text-sm font-semibold">{message}</p>}
+          </div>
+        )}
+      </section>
       {shareSide && <section aria-labelledby="your-link-card-heading" className="mt-5 rounded-2xl border border-rule border-t-4 border-t-sidea bg-white p-5 shadow-sm sm:p-7">
         <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-sidea">Your vote is in</p><h2 id="your-link-card-heading" className="mt-1 text-2xl font-black">Your Link Card</h2></div><span aria-hidden="true" className="text-2xl font-black text-sidea">↓</span></div>
         <p className="mt-2 text-sm leading-relaxed text-mute">Your share card is ready below. Choose a format to download or share it.</p>
