@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { ADMIN_COOKIE, isAdminCookie } from '@/lib/auth';
 import { clientIp, sameOrigin } from '@/lib/http';
 import { rateLimit } from '@/lib/rateLimit';
-import { adminCloseRound, adminUpdateMatchup, createMatchup } from '@/lib/matchups';
+import { adminAdjustVotes, adminCloseRound, adminUpdateMatchup, createMatchup } from '@/lib/matchups';
 
 export const dynamic = 'force-dynamic';
 const str = (f: FormData, key: string) => typeof f.get(key) === 'string' ? String(f.get(key)).trim() : '';
@@ -43,6 +43,14 @@ export async function POST(req: Request) {
     if (action === 'status' && (status === 'published' || status === 'removed')) {
       await adminUpdateMatchup(id, { status });
       return done(status === 'published' ? 'Matchup restored.' : 'Matchup removed from public view.');
+    }
+    if (action === 'adjust_votes') {
+      const side = str(form, 'side');
+      const delta = Number(str(form, 'delta'));
+      if ((side !== 'a' && side !== 'b') || !Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 500)
+        return done('Choose a side and enter a whole-number adjustment from -500 to 500, excluding zero.');
+      const counts = await adminAdjustVotes(id, side, delta);
+      return done(`Votes adjusted. Blue: ${counts.a}; Red: ${counts.b}.`);
     }
     if (action === 'close_round') {
       await adminCloseRound(id);
