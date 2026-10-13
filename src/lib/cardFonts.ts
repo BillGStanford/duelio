@@ -1,5 +1,3 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { parse, type Font } from 'opentype.js';
 
 export interface LoadedFont {
@@ -7,14 +5,16 @@ export interface LoadedFont {
   font: Font;
 }
 export interface CardFonts {
-  display: LoadedFont; // Pagella Bold: the headline face
-  ui: LoadedFont; // Poppins Bold: small labels
+  display: LoadedFont;
+  ui: LoadedFont;
 }
 
-const toArrayBuffer = (b: Buffer): ArrayBuffer => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer;
+const ASSET_BASE = 'https://raw.githubusercontent.com/BillGStanford/duelio/main/src/assets/';
 
 async function load(file: string): Promise<LoadedFont> {
-  const data = toArrayBuffer(await fs.readFile(path.join(process.cwd(), 'src/assets', file)));
+  const response = await fetch(ASSET_BASE + file, { cache: 'force-cache' });
+  if (!response.ok) throw new Error(`Unable to load card font: ${file}`);
+  const data = await response.arrayBuffer();
   return { data, font: parse(data) };
 }
 
@@ -29,8 +29,12 @@ export async function getBackground(tone: 'a' | 'b' | 'n', fmt: string): Promise
   const key = `${tone}-${fmt}`;
   let uri = bgCache.get(key);
   if (!uri) {
-    const buf = await fs.readFile(path.join(process.cwd(), 'src/assets', `bg-${key}.jpg`));
-    uri = `data:image/jpeg;base64,${buf.toString('base64')}`;
+    const response = await fetch(ASSET_BASE + `bg-${key}.jpg`, { cache: 'force-cache' });
+    if (!response.ok) throw new Error(`Unable to load card background: ${key}`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 32768) binary += String.fromCharCode(...bytes.subarray(i, i + 32768));
+    uri = `data:image/jpeg;base64,${btoa(binary)}`;
     bgCache.set(key, uri);
   }
   return uri;
