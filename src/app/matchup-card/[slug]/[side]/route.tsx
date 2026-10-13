@@ -13,6 +13,7 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
   const fmt = new URL(req.url).searchParams.get('fmt') || 'wide';
   const dims = fmt === 'story' ? { width: 1080, height: 1920 } : fmt === 'portrait' ? { width: 1080, height: 1350 } : fmt === 'square' ? { width: 1080, height: 1080 } : { width: 1200, height: 630 };
   const wide = dims.width / dims.height > 1.5;
+  const neutralShare = new URL(req.url).searchParams.get('share') === '1';
   const photo = async (url: string, person: string): Promise<string> => {
     const initials = person.trim().split(' ').filter(Boolean).slice(0, 2).map(word => Array.from(word)[0] || '').join('').toUpperCase().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="800"><rect width="640" height="800" rx="28" fill="#f0f2ff"/><circle cx="320" cy="300" r="145" fill="white" stroke="#2433E0" stroke-width="5"/><text x="320" y="340" text-anchor="middle" font-family="Arial" font-weight="700" font-size="100" fill="#14162B">' + initials + '</text><text x="320" y="550" text-anchor="middle" font-family="Arial" font-weight="700" font-size="25" fill="#14162B">DUELIO MATCHUP</text></svg>';
@@ -35,8 +36,8 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
   };
   const [safeImage, safeOtherImage] = await Promise.all([photo(image, name), photo(otherImage, other)]);
   return new ImageResponse(
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: wide ? '44px 54px' : '64px 58px', background: 'linear-gradient(135deg,#f7f8ff 0%,#ffffff 52%,#fff0f4 100%)', color: '#14162B', fontFamily: 'Arial, sans-serif', border: '10px solid #2433E0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: wide ? 22 : 28, fontWeight: 800, letterSpacing: 3, color: '#2433E0' }}><span>DUELIO · PUBLIC OPINION</span><span>NO MONEY. JUST OPINIONS.</span></div>
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: wide ? '44px 54px' : '64px 58px', background: 'linear-gradient(135deg,#f4f6ff 0%,#ffffff 48%,#fff1f5 100%)', color: '#14162B', fontFamily: 'Arial, sans-serif', border: '10px solid #2433E0', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: wide ? 22 : 28, fontWeight: 800, letterSpacing: 3, color: '#2433E0' }}><span style={{ letterSpacing: 4 }}>DUELIO.INK</span><span style={{ color: '#626b7b', letterSpacing: 2 }}>PUBLIC VERDICT</span></div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: wide ? 30 : 38, flex: 1, marginTop: 20, marginBottom: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%', minWidth: 0 }}>
           <img src={safeImage} width={wide ? 200 : 340} height={wide ? 200 : 340} style={{ width: wide ? 200 : 340, height: wide ? 200 : 340, objectFit: 'cover', borderRadius: 24, border: '3px solid #2433E0', background: '#eef0ff' }} />
@@ -49,9 +50,19 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', borderRadius: 24, padding: wide ? '18px 24px' : '26px 24px', background: '#14162B', color: 'white' }}>
-        <div style={{ fontSize: wide ? 20 : 30, fontWeight: 800, letterSpacing: 4, color: '#c7ccff' }}>I VOTED FOR</div>
-        <div style={{ fontSize: wide ? 38 : 60, fontWeight: 900, textAlign: 'center', marginTop: 6 }}>{name.slice(0, 54)}</div>
-        <div style={{ fontSize: wide ? 17 : 24, marginTop: 8, color: '#e1e4f3' }}>Your turn. Pick a side on Duelio.</div>
+        {neutralShare ? (
+          <>
+            <div style={{ fontSize: wide ? 20 : 30, fontWeight: 800, letterSpacing: 4, color: '#c7ccff' }}>THE MATCHUP</div>
+            <div style={{ fontSize: wide ? 38 : 60, fontWeight: 900, textAlign: 'center', marginTop: 6 }}>WHO WINS?</div>
+            <div style={{ fontSize: wide ? 17 : 24, marginTop: 8, color: '#e1e4f3' }}>Cast your vote at duelio.ink</div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: wide ? 20 : 30, fontWeight: 800, letterSpacing: 4, color: '#c7ccff' }}>I VOTED FOR</div>
+            <div style={{ fontSize: wide ? 38 : 60, fontWeight: 900, textAlign: 'center', marginTop: 6 }}>{name.slice(0, 54)}</div>
+            <div style={{ fontSize: wide ? 17 : 24, marginTop: 8, color: '#e1e4f3' }}>Your turn. Pick a side at duelio.ink.</div>
+          </>
+        )}
       </div>
     </div>,
     { ...dims, headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600' } },
