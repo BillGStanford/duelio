@@ -21,7 +21,7 @@ async function cardData(matchup: Matchup) {
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   // Do not gate rendering on a separate schema probe: it can fail even when
   // the matchup table is readable, which made the whole board disappear.
-  const matchups = await listMatchups(100);
+  const matchups = await listMatchups(limit > 3 ? 1000 : 100);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
@@ -39,7 +39,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
           <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">The matchups everyone has an opinion on.</h2>
           <p className="mt-2 max-w-2xl text-mute">Head-to-head showdowns. Cast a vote, make your case, and watch public opinion shift as each round unfolds.</p>
         </div>
-        <Link href="/#matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">Explore matchups</Link>
+        <Link href="/matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">Explore all matchups →</Link>
       </div>
       {ranked.length ? (
         <div className="mt-6 grid items-stretch gap-4 md:grid-cols-2">
@@ -67,7 +67,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
         </div>
       ) : (
         <div className="mt-5 rounded-2xl border border-dashed border-rule bg-white p-6 text-mute">
-          No open matchups are available right now. Check back shortly, or create a matchup below.
+          No published matchups with an active round are available right now. Check back shortly, or create a matchup below.
         </div>
       )}
       <MatchupCreator />
