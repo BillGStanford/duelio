@@ -160,7 +160,7 @@ export default function MatchupCarousel({ matchups }: { matchups: MatchupSlide[]
                   <span className="text-sideb">{pctB}% <span className="font-semibold text-mute">· {m.votesB}</span></span>
                 </div>
                 <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
-                <Link href={`/matchup/${m.slug}`} draggable={false} className="matchup-slide-cta mt-5">Enter matchup <span aria-hidden="true">→</span></Link>
+                <a href={`/matchup/${m.slug}`} data-enter-matchup="true" draggable={false} onClick={(event) => { if (suppressClick.current) { event.preventDefault(); event.stopPropagation(); return; } window.location.assign(`/matchup/${m.slug}`); }} className="matchup-slide-cta mt-5">Enter matchup <span aria-hidden="true">→</span></a>
               </article>
             );
           })}
