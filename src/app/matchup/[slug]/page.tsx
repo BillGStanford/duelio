@@ -7,17 +7,16 @@ import { hashVoter, VOTER_COOKIE } from '@/lib/auth';
 import { SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
-export async function generateMetadata({ params, searchParams }: { params: { slug: string }; searchParams?: { voted?: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const matchup = await getMatchup(params.slug);
   if (!matchup || matchup.status !== 'published') return { title: 'Matchup not found', robots: { index: false, follow: false } };
   const description = `Who wins: ${matchup.nameA} or ${matchup.nameB}? Vote in this free public-opinion matchup on Duelio. No accounts, no money.`;
-  const voted = searchParams?.voted === 'b' ? 'b' : 'a';
-  const image = `${SITE_URL}/matchup-card/${matchup.slug}/${voted}?fmt=wide`;
+  const image = `${SITE_URL}/matchup-card/${matchup.slug}/a?fmt=wide&share=1`;
   return {
     title: `${matchup.nameA} vs. ${matchup.nameB}`,
     description,
     alternates: { canonical: `${SITE_URL}/matchup/${matchup.slug}` },
-    openGraph: { type: 'article', siteName: 'Duelio', title: `${matchup.nameA} vs. ${matchup.nameB} | Duelio`, description, url: `${SITE_URL}/matchup/${matchup.slug}`, images: [{ url: image, width: 1200, height: 630, alt: `I voted for ${voted === 'a' ? matchup.nameA : matchup.nameB} in this Duelio matchup` }] },
+    openGraph: { type: 'article', siteName: 'Duelio', title: `${matchup.nameA} vs. ${matchup.nameB} | Duelio`, description, url: `${SITE_URL}/matchup/${matchup.slug}`, images: [{ url: image, width: 1200, height: 630, alt: `Duelio matchup: ${matchup.nameA} versus ${matchup.nameB}` }] },
     twitter: { card: 'summary_large_image', title: `${matchup.nameA} vs. ${matchup.nameB} | Duelio`, description, images: [image] },
   };
 }
