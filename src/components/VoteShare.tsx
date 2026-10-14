@@ -27,7 +27,7 @@ export default function VoteShare({
         Post it and let your friends try to change your mind.{closesAt ? ` Voting closes ${formatCloseDate(closesAt)}.` : ''}
       </p>
       <CardShare
-        src={(f) => matchup ? `/matchup-card/${slug}/${side}?fmt=${f}&v=2` : `/card/${slug}/${side}?fmt=${f}`}
+        src={(f) => matchup ? `/matchup-card/${slug}/${side}?fmt=${f}&v=3` : `/card/${slug}/${side}?fmt=${f}`}
         filename={`duelio-${slug}`}
         shareText={`I picked ${label}. Do you agree? ${question}`}
         alt={`Vote card: I picked ${label}. ${question} Do you agree?`}
