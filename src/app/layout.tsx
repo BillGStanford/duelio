@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
   },
+  other: { 'google-adsense-account': 'ca-pub-5222388837833339' },
 };
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#EEF0F6' };
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="font-sans">
         <Script
           id="google-adsense"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
           crossOrigin="anonymous"
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5222388837833339"
         />
