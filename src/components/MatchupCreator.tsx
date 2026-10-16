@@ -1,5 +1,5 @@
 'use client';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 const QUICK_STARTS = [
   ['Alexander the Great', 'Napoleon'],
@@ -13,6 +13,29 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
   const [b, setB] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [suggestionsA, setSuggestionsA] = useState<{ title: string; description: string }[]>([]);
+  const [suggestionsB, setSuggestionsB] = useState<{ title: string; description: string }[]>([]);
+  const [focused, setFocused] = useState<'a' | 'b' | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const query = (focused === 'a' ? a : b).trim();
+    if (!focused || query.length < 2) {
+      if (focused === 'a') setSuggestionsA([]);
+      if (focused === 'b') setSuggestionsB([]);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch('/api/entity-search?q=' + encodeURIComponent(query), { cache: 'no-store' });
+        const result = await response.json();
+        if (!cancelled && response.ok) {
+          const items = Array.isArray(result.results) ? result.results : [];
+          if (focused === 'a') setSuggestionsA(items); else setSuggestionsB(items);
+        }
+      } catch { if (!cancelled) { if (focused === 'a') setSuggestionsA([]); else setSuggestionsB([]); } }
+    }, 220);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [a, b, focused]);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -58,11 +81,11 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       )}
       <form onSubmit={submit} className="mt-5 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto] md:items-end">
         <label className="block text-sm font-bold">First competitor
-          <input value={a} onChange={e => setA(e.target.value)} required minLength={2} maxLength={100} placeholder="e.g. Alexander the Great" className="mt-1 block min-h-12 w-full rounded-xl border border-rule px-4 py-3 font-normal" autoFocus={modal} />
+          <input value={a} onFocus={() => setFocused("a")} onBlur={() => window.setTimeout(() => setFocused(v => v === "a" ? null : v), 160)} onChange={e => setA(e.target.value)} list="duelio-entity-suggestions-a" required minLength={2} maxLength={100} autoComplete="off" placeholder="Search a person, character, team…" className="mt-1 block min-h-12 w-full rounded-xl border border-rule px-4 py-3 font-normal" autoFocus={modal} /><datalist id="duelio-entity-suggestions-a">{suggestionsA.map(item => <option key={item.title} value={item.title} />)}</datalist>
         </label>
         <span className="pb-3 text-center text-sm font-black uppercase text-mute">vs.</span>
         <label className="block text-sm font-bold">Second competitor
-          <input value={b} onChange={e => setB(e.target.value)} required minLength={2} maxLength={100} placeholder="e.g. Napoleon" className="mt-1 block min-h-12 w-full rounded-xl border border-rule px-4 py-3 font-normal" />
+          <input value={b} onFocus={() => setFocused("b")} onBlur={() => window.setTimeout(() => setFocused(v => v === "b" ? null : v), 160)} onChange={e => setB(e.target.value)} list="duelio-entity-suggestions-b" required minLength={2} maxLength={100} autoComplete="off" placeholder="Search a person, character, team…" className="mt-1 block min-h-12 w-full rounded-xl border border-rule px-4 py-3 font-normal" /><datalist id="duelio-entity-suggestions-b">{suggestionsB.map(item => <option key={item.title} value={item.title} />)}</datalist>
         </label>
         <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-ink px-5 py-3 font-extrabold text-white transition hover:bg-sidea disabled:cursor-wait disabled:opacity-60">{busy ? 'Creating…' : 'Create matchup'}</button>
       </form>
