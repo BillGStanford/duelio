@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { getActiveRound, getRoundCounts, listMatchups, type Matchup } from '@/lib/matchups';
 import MatchupCreator from './MatchupCreator';
 import EntityImage from './EntityImage';
-import MatchupCarousel from './MatchupCarousel';
 import FeaturedMatchupCarousel from './FeaturedMatchupCarousel';
 
 async function cardData(matchup: Matchup) {
@@ -22,17 +21,16 @@ async function cardData(matchup: Matchup) {
 
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   const isDirectory = limit > 3;
-  // The homepage features ten swipeable matchups; the dedicated directory loads the full catalog.
   const matchups = await listMatchups(10000, !isDirectory);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
-    .filter((item) => isDirectory || item.round?.status === 'active')
+
     .sort((left, right) => {
       if (isDirectory) return right.matchup.createdAt.localeCompare(left.matchup.createdAt);
       return (right.counts.a + right.counts.b) - (left.counts.a + left.counts.b) || right.matchup.createdAt.localeCompare(left.matchup.createdAt);
     })
-    .slice(0, isDirectory ? limit : 10000);
+    .slice(0, 10000);
 
   const heroPicks = ranked.filter(({ matchup }) => matchup.isFeatured);
   const heroItems = (heroPicks.length ? heroPicks : ranked).slice(0, heroPicks.length ? 12 : 3);
@@ -47,37 +45,39 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
           roundNumber: round?.roundNumber ?? null, votesA: counts.a, votesB: counts.b,
         }))} />
       )}
-      <MatchupCreator />
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">The matchup board</p>
-          <h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">The matchups everyone has an opinion on.</h2>
-          <p className="mt-2 max-w-2xl text-mute">Head-to-head showdowns. Cast a vote, make your case, and watch public opinion shift as each round unfolds.</p>
+      {isDirectory ? (
+        <div className="mb-5 flex flex-col gap-4 border-b border-rule pb-5 sm:flex-row sm:items-end sm:justify-between">
+          <div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">Explore Duelio</p><h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">All matchups</h2><p className="mt-2 text-mute">Every published matchup, in one place.</p></div>
+          <span className="text-sm font-bold text-mute">{ranked.length} matchups</span>
         </div>
-        <Link href="/matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">Explore all matchups →</Link>
-      </div>
+      ) : (
+        <>
+          <MatchupCreator />
+          <div className="mb-5 flex items-end justify-between border-b border-rule pb-4"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">Duelio picks</p><h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Featured matchups</h2></div><Link href="/matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">All matchups →</Link></div>
+        </>
+      )}
 
       {ranked.length ? (
-        isDirectory || ranked.length > 0 ? (
+        true ? (
           <div className="mt-6 grid items-stretch gap-4 md:grid-cols-2">
             {ranked.map(({ matchup: m, round, counts }) => {
               const total = counts.a + counts.b;
               const pctA = total ? Math.round(counts.a / total * 100) : 50;
               const pctB = 100 - pctA;
               return (
-                <article key={m.id} className="matchup-card flex h-full flex-col overflow-hidden border border-rule bg-white p-4 sm:p-5">
+                <article key={m.id} className="matchup-card group flex h-full flex-col overflow-hidden border border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
                   <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-                    <div><EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full border border-rule bg-[#11172a] object-cover sm:aspect-[5/4]" /><h3 className="matchup-name mt-2 line-clamp-2 font-extrabold">{m.nameA}</h3><p className="mt-1 line-clamp-2 text-xs text-mute">{m.descriptionA}</p></div>
-                    <span className="mt-12 text-xs font-black uppercase text-mute">vs</span>
-                    <div><EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full border border-rule bg-[#fff0f4] object-cover sm:aspect-[5/4]" /><h3 className="matchup-name mt-2 line-clamp-2 text-right font-extrabold">{m.nameB}</h3><p className="mt-1 line-clamp-2 text-right text-xs text-mute">{m.descriptionB}</p></div>
+                    <div><EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full bg-[#11172a] object-cover" /><h3 className="matchup-name mt-3 line-clamp-2 px-3 text-base font-extrabold sm:text-lg">{m.nameA}</h3><p className="mt-1 line-clamp-2 px-3 pb-3 text-xs leading-relaxed text-mute">{m.descriptionA}</p></div>
+                    <span className="mt-10 text-[10px] font-black uppercase tracking-wider text-mute">vs</span>
+                    <div><EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full bg-[#fff0f4] object-cover" /><h3 className="matchup-name mt-3 line-clamp-2 px-3 text-right text-base font-extrabold sm:text-lg">{m.nameB}</h3><p className="mt-1 line-clamp-2 px-3 pb-3 text-right text-xs leading-relaxed text-mute">{m.descriptionB}</p></div>
                   </div>
-                  <div className="mt-4 flex items-center justify-between gap-2 text-sm font-bold">
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-rule px-3 pt-3 text-sm font-bold">
                     <span className="text-sidea">{pctA}% · {counts.a}</span>
                     <span className="text-xs font-semibold text-mute">{round ? `Round ${round.roundNumber}` : 'Preparing round'} · {total} votes</span>
                     <span className="text-sideb">{pctB}% · {counts.b}</span>
                   </div>
-                  <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
-                  <Link href={`/matchup/${m.slug}`} className="mt-4 flex min-h-12 items-center justify-center rounded-xl bg-ink px-4 py-3 text-center font-extrabold text-white">Vote and make your case <span className="ml-2" aria-hidden="true">→</span></Link>
+                  <div className="mt-2 flex h-1.5 overflow-hidden bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
+                  <Link href={`/matchup/${m.slug}`} className="mt-3 flex min-h-11 items-center justify-between border-t border-rule px-3 py-3 text-sm font-extrabold text-ink transition-colors group-hover:bg-ink group-hover:text-white">View matchup <span className="ml-2" aria-hidden="true">→</span></Link>
                 </article>
               );
             })}
@@ -97,7 +97,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
           )
         )
       ) : (
-        <div className="mt-5 rounded-2xl border border-dashed border-rule bg-white p-6 text-mute">
+        <div className="mt-5 border border-dashed border-rule bg-white p-6 text-mute">
           No published matchups are available right now. Check back shortly, or create a matchup below.
         </div>
       )}
