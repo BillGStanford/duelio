@@ -69,10 +69,10 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
               Pick a side.<br /><span className="text-sidea">Move the crowd.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/75 sm:text-xl">
-              Head-to-head matchups and everyday dilemmas, decided by real votes. Make your call, defend it, and see where everyone else lands.
+              The home for settling GOAT debates. Pit legends, artists, athletes, characters, teams, and ideas against each other—then let the crowd decide. Vote, make your case, and share the verdict.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/matchups" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-sidea px-6 py-3 font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#4f5fdf]">Enter the matchup arena <span className="ml-2" aria-hidden="true">↗</span></Link>
+              <Link href="/matchups" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-sidea px-6 py-3 font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#4f5fdf]">Settle a GOAT debate <span className="ml-2" aria-hidden="true">↗</span></Link>
               <Link href="/submit" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-extrabold text-white transition hover:bg-white/10">Start a debate</Link>
             </div>
           </div>
