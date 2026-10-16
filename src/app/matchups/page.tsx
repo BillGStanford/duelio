@@ -16,7 +16,7 @@ export default function MatchupsPage() {
       <section className="border-b border-rule py-8 sm:py-10">
         <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-sidea">Duelio · Public opinion</p>
         <h1 className="mt-3 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">The matchup library.</h1>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-mute sm:text-xl">Two sides. One public verdict. Vote in the matchups you care about, make your case, and help decide who comes out on top.</p>
+        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-mute sm:text-xl">The home for settling GOAT debates. Compare the greats, settle rivalries, and see where public opinion lands.</p>
       </section>
       <MatchupCreator />
       <MatchupHome limit={10000} />
