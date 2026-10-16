@@ -15,6 +15,7 @@ create table if not exists duel_matchups (
   source_url_a text not null default '',
   source_url_b text not null default '',
   status text not null default 'published' check (status in ('published','removed')),
+  is_featured boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (lower(name_a) <> lower(name_b))
