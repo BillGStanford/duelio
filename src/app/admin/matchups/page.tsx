@@ -55,6 +55,7 @@ export default async function MatchupAdmin({ searchParams }: { searchParams: { m
             <div className="mt-4 flex flex-wrap gap-2">
               <form method="post" action="/api/admin/matchups"><Hidden action="status" id={m.id}/><input type="hidden" name="status" value={m.status==='published'?'removed':'published'}/><button className="rounded-lg border border-rule px-3 py-2 text-sm font-bold hover:bg-paper" type="submit">{m.status==='published'?'Remove from public view':'Restore public page'}</button></form>
               <form method="post" action="/api/admin/matchups"><Hidden action="close_round" id={m.id}/><button className="rounded-lg border border-rule px-3 py-2 text-sm font-bold hover:bg-paper" type="submit">Close round and start next</button></form>
+              <form method="post" action="/api/admin/matchups" onSubmit={(event) => { if (!window.confirm(`Permanently delete "${m.nameA} vs. ${m.nameB}" and all its rounds and votes? This cannot be undone.`)) event.preventDefault(); }}><Hidden action="delete" id={m.id}/><button className="rounded-lg border border-sideb px-3 py-2 text-sm font-bold text-sideb hover:bg-[#fff1f4]" type="submit">Delete permanently</button></form>
             </div>
           </li>;
         })}</ul>
