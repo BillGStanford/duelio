@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { getActiveRound, getRoundCounts, listMatchups, type Matchup } from '@/lib/matchups';
-import MatchupCreator from './MatchupCreator';
 import EntityImage from './EntityImage';
 import FeaturedMatchupCarousel from './FeaturedMatchupCarousel';
 
