@@ -34,26 +34,6 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
   }
   const modal = variant === 'modal';
   const Wrapper = modal ? 'div' : 'section';
-  const discordMessage = createdMatchup
-    ? `🔥 I just created a new Duelio matchup: ${createdMatchup.a} vs. ${createdMatchup.b}\n\nCast your vote and join the debate: ${createdMatchup.url}\n\nWho do you think should win? Tell us why!`
-    : '';
-  async function copyDiscordMessage() {
-    if (!discordMessage) return;
-    try {
-      await navigator.clipboard.writeText(discordMessage);
-      setCopied(true);
-    } catch {
-      const area = document.createElement('textarea');
-      area.value = discordMessage;
-      area.style.position = 'fixed';
-      area.style.opacity = '0';
-      document.body.appendChild(area);
-      area.select();
-      const success = document.execCommand('copy');
-      area.remove();
-      setCopied(success);
-    }
-  }
   return (
     <Wrapper aria-labelledby={modal ? 'welcome-matchup-heading' : 'create-matchup-heading'} className={modal ? 'w-full' : 'mt-8 rounded-2xl border border-rule bg-white p-5 shadow-sm sm:p-7'}>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -87,35 +67,6 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
         <button type="submit" disabled={busy} className="min-h-12 rounded-xl bg-ink px-5 py-3 font-extrabold text-white transition hover:bg-sidea disabled:cursor-wait disabled:opacity-60">{busy ? 'Creating…' : 'Create matchup'}</button>
       </form>
       {error && <p role="alert" className="mt-3 rounded-lg bg-[#fff1f4] p-3 text-sm font-semibold">{error}</p>}
-      {createdMatchup && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#101525]/70 p-3 backdrop-blur-sm sm:p-6">
-        <div role="dialog" aria-modal="true" aria-labelledby="discord-share-heading" className="my-auto w-full max-w-xl overflow-hidden rounded-2xl border border-[#5865F2]/25 bg-gradient-to-br from-[#f4f5ff] via-white to-[#f0f1ff] shadow-[0_16px_45px_rgba(39,49,120,0.12)]">
-          <div className="flex items-start gap-3 border-b border-[#5865F2]/15 bg-[#5865F2]/[0.07] p-4 sm:p-5">
-            <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#5865F2] text-white">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M19.73 5.36a18.2 18.2 0 0 0-4.48-1.39l-.22.45a16.8 16.8 0 0 0-6.06 0l-.22-.45a18.2 18.2 0 0 0-4.48 1.39C1.44 9.55.67 13.63 1.05 17.65a18.4 18.4 0 0 0 5.5 2.78l1.19-1.94a11.8 11.8 0 0 1-1.87-.91l.46-.36c3.61 1.67 7.53 1.67 11.1 0l.47.36c-.6.36-1.23.66-1.88.91l1.19 1.94a18.4 18.4 0 0 0 5.5-2.78c.45-4.66-.77-8.7-2.98-12.29ZM8.55 15.3c-1.08 0-1.97-.99-1.97-2.2 0-1.22.87-2.21 1.97-2.21s1.99.99 1.97 2.21c0 1.21-.87 2.2-1.97 2.2Zm6.9 0c-1.08 0-1.97-.99-1.97-2.2 0-1.22.87-2.21 1.97-2.21s1.99.99 1.97 2.21c0 1.21-.87 2.2-1.97 2.2Z"/></svg>
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#5865F2]">Matchup published</p>
-              <h3 id="discord-share-heading" className="mt-1 text-xl font-black tracking-tight text-[#172033]">Now bring the debate to Discord.</h3>
-              <p className="mt-1 text-sm leading-relaxed text-[#626b7b]">Share your matchup with the Duelio community and invite people to vote. Copy this ready-to-post message.</p>
-            </div>
-            <button type="button" onClick={() => setCreatedMatchup(null)} aria-label="Dismiss Discord sharing prompt" className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-lg text-[#626b7b] hover:bg-[#5865F2]/10">×</button>
-          </div>
-          <div className="p-4 sm:p-5">
-            <div className="whitespace-pre-wrap rounded-xl border border-[#dfe2f4] bg-white p-4 text-sm leading-relaxed text-[#29334a]">{discordMessage}</div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
-              <button type="button" onClick={copyDiscordMessage} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#4752c4]">
-                {copied ? '✓ Copied — ready to paste' : '▢ Copy Discord message'}
-              </button>
-              <a href="https://discord.gg/yyqm6gPWnS" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-[#d8dcf1] bg-white px-4 py-3 text-sm font-extrabold text-[#29334a] transition hover:bg-[#f4f5ff]">
-                Join the Discord <span aria-hidden="true">↗</span>
-              </a>
-            </div>
-            <p className="mt-3 text-xs leading-relaxed text-[#737c90]">After joining, paste it into the matchup-sharing channel. The link takes people straight to your matchup.</p>
-          </div>
-        </div>
-        </div>
-      )}
       <p className="mt-3 text-xs text-mute">Same two names, either order? Duelio takes you to the same canonical matchup.</p>
     </Wrapper>
   );
