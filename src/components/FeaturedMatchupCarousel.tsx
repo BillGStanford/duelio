@@ -44,7 +44,7 @@ export default function FeaturedMatchupCarousel({ matchups }: { matchups: Featur
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-mute sm:text-base">Big names. Big questions. No verdict until you vote.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" aria-label="Previous featured matchup" onClick={() => goTo(activeIndex - 1)} className="grid h-11 w-11 place-items-center rounded-full border border-rule bg-white text-lg font-bold transition-colors hover:border-ink hover:bg-ink hover:text-white">←</button>
+          <button type="button" aria-label="Previous featured matchup" onClick={() => goTo(activeIndex - 1)} className="grid h-11 w-11 place-items-center rounded-none border border-rule bg-white text-lg font-bold transition-colors hover:border-ink hover:bg-ink hover:text-white">←</button>
           <button type="button" aria-label="Next featured matchup" onClick={() => goTo(activeIndex + 1)} className="grid h-11 w-11 place-items-center rounded-full border border-rule bg-white text-lg font-bold transition-colors hover:border-ink hover:bg-ink hover:text-white">→</button>
         </div>
       </div>
