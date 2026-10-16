@@ -13,8 +13,8 @@ function Portrait({ src, name, large = false }: { src: string; name: string; lar
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={image} alt={name} onError={() => { const fallback = `/api/entity-image?name=${encodeURIComponent(name)}`; if (image !== fallback) setImage(fallback); }}
-      className={`${large ? 'h-56 sm:h-72' : 'h-20'} w-full rounded-xl border border-rule bg-[#11172a] object-cover object-center`}
-      style={{ objectFit: 'cover', objectPosition: 'center' }} />
+      className={`${large ? 'h-56 sm:h-72' : 'h-20'} w-full rounded-xl border border-rule bg-[#f5f6fa] object-contain object-center`}
+      style={{ objectFit: 'contain', objectPosition: 'center' }} />
   );
 }
 function percent(n: number, total: number) { return total ? Math.round(n / total * 100) : 50; }
