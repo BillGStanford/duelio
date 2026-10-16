@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { ADMIN_COOKIE, isAdminCookie } from '@/lib/auth';
 import { clientIp, sameOrigin } from '@/lib/http';
 import { rateLimit } from '@/lib/rateLimit';
-import { adminAdjustVotes, adminCloseRound, adminUpdateMatchup, createMatchup } from '@/lib/matchups';
+import { adminAdjustVotes, adminCloseRound, adminDeleteMatchup, adminUpdateMatchup, createMatchup } from '@/lib/matchups';
 
 export const dynamic = 'force-dynamic';
 const str = (f: FormData, key: string) => typeof f.get(key) === 'string' ? String(f.get(key)).trim() : '';
@@ -44,6 +44,10 @@ export async function POST(req: Request) {
     if (action === 'status' && (status === 'published' || status === 'removed')) {
       await adminUpdateMatchup(id, { status });
       return done(status === 'published' ? 'Matchup restored.' : 'Matchup removed from public view.');
+    }
+    if (action === 'delete') {
+      await adminDeleteMatchup(id);
+      return done('Matchup permanently deleted.');
     }
     if (action === 'adjust_votes') {
       const side = str(form, 'side');
