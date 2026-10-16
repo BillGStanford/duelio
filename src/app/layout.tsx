@@ -4,6 +4,8 @@ import Script from 'next/script';
 import './globals.css';
 import Logo from '@/components/Logo';
 import PageView from '@/components/PageView';
+import MatchupWelcomeModal from '@/components/MatchupWelcomeModal';
+import DiscordFloatingButton from '@/components/DiscordFloatingButton';
 import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -72,6 +74,8 @@ gtag('config', 'G-5HEWDYYCEC');`}
             </span>
           </p>
         </footer>
+        <MatchupWelcomeModal />
+        <DiscordFloatingButton />
         <PageView />
       </body>
     </html>
