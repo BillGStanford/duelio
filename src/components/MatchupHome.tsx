@@ -58,47 +58,44 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       )}
 
       {ranked.length ? (
-        true ? (
-          <div className="mt-6 grid items-stretch gap-4 md:grid-cols-2">
-            {ranked.map(({ matchup: m, round, counts }) => {
-              const total = counts.a + counts.b;
-              const pctA = total ? Math.round(counts.a / total * 100) : 50;
-              const pctB = 100 - pctA;
-              return (
-                <article key={m.id} className="matchup-card group flex h-full flex-col overflow-hidden border border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
-                    <div><EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full bg-[#11172a] object-cover" /><h3 className="matchup-name mt-3 line-clamp-2 px-3 text-base font-extrabold sm:text-lg">{m.nameA}</h3><p className="mt-1 line-clamp-2 px-3 pb-3 text-xs leading-relaxed text-mute">{m.descriptionA}</p></div>
-                    <span className="mt-10 text-[10px] font-black uppercase tracking-wider text-mute">vs</span>
-                    <div><EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full bg-[#fff0f4] object-cover" /><h3 className="matchup-name mt-3 line-clamp-2 px-3 text-right text-base font-extrabold sm:text-lg">{m.nameB}</h3><p className="mt-1 line-clamp-2 px-3 pb-3 text-right text-xs leading-relaxed text-mute">{m.descriptionB}</p></div>
+        <div className="mt-6 grid grid-cols-1 items-stretch gap-0 border-l border-t border-rule sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {ranked.map(({ matchup: m, round, counts }) => {
+            const total = counts.a + counts.b;
+            const pctA = total ? Math.round(counts.a / total * 100) : 50;
+            const pctB = 100 - pctA;
+            return (
+              <article key={m.id} className="matchup-card group flex min-w-0 flex-col border-b border-r border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
+                <Link href={`/matchup/${m.slug}`} aria-label={`Vote: ${m.nameA} versus ${m.nameB}`} className="block">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-0">
+                    <div className="min-w-0">
+                      <EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full bg-[#11172a] object-cover" />
+                      <h3 className="matchup-name mt-3 line-clamp-2 px-3 text-base font-extrabold sm:text-lg">{m.nameA}</h3>
+                      <p className="mt-1 line-clamp-2 px-3 pb-3 text-xs leading-relaxed text-mute">{m.descriptionA}</p>
+                    </div>
+                    <span className="mt-10 px-1 text-[10px] font-black uppercase tracking-wider text-mute">vs</span>
+                    <div className="min-w-0">
+                      <EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full bg-[#fff0f4] object-cover" />
+                      <h3 className="matchup-name mt-3 line-clamp-2 px-3 text-right text-base font-extrabold sm:text-lg">{m.nameB}</h3>
+                      <p className="mt-1 line-clamp-2 px-3 pb-3 text-right text-xs leading-relaxed text-mute">{m.descriptionB}</p>
+                    </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-rule px-3 pt-3 text-sm font-bold">
+                </Link>
+                <div className="mt-auto border-t border-rule px-3 pt-3">
+                  <div className="flex items-center justify-between gap-2 text-sm font-bold">
                     <span className="text-sidea">{pctA}% · {counts.a}</span>
-                    <span className="text-xs font-semibold text-mute">{round ? `Round ${round.roundNumber}` : 'Preparing round'} · {total} votes</span>
+                    <span className="text-[10px] font-semibold text-mute">{round ? `R${round.roundNumber}` : 'New'} · {total} votes</span>
                     <span className="text-sideb">{pctB}% · {counts.b}</span>
                   </div>
                   <div className="mt-2 flex h-1.5 overflow-hidden bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
-                  <Link href={`/matchup/${m.slug}`} className="mt-3 flex min-h-11 items-center justify-between border-t border-rule px-3 py-3 text-sm font-extrabold text-ink transition-colors group-hover:bg-ink group-hover:text-white">View matchup <span className="ml-2" aria-hidden="true">→</span></Link>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          ranked.length > 3 ? (
-            <MatchupCarousel matchups={ranked.slice(3).map(({ matchup: m, round, counts }) => ({
-              id: m.id, slug: m.slug, nameA: m.nameA, nameB: m.nameB,
-              descriptionA: m.descriptionA, descriptionB: m.descriptionB,
-              imageA: m.imageA, imageB: m.imageB,
-              roundNumber: round?.roundNumber ?? null, votesA: counts.a, votesB: counts.b,
-            }))} />
-          ) : (
-            <div className="mt-6 rounded-2xl border border-rule bg-white p-5 text-sm text-mute">
-              Want another debate? <Link href="/matchups" className="font-extrabold text-ink underline underline-offset-4">Explore every matchup →</Link>
-            </div>
-          )
-        )
+                  <Link href={`/matchup/${m.slug}`} className="flex min-h-11 items-center justify-between py-3 text-sm font-extrabold text-ink transition-colors group-hover:text-sidea">Vote in this matchup <span aria-hidden="true">→</span></Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       ) : (
         <div className="mt-5 border border-dashed border-rule bg-white p-6 text-mute">
-          No published matchups are available right now. Check back shortly, or create a matchup below.
+          No published matchups are available right now. Create the first matchup to get things started.
         </div>
       )}
     </section>
