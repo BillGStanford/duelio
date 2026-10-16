@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import MatchupHome from '@/components/MatchupHome';
+import MatchupCreator from '@/components/MatchupCreator';
 
 export const metadata: Metadata = {
   title: 'Matchups',
@@ -17,6 +18,7 @@ export default function MatchupsPage() {
         <h1 className="mt-3 max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-6xl">The matchup library.</h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-mute sm:text-xl">Two sides. One public verdict. Vote in the matchups you care about, make your case, and help decide who comes out on top.</p>
       </section>
+      <MatchupCreator />
       <MatchupHome limit={10000} />
     </main>
   );
