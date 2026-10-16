@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { getActiveRound, getRoundCounts, listMatchups, type Matchup } from '@/lib/matchups';
-import EntityImage from './EntityImage';
+import MatchupDirectoryGrid from './MatchupDirectoryGrid';
 import FeaturedMatchupCarousel from './FeaturedMatchupCarousel';
 
 async function cardData(matchup: Matchup) {
@@ -52,40 +51,16 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       ) : null}
 
       {isDirectory && ranked.length ? (
-        <div className="mt-6 grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 sm:gap-6">
-          {ranked.map(({ matchup: m, round, counts }) => {
-            const total = counts.a + counts.b;
-            const pctA = total ? Math.round(counts.a / total * 100) : 50;
-            const pctB = 100 - pctA;
-            return (
-              <article key={m.id} className="matchup-card group flex min-w-0 flex-col border border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
-                <Link href={`/matchup/${m.slug}`} aria-label={`Vote: ${m.nameA} versus ${m.nameB}`} className="block">
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-0">
-                    <div className="min-w-0">
-                      <EntityImage src={m.imageA} name={m.nameA} className="matchup-portrait matchup-portrait-a aspect-[4/3] h-auto w-full bg-[#11172a] object-cover" />
-                      <h3 className="matchup-name mt-3 line-clamp-2 px-3 text-base font-extrabold sm:text-lg">{m.nameA}</h3>
-                      <p className="mt-1 line-clamp-2 px-3 pb-3 text-xs leading-relaxed text-mute">{m.descriptionA}</p>
-                    </div>
-                    <span className="mt-10 px-1 text-[10px] font-black uppercase tracking-wider text-mute">vs</span>
-                    <div className="min-w-0">
-                      <EntityImage src={m.imageB} name={m.nameB} className="matchup-portrait matchup-portrait-b aspect-[4/3] h-auto w-full bg-[#fff0f4] object-cover" />
-                      <h3 className="matchup-name mt-3 line-clamp-2 px-3 text-right text-base font-extrabold sm:text-lg">{m.nameB}</h3>
-                      <p className="mt-1 line-clamp-2 px-3 pb-3 text-right text-xs leading-relaxed text-mute">{m.descriptionB}</p>
-                    </div>
-                  </div>
-                </Link>
-                <div className="mt-auto border-t border-rule px-3 pt-3">
-                  <div className="flex items-center justify-between gap-2 text-sm font-bold">
-                    <span className="text-sidea">{pctA}% · {counts.a}</span>
-                    <span className="text-[10px] font-semibold text-mute">{round ? `R${round.roundNumber}` : 'New'} · {total} votes</span>
-                    <span className="text-sideb">{pctB}% · {counts.b}</span>
-                  </div>
-                  <div className="mt-2 flex h-1.5 overflow-hidden bg-[#fff1f4]"><span className="bg-sidea" style={{ width: `${pctA}%` }} /><span className="bg-sideb" style={{ width: `${pctB}%` }} /></div>
-                  <Link href={`/matchup/${m.slug}`} className="flex min-h-11 items-center justify-between py-3 text-sm font-extrabold text-ink transition-colors group-hover:text-sidea">Vote in this matchup <span aria-hidden="true">→</span></Link>
-                </div>
-              </article>
-            );
-          })}
+        <div className="mt-6">
+          <MatchupDirectoryGrid matchups={ranked.map(({ matchup, round, counts }) => ({
+            matchup: {
+              id: matchup.id, slug: matchup.slug, nameA: matchup.nameA, nameB: matchup.nameB,
+              descriptionA: matchup.descriptionA, descriptionB: matchup.descriptionB,
+              imageA: matchup.imageA, imageB: matchup.imageB,
+            },
+            round: round ? { roundNumber: round.roundNumber } : null,
+            counts,
+          }))} />
         </div>
       ) : isDirectory ? (
         <div className="mt-5 border border-dashed border-rule bg-white p-6 text-mute">
