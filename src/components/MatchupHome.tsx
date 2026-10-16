@@ -52,13 +52,13 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       ) : null}
 
       {isDirectory && ranked.length ? (
-        <div className="mt-6 grid grid-cols-1 items-stretch gap-0 border-l border-t border-rule sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 sm:gap-6">
           {ranked.map(({ matchup: m, round, counts }) => {
             const total = counts.a + counts.b;
             const pctA = total ? Math.round(counts.a / total * 100) : 50;
             const pctB = 100 - pctA;
             return (
-              <article key={m.id} className="matchup-card group flex min-w-0 flex-col border-b border-r border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
+              <article key={m.id} className="matchup-card group flex min-w-0 flex-col border border-rule bg-white transition-colors hover:bg-[#f8f9ff]">
                 <Link href={`/matchup/${m.slug}`} aria-label={`Vote: ${m.nameA} versus ${m.nameB}`} className="block">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-0">
                     <div className="min-w-0">
