@@ -50,14 +50,9 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
           <div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">Explore Duelio</p><h2 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">All matchups</h2><p className="mt-2 text-mute">Every published matchup, in one place.</p></div>
           <span className="text-sm font-bold text-mute">{ranked.length} matchups</span>
         </div>
-      ) : (
-        <>
-          <MatchupCreator />
-          <div className="mb-5 flex items-end justify-between border-b border-rule pb-4"><div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">Duelio picks</p><h2 className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Featured matchups</h2></div><Link href="/matchups" className="font-bold underline decoration-2 underline-offset-4 hover:text-sidea">All matchups →</Link></div>
-        </>
-      )}
+      ) : null}
 
-      {ranked.length ? (
+      {isDirectory && ranked.length ? (
         <div className="mt-6 grid grid-cols-1 items-stretch gap-0 border-l border-t border-rule sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {ranked.map(({ matchup: m, round, counts }) => {
             const total = counts.a + counts.b;
@@ -93,11 +88,11 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
             );
           })}
         </div>
-      ) : (
+      ) : isDirectory ? (
         <div className="mt-5 border border-dashed border-rule bg-white p-6 text-mute">
           No published matchups are available right now. Create the first matchup to get things started.
         </div>
-      )}
+      ) : null}
     </section>
   );
 }
