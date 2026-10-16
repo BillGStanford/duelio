@@ -13,8 +13,6 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
   const [b, setB] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [createdMatchup, setCreatedMatchup] = useState<{ a: string; b: string; url: string } | null>(null);
-  const [copied, setCopied] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -26,14 +24,8 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not create that matchup.');
-      // Carry the share prompt across navigation. It is shown only after the voting page loads.
-      const matchupUrl = new URL(result.url, window.location.origin).toString();
-      window.sessionStorage.setItem('duelio-pending-discord-share-v1', JSON.stringify({
-        a: a.trim(),
-        b: b.trim(),
-        url: matchupUrl,
-      }));
-      window.location.assign(matchupUrl);
+      // Creation is complete: take the visitor directly to the voting page, with no popup.
+      window.location.assign(new URL(result.url, window.location.origin).toString());
       return;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create that matchup.');
