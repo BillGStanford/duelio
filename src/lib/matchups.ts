@@ -110,7 +110,7 @@ export async function resolveEntity(name: string): Promise<EntityInfo> {
   }
 }
 
-export async function listMatchups(limit = 12): Promise<Matchup[]> {
+export async function listMatchups(limit = 12, featuredFirst = false): Promise<Matchup[]> {
   try {
     const client = db();
     const pageSize = 500;
@@ -123,6 +123,7 @@ export async function listMatchups(limit = 12): Promise<Matchup[]> {
       const rows = check(await client.from('duel_matchups')
         .select('*')
         .eq('status', 'published')
+        .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false })
         .range(offset, offset + take - 1)) as any[];
       all.push(...rows);
