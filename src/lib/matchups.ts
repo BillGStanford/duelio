@@ -283,3 +283,18 @@ export async function isMatchupSchemaReady(): Promise<boolean> {
     return !result.error;
   } catch { return false; }
 }
+
+export async function adminDeleteMatchup(id: string) {
+  const client = db();
+  const rounds = check(await client.from('duel_rounds').select('id').eq('matchup_id', id)) as { id: string }[];
+  const roundIds = rounds.map(round => round.id);
+  if (roundIds.length) {
+    const votes = await client.from('duel_votes').delete().in('round_id', roundIds);
+    if (votes.error) throw new Error(votes.error.message);
+    const deletedRounds = await client.from('duel_rounds').delete().eq('matchup_id', id);
+    if (deletedRounds.error) throw new Error(deletedRounds.error.message);
+  }
+  const deleted = await client.from('duel_matchups').delete().eq('id', id).select('id').maybeSingle();
+  if (deleted.error) throw new Error(deleted.error.message);
+  if (!deleted.data) throw new Error('Matchup not found.');
+}
