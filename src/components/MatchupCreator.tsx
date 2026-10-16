@@ -26,12 +26,9 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not create that matchup.');
-      if (variant === 'inline') {
-        setCreatedMatchup({ a: a.trim(), b: b.trim(), url: new URL(result.url, window.location.origin).toString() });
-        setCopied(false);
-      } else {
-        window.location.assign(result.url);
-      }
+      setCreatedMatchup({ a: a.trim(), b: b.trim(), url: new URL(result.url, window.location.origin).toString() });
+      setCopied(false);
+      setBusy(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create that matchup.');
       setBusy(false);
@@ -93,7 +90,8 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       </form>
       {error && <p role="alert" className="mt-3 rounded-lg bg-[#fff1f4] p-3 text-sm font-semibold">{error}</p>}
       {createdMatchup && (
-        <div role="dialog" aria-modal="true" aria-labelledby="discord-share-heading" className="mt-6 overflow-hidden rounded-2xl border border-[#5865F2]/25 bg-gradient-to-br from-[#f4f5ff] via-white to-[#f0f1ff] shadow-[0_16px_45px_rgba(39,49,120,0.12)]">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#101525]/70 p-3 backdrop-blur-sm sm:p-6">
+        <div role="dialog" aria-modal="true" aria-labelledby="discord-share-heading" className="my-auto w-full max-w-xl overflow-hidden rounded-2xl border border-[#5865F2]/25 bg-gradient-to-br from-[#f4f5ff] via-white to-[#f0f1ff] shadow-[0_16px_45px_rgba(39,49,120,0.12)]">
           <div className="flex items-start gap-3 border-b border-[#5865F2]/15 bg-[#5865F2]/[0.07] p-4 sm:p-5">
             <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#5865F2] text-white">
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M19.73 5.36a18.2 18.2 0 0 0-4.48-1.39l-.22.45a16.8 16.8 0 0 0-6.06 0l-.22-.45a18.2 18.2 0 0 0-4.48 1.39C1.44 9.55.67 13.63 1.05 17.65a18.4 18.4 0 0 0 5.5 2.78l1.19-1.94a11.8 11.8 0 0 1-1.87-.91l.46-.36c3.61 1.67 7.53 1.67 11.1 0l.47.36c-.6.36-1.23.66-1.88.91l1.19 1.94a18.4 18.4 0 0 0 5.5-2.78c.45-4.66-.77-8.7-2.98-12.29ZM8.55 15.3c-1.08 0-1.97-.99-1.97-2.2 0-1.22.87-2.21 1.97-2.21s1.99.99 1.97 2.21c0 1.21-.87 2.2-1.97 2.2Zm6.9 0c-1.08 0-1.97-.99-1.97-2.2 0-1.22.87-2.21 1.97-2.21s1.99.99 1.97 2.21c0 1.21-.87 2.2-1.97 2.2Z"/></svg>
@@ -117,6 +115,7 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
             </div>
             <p className="mt-3 text-xs leading-relaxed text-[#737c90]">After joining, paste it into the matchup-sharing channel. The link takes people straight to your matchup.</p>
           </div>
+        </div>
         </div>
       )}
       <p className="mt-3 text-xs text-mute">Same two names, either order? Duelio takes you to the same canonical matchup.</p>
