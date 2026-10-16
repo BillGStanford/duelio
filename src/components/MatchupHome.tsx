@@ -34,10 +34,13 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
     })
     .slice(0, isDirectory ? limit : 10);
 
+  const heroPicks = ranked.filter(({ matchup }) => matchup.isFeatured);
+  const heroItems = (heroPicks.length ? heroPicks : ranked).slice(0, heroPicks.length ? 12 : 3);
+
   return (
     <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-8 sm:mt-16 sm:pt-10">
-      {!isDirectory && ranked.length > 0 && (
-        <FeaturedMatchupCarousel matchups={ranked.slice(0, 3).map(({ matchup: m, round, counts }) => ({
+      {!isDirectory && heroItems.length > 0 && (
+        <FeaturedMatchupCarousel matchups={heroItems.map(({ matchup: m, round, counts }) => ({
           id: m.id, slug: m.slug, nameA: m.nameA, nameB: m.nameB,
           descriptionA: m.descriptionA, descriptionB: m.descriptionB,
           imageA: m.imageA, imageB: m.imageB,
