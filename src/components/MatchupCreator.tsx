@@ -62,8 +62,8 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-sidea">Create a public matchup</p>
-          <h2 id={modal ? 'welcome-matchup-heading' : 'create-matchup-heading'} className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Who wins the debate?</h2>
-          <p className="mt-2 max-w-2xl text-mute">Enter any two people, characters, teams, ideas, or things. No account needed. Every matchup gets a permanent page and a fresh two-week round.</p>
+          <h2 id={modal ? 'welcome-matchup-heading' : 'create-matchup-heading'} className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Who’s the GOAT? Let’s settle it.</h2>
+          <p className="mt-2 max-w-2xl text-mute">Pit any two people, artists, athletes, teams, characters, or ideas against each other. No account needed—just pick the contenders and let the crowd weigh in.</p>
         </div>
         <span className="rounded-full border border-rule bg-paper px-3 py-1 text-xs font-bold text-mute">FREE · NO BETTING</span>
       </div>
