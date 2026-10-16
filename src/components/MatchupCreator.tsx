@@ -26,15 +26,15 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not create that matchup.');
-      if (variant === 'modal') {
-        // Finish creation and let the creator modal close before navigating to the live voting page.
-        const matchupUrl = new URL(result.url, window.location.origin).toString();
-        window.location.assign(matchupUrl);
-        return;
-      }
-      setCreatedMatchup({ a: a.trim(), b: b.trim(), url: new URL(result.url, window.location.origin).toString() });
-      setCopied(false);
-      setBusy(false);
+      // Carry the share prompt across navigation. It is shown only after the voting page loads.
+      const matchupUrl = new URL(result.url, window.location.origin).toString();
+      window.sessionStorage.setItem('duelio-pending-discord-share-v1', JSON.stringify({
+        a: a.trim(),
+        b: b.trim(),
+        url: matchupUrl,
+      }));
+      window.location.assign(matchupUrl);
+      return;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create that matchup.');
       setBusy(false);
