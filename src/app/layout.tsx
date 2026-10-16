@@ -29,6 +29,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="font-sans">
+        <Script
+          id="google-adsense"
+          async
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5222388837833339"
+        />
         <Script id="google-analytics-init" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];
 function gtag(){window.dataLayer.push(arguments);}
