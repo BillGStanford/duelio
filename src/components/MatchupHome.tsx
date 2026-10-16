@@ -23,7 +23,7 @@ async function cardData(matchup: Matchup) {
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   const isDirectory = limit > 3;
   // The homepage features ten swipeable matchups; the dedicated directory loads the full catalog.
-  const matchups = await listMatchups(isDirectory ? 10000 : 100);
+  const matchups = await listMatchups(isDirectory ? 10000 : 100, !isDirectory);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
