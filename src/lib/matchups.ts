@@ -114,7 +114,7 @@ export async function listMatchups(limit = 12, featuredFirst = false): Promise<M
   try {
     const client = db();
     const pageSize = 500;
-    const requested = Math.max(0, Math.min(limit, 10000));
+    const requested = Math.max(0, limit);
     const all: any[] = [];
     // Explicitly paginate. A single Supabase select can be capped by project API
     // row limits, which otherwise silently truncates the matchup catalog.
