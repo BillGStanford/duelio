@@ -37,7 +37,7 @@ export default function MatchupCreator({ variant = 'inline', onClose }: { varian
   const modal = variant === 'modal';
   const Wrapper = modal ? 'div' : 'section';
   const discordMessage = createdMatchup
-    ? `🔥 I just created a new Duelio matchup: ${createdMatchup.a} vs. ${createdMatchup.b}\\n\\nCast your vote and join the debate: ${createdMatchup.url}\\n\\nWho do you think should win? Tell us why!`
+    ? `🔥 I just created a new Duelio matchup: ${createdMatchup.a} vs. ${createdMatchup.b}\n\nCast your vote and join the debate: ${createdMatchup.url}\n\nWho do you think should win? Tell us why!`
     : '';
   async function copyDiscordMessage() {
     if (!discordMessage) return;
