@@ -15,6 +15,7 @@ export interface Matchup {
   sourceUrlA: string;
   sourceUrlB: string;
   status: 'published' | 'removed';
+  isFeatured: boolean;
   createdAt: string;
 }
 export interface DuelRound {
@@ -51,7 +52,7 @@ const toMatchup = (r: any): Matchup => ({
   descriptionA: r.description_a ?? '', descriptionB: r.description_b ?? '',
   imageA: r.image_a ?? '', imageB: r.image_b ?? '',
   sourceUrlA: r.source_url_a ?? '', sourceUrlB: r.source_url_b ?? '',
-  status: r.status, createdAt: r.created_at,
+  status: r.status, isFeatured: r.is_featured === true, createdAt: r.created_at,
 });
 const toRound = (r: any): DuelRound => ({
   id: r.id, matchupId: r.matchup_id, roundNumber: r.round_number, startsAt: r.starts_at,
@@ -209,12 +210,19 @@ export async function getClosedWinner(matchupId: string): Promise<{ roundNumber:
   return r ? { roundNumber: r.round_number, winnerSide: r.winner_side, votesA: r.votes_a, votesB: r.votes_b, closedAt: r.closed_at } : null;
 }
 export async function adminListMatchups(): Promise<Matchup[]> {
-  const rows = check(await db().from('duel_matchups').select('*').order('created_at', { ascending: false }).limit(500)) as any[];
+  const client = db();
+  const rows: any[] = [];
+  const pageSize = 500;
+  for (let offset = 0; offset < 10000; offset += pageSize) {
+    const page = check(await client.from('duel_matchups').select('*').order('created_at', { ascending: false }).range(offset, offset + pageSize - 1)) as any[];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
   return rows.map(toMatchup);
 }
 export async function adminUpdateMatchup(id: string, patch: Record<string, unknown>) {
   const safe: Record<string, unknown> = {};
-  for (const key of ['name_a','name_b','description_a','description_b','image_a','image_b','status']) {
+  for (const key of ['name_a','name_b','description_a','description_b','image_a','image_b','status','is_featured']) {
     if (key in patch) safe[key] = patch[key];
   }
   if ('name_a' in safe || 'name_b' in safe) {
