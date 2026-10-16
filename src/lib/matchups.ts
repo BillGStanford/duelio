@@ -120,12 +120,11 @@ export async function listMatchups(limit = 12, featuredFirst = false): Promise<M
     // row limits, which otherwise silently truncates the matchup catalog.
     for (let offset = 0; offset < requested; offset += pageSize) {
       const take = Math.min(pageSize, requested - offset);
-      const rows = check(await client.from('duel_matchups')
-        .select('*')
-        .eq('status', 'published')
-        .order('is_featured', { ascending: false })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + take - 1)) as any[];
+      const baseQuery = client.from('duel_matchups').select('*').eq('status', 'published');
+      const orderedQuery = featuredFirst
+        ? baseQuery.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
+        : baseQuery.order('created_at', { ascending: false });
+      const rows = check(await orderedQuery.range(offset, offset + take - 1)) as any[];
       all.push(...rows);
       if (rows.length < take) break;
     }
