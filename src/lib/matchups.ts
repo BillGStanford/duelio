@@ -121,10 +121,17 @@ export async function listMatchups(limit = 12, featuredFirst = false): Promise<M
     for (let offset = 0; offset < requested; offset += pageSize) {
       const take = Math.min(pageSize, requested - offset);
       const baseQuery = client.from('duel_matchups').select('*').eq('status', 'published');
-      const orderedQuery = featuredFirst
-        ? baseQuery.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
-        : baseQuery.order('created_at', { ascending: false });
-      const rows = check(await orderedQuery.range(offset, offset + take - 1)) as any[];
+      let rows: any[];
+      if (featuredFirst) {
+        try {
+          rows = check(await baseQuery.order('is_featured', { ascending: false }).order('created_at', { ascending: false }).range(offset, offset + take - 1)) as any[];
+        } catch {
+          // Keep the matchup catalog available while an existing database is awaiting the hero-column migration.
+          rows = check(await client.from('duel_matchups').select('*').eq('status', 'published').order('created_at', { ascending: false }).range(offset, offset + take - 1)) as any[];
+        }
+      } else {
+        rows = check(await baseQuery.order('created_at', { ascending: false }).range(offset, offset + take - 1)) as any[];
+      }
       all.push(...rows);
       if (rows.length < take) break;
     }
