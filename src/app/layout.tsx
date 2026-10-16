@@ -6,7 +6,6 @@ import Logo from '@/components/Logo';
 import PageView from '@/components/PageView';
 import MatchupWelcomeModal from '@/components/MatchupWelcomeModal';
 import DiscordFloatingButton from '@/components/DiscordFloatingButton';
-import MatchupCreatedSharePopup from '@/components/MatchupCreatedSharePopup';
 import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -76,7 +75,6 @@ gtag('config', 'G-5HEWDYYCEC');`}
           </p>
         </footer>
         <MatchupWelcomeModal />
-        <MatchupCreatedSharePopup />
         <DiscordFloatingButton />
         <PageView />
       </body>
