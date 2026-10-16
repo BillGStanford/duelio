@@ -23,7 +23,7 @@ async function cardData(matchup: Matchup) {
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   const isDirectory = limit > 3;
   // The homepage features ten swipeable matchups; the dedicated directory loads the full catalog.
-  const matchups = await listMatchups(isDirectory ? 10000 : 100, !isDirectory);
+  const matchups = await listMatchups(10000, !isDirectory);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
@@ -32,7 +32,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       if (isDirectory) return right.matchup.createdAt.localeCompare(left.matchup.createdAt);
       return (right.counts.a + right.counts.b) - (left.counts.a + left.counts.b) || right.matchup.createdAt.localeCompare(left.matchup.createdAt);
     })
-    .slice(0, isDirectory ? limit : 10);
+    .slice(0, isDirectory ? limit : 10000);
 
   const heroPicks = ranked.filter(({ matchup }) => matchup.isFeatured);
   const heroItems = (heroPicks.length ? heroPicks : ranked).slice(0, heroPicks.length ? 12 : 3);
@@ -58,7 +58,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       </div>
 
       {ranked.length ? (
-        isDirectory ? (
+        isDirectory || ranked.length > 0 ? (
           <div className="mt-6 grid items-stretch gap-4 md:grid-cols-2">
             {ranked.map(({ matchup: m, round, counts }) => {
               const total = counts.a + counts.b;
