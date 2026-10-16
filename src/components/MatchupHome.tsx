@@ -20,7 +20,7 @@ async function cardData(matchup: Matchup) {
 
 export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
   const isDirectory = limit > 3;
-  const matchups = await listMatchups(10000, !isDirectory);
+  const matchups = await listMatchups(Number.MAX_SAFE_INTEGER, !isDirectory);
   const data = await Promise.all(matchups.map(cardData));
   const ranked = matchups
     .map((matchup, index) => ({ matchup, ...data[index] }))
@@ -29,7 +29,7 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
       if (isDirectory) return right.matchup.createdAt.localeCompare(left.matchup.createdAt);
       return (right.counts.a + right.counts.b) - (left.counts.a + left.counts.b) || right.matchup.createdAt.localeCompare(left.matchup.createdAt);
     })
-    .slice(0, 10000);
+;
 
   const heroPicks = ranked.filter(({ matchup }) => matchup.isFeatured);
   const heroItems = (heroPicks.length ? heroPicks : ranked).slice(0, heroPicks.length ? 12 : 3);
