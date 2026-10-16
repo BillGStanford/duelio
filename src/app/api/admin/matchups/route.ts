@@ -35,6 +35,7 @@ export async function POST(req: Request) {
         if (value.length > max) return done(`${formKey} is too long.`);
         patch[dbKey] = value;
       }
+      patch.is_featured = str(form, 'isFeatured') === 'on';
       if (!String(patch.name_a).trim() || !String(patch.name_b).trim() || String(patch.name_a).toLocaleLowerCase() === String(patch.name_b).toLocaleLowerCase())
         return done('Enter two different competitor names.');
       await adminUpdateMatchup(id, patch);
