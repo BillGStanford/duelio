@@ -3,6 +3,7 @@ import { getActiveRound, getRoundCounts, listMatchups, type Matchup } from '@/li
 import MatchupCreator from './MatchupCreator';
 import EntityImage from './EntityImage';
 import MatchupCarousel from './MatchupCarousel';
+import FeaturedMatchupCarousel from './FeaturedMatchupCarousel';
 
 async function cardData(matchup: Matchup) {
   let round;
@@ -35,6 +36,14 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
 
   return (
     <section id="matchups" className="matchup-board mt-12 scroll-mt-5 border-t border-rule pt-8 sm:mt-16 sm:pt-10">
+      {!isDirectory && ranked.length > 0 && (
+        <FeaturedMatchupCarousel matchups={ranked.slice(0, 3).map(({ matchup: m, round, counts }) => ({
+          id: m.id, slug: m.slug, nameA: m.nameA, nameB: m.nameB,
+          descriptionA: m.descriptionA, descriptionB: m.descriptionB,
+          imageA: m.imageA, imageB: m.imageB,
+          roundNumber: round?.roundNumber ?? null, votesA: counts.a, votesB: counts.b,
+        }))} />
+      )}
       <MatchupCreator />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -71,12 +80,18 @@ export default async function MatchupHome({ limit = 3 }: { limit?: number }) {
             })}
           </div>
         ) : (
-          <MatchupCarousel matchups={ranked.map(({ matchup: m, round, counts }) => ({
-            id: m.id, slug: m.slug, nameA: m.nameA, nameB: m.nameB,
-            descriptionA: m.descriptionA, descriptionB: m.descriptionB,
-            imageA: m.imageA, imageB: m.imageB,
-            roundNumber: round?.roundNumber ?? null, votesA: counts.a, votesB: counts.b,
-          }))} />
+          ranked.length > 3 ? (
+            <MatchupCarousel matchups={ranked.slice(3).map(({ matchup: m, round, counts }) => ({
+              id: m.id, slug: m.slug, nameA: m.nameA, nameB: m.nameB,
+              descriptionA: m.descriptionA, descriptionB: m.descriptionB,
+              imageA: m.imageA, imageB: m.imageB,
+              roundNumber: round?.roundNumber ?? null, votesA: counts.a, votesB: counts.b,
+            }))} />
+          ) : (
+            <div className="mt-6 rounded-2xl border border-rule bg-white p-5 text-sm text-mute">
+              Want another debate? <Link href="/matchups" className="font-extrabold text-ink underline underline-offset-4">Explore every matchup →</Link>
+            </div>
+          )
         )
       ) : (
         <div className="mt-5 rounded-2xl border border-dashed border-rule bg-white p-6 text-mute">
