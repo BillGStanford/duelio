@@ -113,7 +113,7 @@ export async function resolveEntity(name: string): Promise<EntityInfo> {
 export async function listMatchups(limit = 12, featuredFirst = false): Promise<Matchup[]> {
   try {
     const client = db();
-    const pageSize = 500;
+    const pageSize = 5;
     const requested = Math.max(0, limit);
     const all: any[] = [];
     // Explicitly paginate. A single Supabase select can be capped by project API
