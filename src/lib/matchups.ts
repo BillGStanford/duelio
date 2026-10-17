@@ -85,12 +85,15 @@ export async function resolveEntity(name: string): Promise<EntityInfo> {
   try {
     const searchUrl = new URL('https://en.wikipedia.org/w/rest.php/v1/search/page');
     searchUrl.searchParams.set('q', clean);
-    searchUrl.searchParams.set('limit', '1');
+    searchUrl.searchParams.set('limit', '8');
     const searchResponse = await fetch(searchUrl, { headers: { accept: 'application/json', 'user-agent': 'Duelio/1.0 (https://duelio.ink)' }, signal: AbortSignal.timeout(4500), next: { revalidate: 86400 } } as RequestInit & { next: { revalidate: number } });
     if (!searchResponse.ok) return fallbackEntity(clean);
     const search = await searchResponse.json() as { pages?: { title: string; description?: string; thumbnail?: { url?: string }; key?: string }[] };
-    const page = search.pages?.[0];
-    if (!page) return fallbackEntity(clean);
+    const pages = search.pages || [];
+    if (!pages.length) return fallbackEntity(clean);
+    // Avoid Wikipedia disambiguation pages, and prefer an actual illustrated subject.
+    const specificPages = pages.filter((candidate) => !/disambiguation/i.test(`${candidate.title} ${candidate.description || ''}`));
+    const page = specificPages.find((candidate) => candidate.thumbnail?.url) || specificPages[0] || pages[0];
     const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page.title.replace(/ /g, '_'))}`;
     const summaryResponse = await fetch(summaryUrl, { headers: { accept: 'application/json', 'user-agent': 'Duelio/1.0 (https://duelio.ink)' }, signal: AbortSignal.timeout(4500), next: { revalidate: 86400 } } as RequestInit & { next: { revalidate: number } });
     if (!summaryResponse.ok) return {
