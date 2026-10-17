@@ -40,13 +40,17 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
       return { src: 'data:' + type + ';base64,' + btoa(binary), fallback: false };
     } catch { return fallback; }
   };
-  // Re-resolve portraits from each displayed name so stale/swapped database image
-  // fields cannot put one contender's face under the other contender's name.
+  // Prefer the matchup's saved portrait when it is a real remote image. Re-resolve
+  // only missing/local placeholder images, so an intermittent Wikipedia search result
+  // cannot replace a known-good photo with initials.
   const [entityA, entityB] = matchup
-    ? await Promise.all([resolveEntity(matchup.nameA), resolveEntity(matchup.nameB)])
+    ? await Promise.all([
+        image.startsWith('https://') ? Promise.resolve(null) : resolveEntity(matchup.nameA),
+        otherImage.startsWith('https://') ? Promise.resolve(null) : resolveEntity(matchup.nameB),
+      ])
     : [null, null];
-  const correctImageA = entityA?.image || image;
-  const correctImageB = entityB?.image || otherImage;
+  const correctImageA = image.startsWith('https://') ? image : entityA?.image || image;
+  const correctImageB = otherImage.startsWith('https://') ? otherImage : entityB?.image || otherImage;
   const [safeImageA, safeImageB, template, fonts] = await Promise.all([
     photo(correctImageA, matchup?.nameA || name),
     photo(correctImageB, matchup?.nameB || other),
@@ -93,8 +97,9 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
             top: photoTop,
             width: photoWidth,
             height: photoHeight,
-            objectFit: 'cover',
+            objectFit: 'contain',
             objectPosition: 'center',
+            backgroundColor: '#f5f6fa',
             border: '1px solid #c7c9df',
             boxSizing: 'border-box',
           }}
