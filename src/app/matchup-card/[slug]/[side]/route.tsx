@@ -11,8 +11,10 @@ export async function GET(req: Request, { params }: { params: { slug: string; si
   const side = params.side === 'b' ? 'b' : 'a';
   const name = matchup ? (side === 'a' ? matchup.nameA : matchup.nameB) : 'Your side';
   const other = matchup ? (side === 'a' ? matchup.nameB : matchup.nameA) : 'The other side';
-  const image = matchup ? (side === 'a' ? matchup.imageA : matchup.imageB) : '';
-  const otherImage = matchup ? (side === 'a' ? matchup.imageB : matchup.imageA) : '';
+  // Keep the image variables in canonical A/B order; the card always renders A
+  // on the left and B on the right, regardless of which side the voter picked.
+  const image = matchup?.imageA || '';
+  const otherImage = matchup?.imageB || '';
   const paramsUrl = new URL(req.url);
   const requestedFmt = paramsUrl.searchParams.get('fmt') || 'wide';
   const fmt = ['story', 'portrait', 'square', 'wide'].includes(requestedFmt) ? requestedFmt : 'wide';
