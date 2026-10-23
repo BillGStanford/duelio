@@ -1,217 +1,219 @@
 "use client";
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { ensureWikiProfile } from '@/lib/wikirush-client';
+import Game from './wikirush/Game';
+import Lobby, { type BoardRow } from './wikirush/Lobby';
+import AuthPanel from './wikirush/AuthPanel';
+import { DAILY_SETTINGS, type ChallengeParams, type GameMode, type GameSettings, type GameSummary } from '@/lib/wikirush/types';
+import { dailySeed, utcDateKey } from '@/lib/wikirush/rounds';
+import { randomSeed } from '@/lib/wikirush/rng';
+import { parseChallengeParams } from '@/lib/wikirush/share';
+import { DEFAULT_PREFS, EMPTY_STATS, applyGame, loadPrefs, loadStats, savePrefs, saveStats, type WikiPrefs, type WikiStats } from '@/lib/wikirush/stats';
+import { RunRecorder, canReel, canScreen } from '@/lib/wikirush/recorder';
+import type { OverlayState } from '@/lib/wikirush/overlay';
 
-type Article = { title: string; extract?: string; pageid?: number; thumbnail?: { source: string } };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const timers = [30, 60, 120];
+
+const IDLE_OVERLAY: OverlayState = {
+  phase: 'idle', modeLabel: '', roundIdx: 0, rounds: 1, startTitle: '', targetTitle: '', currentTitle: '',
+  msLeft: 0, limitMs: 1, clicks: 0, path: [], totalScore: 0,
+};
+
+type Active = { id: number; settings: GameSettings; recorder: RunRecorder | null };
 
 export default function WikiRush() {
   const supabase = useMemo<SupabaseClient | null>(() => SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null, []);
   const [session, setSession] = useState<Session | null>(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [signup, setSignup] = useState(false);
   const [referralCode, setReferralCode] = useState('');
-  const [error, setError] = useState('');
+  const [startInSignup, setStartInSignup] = useState(false);
   const [notice, setNotice] = useState('');
-  const [duration, setDuration] = useState(60);
-  const [seconds, setSeconds] = useState(60);
-  const [start, setStart] = useState<Article | null>(null);
-  const [target, setTarget] = useState<Article | null>(null);
-  const [article, setArticle] = useState<Article | null>(null);
-  const [links, setLinks] = useState<string[]>([]);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<'idle'|'ready'|'playing'|'won'|'lost'>('idle');
-  const [articleHtml, setArticleHtml] = useState('');
+  const [error, setError] = useState('');
   const [points, setPoints] = useState(0);
-  const [streak, setStreak] = useState(0);
+  const [loginStreak, setLoginStreak] = useState(0);
   const [runs, setRuns] = useState(0);
-  const [history, setHistory] = useState<string[]>([]);
+  const [prefs, setPrefsState] = useState<WikiPrefs>(DEFAULT_PREFS);
+  const [stats, setStats] = useState<WikiStats>(EMPTY_STATS);
+  const [challenge, setChallenge] = useState<ChallengeParams | null>(null);
+  const [caps, setCaps] = useState({ screen: false, reel: false });
+  const [dailyKey, setDailyKey] = useState(() => utcDateKey());
+  const [board, setBoard] = useState<BoardRow[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [active, setActive] = useState<Active | null>(null);
+  const overlayRef = useRef<OverlayState>(IDLE_OVERLAY);
+  const gameId = useRef(0);
 
+  // Browser-only state (storage, capabilities, URL) is read after mount to keep SSR markup stable.
   useEffect(() => {
+    const loaded = loadPrefs();
+    const screen = canScreen(); const reel = canReel();
+    setCaps({ screen, reel });
+    setPrefsState({ ...loaded, recordMethod: loaded.recordMethod === 'screen' && !screen ? 'reel' : loaded.recordMethod });
+    setStats(loadStats());
+    setDailyKey(utcDateKey());
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
-    if (ref) { setReferralCode(ref.slice(0, 40)); setSignup(true); }
+    if (ref) { setReferralCode(ref.slice(0, 40)); setStartInSignup(true); }
+    setChallenge(parseChallengeParams(window.location.search));
+  }, []);
+
+  const setPrefs = useCallback((p: WikiPrefs) => { setPrefsState(p); savePrefs(p); }, []);
+
+  // ---------- account ----------
+  const refreshProfile = useCallback(async (userId: string) => {
+    if (!supabase) return;
+    const { data } = await supabase.from('wiki_profiles').select('points, login_streak, runs_played').eq('user_id', userId).maybeSingle();
+    if (data) { setPoints(Number(data.points || 0)); setLoginStreak(data.login_streak || 0); setRuns(data.runs_played || 0); }
+  }, [supabase]);
+
+  useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => data.subscription.unsubscribe();
   }, [supabase]);
 
   useEffect(() => {
     if (!session?.user || !supabase) return;
-    let active = true;
+    let alive = true;
     (async () => {
       await ensureWikiProfile(supabase, session.user);
-      const { data } = await supabase.from('wiki_profiles').select('points, login_streak, runs_played').eq('user_id', session.user.id).maybeSingle();
-      if (active && data) { setPoints(Number(data.points || 0)); setStreak(data.login_streak || 0); setRuns(data.runs_played || 0); }
+      if (alive) await refreshProfile(session.user.id);
       const code = referralCode || String(session.user.user_metadata?.referral_code || '');
       if (code) {
-        const { data: claimed, error: referralError } = await supabase.rpc('claim_wikirush_referral', { p_referral_code: code });
-        if (active && claimed) setNotice('Referral bonus claimed! You and your friend earned 100 points each.');
-        else if (active && referralError) setNotice('Account ready. Referral bonus could not be applied; check the database setup.');
+        const { data: claimed, error: refErr } = await supabase.rpc('claim_wikirush_referral', { p_referral_code: code });
+        if (alive && claimed) { setNotice('Referral bonus claimed! You and your friend earned 100 points each.'); await refreshProfile(session.user.id); }
+        else if (alive && refErr) setNotice('Account ready. The referral bonus could not be applied; check the database setup.');
         setReferralCode('');
       }
     })();
-    return () => { active = false; };
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, supabase]);
 
   useEffect(() => {
-    if (status !== 'playing' || !startedAt) return;
-    const tick = () => {
-      const left = Math.max(0, duration - Math.floor((Date.now() - startedAt) / 1000));
-      setSeconds(left);
-      if (left === 0) { setStatus('lost'); setNotice('Time is up. The trail went cold — start another run.'); }
-    };
-    tick();
-    const id = window.setInterval(tick, 200);
-    return () => window.clearInterval(id);
-  }, [status, startedAt, duration]);
+    if (!supabase) return;
+    supabase.from('wikirush_daily_board').select('display_name, total').eq('seed', dailySeed(dailyKey)).order('total', { ascending: false }).limit(10)
+      .then(({ data, error: err }) => { if (!err && data) setBoard(data as BoardRow[]); });
+  }, [supabase, dailyKey, active]);
 
-  const randomArticle = useCallback(async (): Promise<Article> => {
-    const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary');
-    if (!res.ok) throw new Error('Wikipedia is having trouble. Try again in a moment.');
-    const data = await res.json();
-    return { title: data.title, extract: data.extract, pageid: data.pageid, thumbnail: data.thumbnail };
-  }, []);
+  const playerName = String(session?.user.user_metadata?.display_name || prefs.name || '').slice(0, 24) || undefined;
 
-  const loadArticleHtml = useCallback(async (title: string) => {
-    const response = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`);
-    if (!response.ok) throw new Error('Wikipedia could not load this article. Try another trail.');
-    const data = await response.json() as { title: string; html: string };
-    setArticle(current => current ? { ...current, title: data.title } : current);
-    setArticleHtml(data.html);
-  }, []);
-
-  const loadLinks = useCallback(async (title: string) => {
-    const url = new URL('https://en.wikipedia.org/w/api.php');
-    url.search = new URLSearchParams({ action: 'query', prop: 'links', titles: title, plnamespace: '0', pllimit: '100', format: 'json', origin: '*' }).toString();
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error('Could not load article links.');
-    const data = await res.json();
-    const pages = Object.values(data.query?.pages || {}) as Array<{ links?: Array<{ title: string }> }>;
-    setLinks((pages[0]?.links || []).map(link => link.title).filter(Boolean));
-  }, []);
-
-  async function begin() {
-    setBusy(true); setError(''); setNotice(''); setHistory([]);
+  // ---------- starting a game ----------
+  async function start(mode: GameMode) {
+    setError(''); setNotice(''); setBusy(true);
     try {
-      const a = await randomArticle();
-      let b: Article | null = null;
-      for (let i = 0; i < 6; i++) { const candidate = await randomArticle(); if (candidate.title !== a.title) { b = candidate; break; } }
-      if (!b) throw new Error('Could not build a trail. Try again.');
-      setStart(a); setTarget(b); setArticle(a); setArticleHtml(''); await Promise.all([loadArticleHtml(a.title), loadLinks(a.title)]);
-      setSeconds(duration); setStartedAt(null); setStatus('ready');
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not start a run.'); }
-    finally { setBusy(false); }
+      let settings: GameSettings;
+      if (mode === 'daily') settings = { mode, ...DAILY_SETTINGS, seed: dailySeed(utcDateKey()) };
+      else if (mode === 'challenge' && challenge) settings = { mode, rounds: challenge.rounds, seconds: challenge.seconds, seed: challenge.seed };
+      else if (mode === 'wild') settings = { mode, rounds: prefs.rounds, seconds: prefs.seconds };
+      else settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed: randomSeed() };
+      await launch(settings);
+    } finally { setBusy(false); }
   }
 
-  function startRun() { setSeconds(duration); setStartedAt(Date.now()); setStatus('playing'); setError(''); setNotice(''); }
-
-  async function handleArticleClick(event: MouseEvent<HTMLElement>) {
-    const anchor = (event.target as HTMLElement).closest('a');
-    if (!anchor) return;
-    const href = anchor.getAttribute('href') || '';
-    if (href.startsWith('/wiki/') || href.startsWith('./') || href.startsWith('https://en.wikipedia.org/wiki/')) {
-      event.preventDefault();
-      const rawTitle = href.startsWith('/wiki/') ? href.slice('/wiki/'.length) : href.startsWith('./') ? href.slice(2) : href.slice('https://en.wikipedia.org/wiki/'.length);
-      try { await openLinked(decodeURIComponent(rawTitle.split('#')[0]).replaceAll('_', ' ')); } catch { setError('That Wikipedia link could not be opened.'); }
-    } else if (href.startsWith('#')) {
-      event.preventDefault();
-    } else if (href) {
-      event.preventDefault();
-      window.open(new URL(href, 'https://en.wikipedia.org').toString(), '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  async function openLinked(title: string) {
-    if (status !== 'playing' || !target || busy) return;
-    const normalized = title.replaceAll('_', ' ').trim().toLocaleLowerCase();
-    const destination = target.title.replaceAll('_', ' ').trim().toLocaleLowerCase();
-    if (normalized === destination) {
-      const elapsed = startedAt ? Math.max(0, (Date.now() - startedAt) / 1000) : duration;
-      if (elapsed > duration) { setStatus('lost'); return; }
-      const earned = Math.max(25, Math.round(100 + (duration - elapsed) * 3));
-      setStatus('won'); setSeconds(Math.max(0, Math.ceil(duration - elapsed)));
-      setHistory(v => [...v, target.title]);
-      setNotice(`Trail complete! +${earned} points. The destination was detected: ${target.title} (${elapsed.toFixed(1)} seconds).`);
-      if (supabase && session?.user) {
-        const { error: saveError } = await supabase.rpc('finish_wikirush_run', { p_points: earned, p_elapsed_ms: Math.max(1000, Math.round(elapsed * 1000)), p_duration_seconds: duration, p_start_title: start?.title, p_target_title: target.title });
-        if (saveError) setNotice(`Trail complete! Score could not sync: ${saveError.message}`);
-        else {
-          const { data } = await supabase.from('wiki_profiles').select('points, login_streak, runs_played').eq('user_id', session.user.id).maybeSingle();
-          if (data) { setPoints(Number(data.points || 0)); setStreak(data.login_streak || 0); setRuns(data.runs_played || 0); }
+  async function launch(settings: GameSettings) {
+    let recorder: RunRecorder | null = null;
+    if (prefs.record && (caps.screen || caps.reel)) {
+      const method = prefs.recordMethod === 'screen' && caps.screen ? 'screen' : caps.reel ? 'reel' : null;
+      if (method) {
+        try {
+          recorder = new RunRecorder(method, () => overlayRef.current);
+          overlayRef.current = { ...IDLE_OVERLAY };
+          await recorder.start(); // must run inside the click that started the game (screen-capture permission)
+        } catch (e) {
+          recorder = null;
+          const denied = e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+          setNotice(denied ? 'Screen sharing was cancelled, so this run will not be recorded. Starting the game anyway.' : `Recording is unavailable (${e instanceof Error ? e.message : 'unknown error'}). Starting without it.`);
         }
-      } else setNotice('Trail complete! Create an account to save points and appear on the public leaderboard.');
-      return;
+      }
     }
-    setBusy(true); setError('');
-    try {
-      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(' ', '_'))}`);
-      if (!res.ok) { setError('That article could not be loaded. Pick another link.'); return; }
-      const d = await res.json();
-      const next = { title: d.title || title, extract: d.extract, pageid: d.pageid, thumbnail: d.thumbnail };
-      setArticle(next); setHistory(v => [...v, next.title]); await Promise.all([loadArticleHtml(next.title), loadLinks(next.title)]);
-    } catch { setError('Article links could not load. Check your connection and try another link.'); }
-    finally { setBusy(false); }
+    gameId.current += 1;
+    setActive({ id: gameId.current, settings, recorder });
   }
 
-  async function auth(e: FormEvent) {
-    e.preventDefault(); setError(''); setNotice('');
-    if (!supabase) { setError('Account service is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in the deployment environment, then redeploy.'); return; }
-    if (signup) {
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { display_name: displayName.trim(), referral_code: referralCode.trim().toLowerCase() || undefined } } });
-      if (error) setError(error.message);
-      else if (data.session) { setSession(data.session); setNotice('Account created. Your explorer profile is ready.'); }
-      else setNotice('Account created, but Supabase still requires email confirmation. Turn off Confirm email in Supabase Authentication settings to enable instant signup.');
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setError(error.message); else { setSession(data.session); setNotice('Welcome back. Ready to chase a page?'); }
-    }
-  }
+  const onFinish = useCallback(async (summary: GameSummary): Promise<string> => {
+    setStats(prev => { const next = applyGame(prev, summary); saveStats(next); return next; });
+    if (!supabase || !session?.user) return 'Create a free account to put your score on the leaderboard.';
+    const { data, error: err } = await supabase.rpc('submit_wikirush_game', {
+      p_mode: summary.settings.mode, p_seed: summary.settings.seed ?? null, p_rounds: summary.settings.rounds, p_seconds: summary.settings.seconds,
+      p_results: summary.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
+    });
+    if (err) return 'Saved on this device. The online leaderboard needs the WikiRush v2 database migration.';
+    await refreshProfile(session.user.id);
+    const res = (data || {}) as { points?: number; ranked?: boolean };
+    if (summary.settings.mode === 'daily' && res.ranked === false) return 'Already ranked today. This replay is practice only.';
+    return res.points ? `+${res.points.toLocaleString()} leaderboard points saved.` : 'Saved to your profile.';
+  }, [refreshProfile, session, supabase]);
 
-  async function signOut() { await supabase?.auth.signOut(); setSession(null); setStatus('idle'); }
-  const fullscreen = status === 'playing' && Boolean(article && start && target);
+  const exit = useCallback(() => { setActive(null); overlayRef.current = IDLE_OVERLAY; if (typeof window !== 'undefined' && window.location.search) window.history.replaceState(null, '', '/wikirush'); setChallenge(null); }, []);
+
+  const again = useCallback((settings: GameSettings) => {
+    setActive(null);
+    // Let the old game unmount (and release its recorder) before the next one mounts.
+    window.setTimeout(() => { void (async () => { setBusy(true); try { await launch(settings); } finally { setBusy(false); } })(); }, 50);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs, caps]);
+
+  const dailyScore = stats.daily[dailyKey];
 
   return <main className="min-h-[80vh] bg-[#f6f7fb] pb-16">
-    <section className="overflow-hidden bg-[#101426] text-white">
-      <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:py-16 lg:grid-cols-[1fr_330px] lg:items-end">
-        <div><p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-[.18em] text-[#aeb7ff]"><span className="h-2 w-2 rounded-full bg-[#aeb7ff]"/> Duelio original · WikiRush</p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[.95] tracking-[-.06em] sm:text-7xl">One page.<br/><span className="text-[#aeb7ff]">A whole world away.</span></h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">Race between two random Wikipedia articles using only the links on the page. No search shortcuts. Read, connect the dots, and arrive before the timer ends.</p>
-          <div className="mt-7 flex flex-wrap gap-3"><a href="#play" className="rounded-xl bg-[#6978f5] px-5 py-3 font-extrabold text-white hover:bg-[#5866df]">Enter the race ↓</a><Link href="/leaderboard" className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white/80">Global leaderboard ↗</Link></div>
+    <section className="relative overflow-hidden bg-[#101426] text-white">
+      <div className="pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" style={{ background: 'radial-gradient(60% 80% at 90% 0%, rgba(105,120,245,.45), transparent 60%), radial-gradient(40% 60% at 0% 100%, rgba(231,93,135,.28), transparent 60%)' }} />
+      <div className="relative mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:py-16 lg:grid-cols-[1fr_340px] lg:items-end">
+        <div>
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-[.18em] text-[#aeb7ff]"><span className="h-2 w-2 animate-pulse rounded-full bg-[#aeb7ff]" /> Duelio original · WikiRush</p>
+          <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[.95] tracking-[-.06em] sm:text-7xl">GeoGuessr,<br /><span className="text-[#aeb7ff]">but for Wikipedia.</span></h1>
+          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">You’re dropped on a random page and shown a destination. Click only the links inside the article to get there before the clock runs out. Five rounds. One score. Your friends will want a rematch.</p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <a href="#play" className="rounded-xl bg-[#6978f5] px-5 py-3 font-extrabold text-white hover:bg-[#5866df]">Play now ↓</a>
+            <Link href="/leaderboard" className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white/80 hover:bg-white/5">Global leaderboard ↗</Link>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">{[['01','Start'],['02','Navigate'],['03','Arrive']].map(([n,t])=><div key={n} className="rounded-2xl border border-white/10 bg-white/[.05] p-4"><p className="text-xs font-black text-[#aeb7ff]">{n}</p><p className="mt-2 font-extrabold">{t}</p></div>)}</div>
+        <ol className="grid gap-2 text-sm">
+          {[['1', 'See your start and destination', 'Two real pages, shown before the clock starts.'], ['2', 'Hop through links', 'No search. Use Radar if you’re stuck (−600).'], ['3', 'Arrive, score, share', 'Speed and fewer clicks earn more. Post your emoji row.']].map(([n, t, d]) =>
+            <li key={n} className="flex gap-3 rounded-2xl border border-white/10 bg-white/[.05] p-4"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#6978f5] text-xs font-black">{n}</span><span><span className="block font-extrabold">{t}</span><span className="text-white/60">{d}</span></span></li>)}
+        </ol>
       </div>
     </section>
+
     <div id="play" className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <section className="min-w-0 rounded-3xl border border-[#e1e4ef] bg-white p-5 shadow-sm sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[.16em] text-[#6978f5]">The main event</p><h2 className="mt-2 text-3xl font-black tracking-tight">The WikiRush trail</h2><p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500">Read each controlled article view and follow one of its outgoing links. Your route is tracked as you move.</p></div><div className="rounded-2xl bg-[#101426] px-4 py-3 text-right text-white"><p className="text-[10px] font-black uppercase tracking-widest text-white/60">Time left</p><p className="text-3xl font-black tabular-nums">{String(Math.floor(seconds/60)).padStart(2,'0')}:{String(seconds%60).padStart(2,'0')}</p></div></div>
-        <div className="mt-6 grid grid-cols-3 gap-2">{timers.map(t=><button key={t} disabled={status==='playing'} onClick={()=>{setDuration(t);setSeconds(t)}} className={`rounded-xl border px-3 py-3 text-sm font-extrabold transition ${duration===t?'border-[#6978f5] bg-[#eef0ff] text-[#4857d7]':'border-slate-200 hover:border-slate-400'}`}>{t} seconds</button>)}</div>
-        {(status==='idle'||status==='ready') && <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-7 text-center">{status==='ready' && start && target ? <><p className="text-xs font-black uppercase tracking-[.16em] text-[#6978f5]">Your match-up is ready</p><h3 className="mt-3 text-2xl font-black">You start here: <span className="text-[#5968ec]">{start.title}</span></h3><div className="mx-auto my-4 flex max-w-md items-center justify-center gap-3"><span className="h-px flex-1 bg-slate-300"/><span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-widest text-slate-400">Get to</span><span className="h-px flex-1 bg-slate-300"/></div><h3 className="text-2xl font-black">Here: <span className="text-[#5968ec]">{target.title}</span></h3><p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-500">Reach the destination by clicking links inside the real Wikipedia article. Your timer starts only when you press the button.</p></> : <><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef0ff] text-3xl">⌘</div><h3 className="mt-4 text-xl font-black">Ready to disappear down the rabbit hole?</h3><p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">We choose two real Wikipedia pages and show your start and destination before the clock begins.</p></>}<button disabled={busy} onClick={status==='ready'?startRun:begin} className="mt-5 rounded-xl bg-[#6978f5] px-6 py-3 font-extrabold text-white hover:bg-[#5866df] disabled:opacity-50">{busy?'Finding your trail…':status==='ready'?'Start the timer and open Wikipedia →':'Find my match-up →'}</button></div>}
-        {start && target && status==='playing' && <div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-slate-200 p-4"><p className="text-xs font-black uppercase tracking-widest text-slate-400">Start here</p><h3 className="mt-2 text-lg font-black">{start.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500">{start.extract}</p></div><div className="rounded-2xl border border-[#6978f5]/30 bg-[#f4f5ff] p-4"><p className="text-xs font-black uppercase tracking-widest text-[#6978f5]">Your destination</p><h3 className="mt-2 text-lg font-black">{target.title}</h3><p className="mt-2 text-sm text-slate-500">The game checks your clicked page title against this destination. The target is revealed after the run.</p></div></div>}
-        {status==='playing' && article && <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200"><div className="border-b border-slate-200 bg-slate-50 px-5 py-4"><p className="text-xs font-black uppercase tracking-widest text-slate-400">Current page · {history.length + 1} page{history.length === 0 ? '' : 's'} visited</p><h3 className="mt-1 text-2xl font-black">{article.title}</h3></div><div className="p-5"><p className="max-w-3xl text-base leading-8 text-slate-700">{article.extract || 'Explore this page by following one of its links below.'}</p>{article.thumbnail?.source && <img src={article.thumbnail.source} alt="" className="mt-4 max-h-64 rounded-xl object-contain object-left"/>}<p className="mt-6 text-xs font-black uppercase tracking-widest text-slate-400">In this article · choose a link</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{links.map(x=><button key={x} disabled={busy} onClick={()=>openLinked(x)} className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2 text-left text-sm font-semibold hover:border-[#6978f5] hover:bg-[#f4f5ff] disabled:opacity-50"><span>{x}</span><span className="shrink-0 text-[#6978f5]">↗</span></button>)}</div>{busy&&<p className="mt-4 text-sm text-slate-500">Opening article…</p>}</div></div>}
-        {(status==='won'||status==='lost') && <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center"><p className="text-4xl">{status==='won'?'🏁':'⌛'}</p><h3 className="mt-2 text-2xl font-black">{status==='won'?'Trail conquered':'Time ran out'}</h3><p className="mt-2 text-sm text-slate-500">{notice}</p>{target&&<p className="mt-2 text-sm font-bold">Destination: {target.title}</p>}<button onClick={()=>{setStatus('idle');setStart(null);setTarget(null);setArticle(null);setArticleHtml('');setSeconds(duration);setStartedAt(null);setNotice('');setHistory([])}} className="mt-5 rounded-xl bg-[#101426] px-5 py-3 font-extrabold text-white">Run it back ↻</button></div>}
-        {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-        {notice && status==='playing' && <p role="status" className="mt-4 rounded-xl bg-[#eef0ff] p-3 text-sm font-semibold text-[#4857d7]">{notice}</p>}
-        {!session && <div className="mt-6 rounded-2xl border border-slate-200 p-5"><h3 className="text-lg font-black">Save your name to the leaderboard</h3><p className="mt-1 text-sm text-slate-500">Create a free account with a display name and password. No email confirmation is needed once Confirm email is disabled in Supabase.</p><form onSubmit={auth} className="mt-4 grid gap-3 sm:grid-cols-2">{signup&&<label className="text-sm font-bold sm:col-span-2">Display name<input required maxLength={24} value={displayName} onChange={e=>setDisplayName(e.target.value)} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="Trailblazer"/></label>}<label className="text-sm font-bold sm:col-span-2">Email<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="you@example.com"/></label><label className="text-sm font-bold sm:col-span-2">Password<input required minLength={8} type="password" autoComplete={signup?'new-password':'current-password'} value={password} onChange={e=>setPassword(e.target.value)} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="At least 8 characters"/></label><label className="text-sm font-bold sm:col-span-2">Referral code <span className="font-normal text-slate-400">(optional)</span><input value={referralCode} onChange={e=>setReferralCode(e.target.value)} maxLength={40} className="mt-1 block min-h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="Enter a friend's code"/></label><button className="min-h-11 rounded-xl bg-[#6978f5] px-4 font-extrabold text-white">{signup?'Create account':'Sign in'}</button><button type="button" onClick={()=>setSignup(v=>!v)} className="min-h-11 rounded-xl border border-slate-200 px-4 font-bold">{signup?'I already have an account':'New here? Sign up'}</button></form></div>}
-        {session && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4"><div><p className="font-extrabold">Playing as {session.user.user_metadata?.display_name || session.user.email}</p><p className="text-xs text-slate-500">Your profile and saved score sync to Duelio.</p><div className="mt-2 flex flex-wrap gap-3 text-sm font-bold"><Link href="/profile" className="underline">Profile</Link><Link href="/settings" className="underline">Settings</Link><Link href="/leaderboard" className="underline">Leaderboard</Link></div></div><button onClick={signOut} className="text-sm font-bold underline">Sign out</button></div>}
+      <section className="min-w-0 space-y-6">
+        <Lobby prefs={prefs} setPrefs={setPrefs} stats={stats} dailyKey={dailyKey} dailyScore={dailyScore} challenge={challenge}
+          canScreen={caps.screen} canReel={caps.reel} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
+        <AuthPanel supabase={supabase} session={session} referralCode={referralCode} setReferralCode={setReferralCode} startInSignup={startInSignup}
+          onSession={(s, n) => { setSession(s); if (n) setNotice(n); }} />
       </section>
-      <aside className="space-y-4"><div className="rounded-3xl bg-[#101426] p-6 text-white"><p className="text-xs font-black uppercase tracking-widest text-[#aeb7ff]">Your expedition</p><p className="mt-4 text-4xl font-black">{points.toLocaleString()}</p><p className="text-sm text-white/60">total points</p><div className="mt-5 grid grid-cols-2 gap-3"><div className="rounded-xl bg-white/10 p-3"><p className="text-2xl font-black">{streak}</p><p className="text-xs text-white/60">day streak</p></div><div className="rounded-xl bg-white/10 p-3"><p className="text-2xl font-black">{runs}</p><p className="text-xs text-white/60">runs played</p></div></div><Link href="/profile" className="mt-4 inline-flex text-sm font-bold underline">Open profile →</Link></div>
-        <div className="rounded-3xl border border-slate-200 bg-white p-5"><h3 className="font-black">Play fair. Play smart.</h3><ul className="mt-3 space-y-3 text-sm leading-relaxed text-slate-500"><li>↗ Navigate through article links; no search shortcuts.</li><li>◷ The clock runs continuously from trail generation.</li><li>✦ Faster finishes earn more points.</li><li>♧ Invite friends to earn a one-time referral bonus.</li></ul><Link href="/leaderboard" className="mt-4 inline-flex font-extrabold text-[#5968ec] underline">See all explorers →</Link></div>
+      <aside className="space-y-4">
+        <div className="rounded-3xl bg-[#101426] p-6 text-white">
+          <p className="text-xs font-black uppercase tracking-widest text-[#aeb7ff]">Your expedition</p>
+          <p className="mt-4 text-4xl font-black tabular-nums">{points.toLocaleString()}</p>
+          <p className="text-sm text-white/60">leaderboard points</p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-white/10 p-3"><p className="text-2xl font-black">{loginStreak}</p><p className="text-xs text-white/60">login streak</p></div>
+            <div className="rounded-xl bg-white/10 p-3"><p className="text-2xl font-black">{runs}</p><p className="text-xs text-white/60">rounds played</p></div>
+          </div>
+          <Link href="/profile" className="mt-4 inline-flex text-sm font-bold underline">Open profile →</Link>
+        </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5">
+          <h3 className="font-black">Pro tips</h3>
+          <ul className="mt-3 space-y-3 text-sm leading-relaxed text-slate-500">
+            <li>🌍 Climb to a hub first: countries, cities and years link to everything.</li>
+            <li>🎯 Think about what the destination’s page links <em>from</em>: who, where, when.</li>
+            <li>⏸️ The clock pauses while a page loads, so slow Wi-Fi isn’t punished.</li>
+            <li>🎥 Turn on recording before you start to get a post-ready clip.</li>
+          </ul>
+        </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 text-sm text-slate-500">
+          <p>Invite friends with your referral link in your <Link href="/profile" className="font-bold text-[#5968ec] underline">profile</Link> for a one-time bonus.</p>
+        </div>
       </aside>
     </div>
-    {fullscreen && <div className="fixed inset-0 z-[100] flex flex-col bg-[#f7f7f4] text-[#202536]" role="dialog" aria-modal="true" aria-label="WikiRush full-screen game">
-      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 shadow-sm sm:px-8"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[.15em] text-[#6978f5]">DUELIO / WIKIRUSH</p><p className="truncate text-sm font-extrabold sm:text-base">{article?.title}</p></div><div className="flex shrink-0 items-center gap-3"><div className={`rounded-xl px-4 py-2 text-right ${seconds <= 10 ? 'bg-red-100 text-red-700' : 'bg-[#101426] text-white'}`}><p className="text-[9px] font-black uppercase tracking-widest opacity-70">Time left</p><p className="text-2xl font-black tabular-nums">{String(Math.floor(seconds/60)).padStart(2,'0')}:{String(seconds%60).padStart(2,'0')}</p></div><button onClick={()=>{setStatus('lost');setNotice('You ended this run early.');}} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold">Exit</button></div></header>
-      <style jsx global>{`.wiki-article-content a { color: #0645ad; text-decoration: underline; cursor: pointer; } .wiki-article-content a.new { color: #ba0000; } .wiki-article-content p { margin: 0.8em 0; } .wiki-article-content h2 { margin: 1.3em 0 0.5em; border-bottom: 1px solid #a2a9b1; font-size: 1.55rem; line-height: 1.3; } .wiki-article-content h3 { margin: 1em 0 0.4em; font-size: 1.2rem; font-weight: 600; } .wiki-article-content ul, .wiki-article-content ol { margin: .5em 0 .5em 2em; } .wiki-article-content ul { list-style: disc; } .wiki-article-content ol { list-style: decimal; } .wiki-article-content table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; font-size: .9rem; } .wiki-article-content th, .wiki-article-content td { border: 1px solid #a2a9b1; padding: .35em .55em; } .wiki-article-content figure { margin: 1em 0; max-width: 100%; } .wiki-article-content img { max-width: 100%; height: auto; } .wiki-article-content .mw-editsection, .wiki-article-content .mw-empty-elt { display: none; } .wiki-article-content .infobox { float: right; clear: right; margin: 0 0 1em 1em; max-width: 45%; } @media(max-width:640px){.wiki-article-content .infobox{float:none;max-width:100%;margin:1em 0}}`}</style><div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]"><article className="overflow-y-auto px-5 py-7 sm:px-10 lg:px-16"><div className="mx-auto max-w-4xl"><div className="mb-5 flex items-center gap-2 text-xs text-slate-500"><span>Real Wikipedia article content · linked from Wikipedia</span><span>·</span><span>Page {history.length + 1}</span></div><h1 className="border-b border-slate-300 pb-4 text-4xl font-normal tracking-tight sm:text-6xl">{article?.title}</h1>{article?.thumbnail?.source&&<img src={article.thumbnail.source} alt="" className="float-right ml-5 mt-5 max-h-56 max-w-[45%] rounded-lg object-contain"/>}<div className="wiki-article-content mt-6 text-[16px] leading-7 text-[#202122]" onClick={handleArticleClick} dangerouslySetInnerHTML={{__html: articleHtml || '<p>Loading the full Wikipedia article…</p>'}}/><p className="mt-8 border-t border-slate-200 pt-5 text-sm text-slate-500">Article text, images, tables and links are served from Wikipedia’s live article HTML. Duelio only adds the timer and route tracking around it. <a className="text-blue-700 underline" href={`https://en.wikipedia.org/wiki/${encodeURIComponent((article?.title || '').replaceAll(' ', '_'))}`} target="_blank" rel="noreferrer">Open this article on Wikipedia ↗</a></p><div className="clear-both h-8"/></div></article>
-      <aside className="flex min-h-0 flex-col border-t border-slate-200 bg-white lg:border-l lg:border-t-0"><div className="border-b border-slate-200 p-5"><p className="text-xs font-black uppercase tracking-widest text-[#6978f5]">Mission target</p><p className="mt-2 text-lg font-black">{target?.title}</p><p className="mt-1 text-xs text-slate-500">Reach this exact page title by clicking an article link.</p><div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#6978f5] transition-all" style={{width:`${Math.min(100, (history.length / 12) * 100)}%`}}/></div><p className="mt-2 text-xs text-slate-500">{history.length} links followed</p></div><div className="min-h-0 flex-1 overflow-y-auto p-4"><p className="px-1 text-xs font-black uppercase tracking-widest text-slate-400">Article links</p><div className="mt-3 space-y-1">{links.map(x=><button key={x} disabled={busy} onClick={()=>openLinked(x)} className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[#3153ad] hover:bg-[#eef0ff] disabled:opacity-50"><span>{x}</span><span>›</span></button>)}</div>{busy&&<p className="p-3 text-sm text-slate-500">Loading article…</p>}{error&&<p role="alert" className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}</div><div className="border-t border-slate-200 p-4"><p className="text-xs text-slate-500">Start: {start?.title}</p><p className="mt-1 text-xs text-slate-500">Follow connected knowledge. No search.</p></div></aside></div>
-    </div>}
+
+    {active && <Game key={active.id} settings={active.settings} recorder={active.recorder} overlayRef={overlayRef} sound={prefs.sound}
+      playerName={playerName} challenge={active.settings.mode === 'challenge' ? challenge : null} onFinish={onFinish} onExit={exit} onPlayAgain={again} />}
   </main>;
 }

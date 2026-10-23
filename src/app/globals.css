@@ -763,3 +763,49 @@ body #matchups.matchup-board > section[aria-labelledby="create-matchup-heading"]
   .matchup-slide-card .matchup-competitor p { font-size: .74rem; }
   .matchup-slide-card .matchup-vs-badge { padding: .35rem .4rem; font-size: .58rem; }
 }
+
+/* ---------- WikiRush ---------- */
+.wr-title { font-family: 'Linux Libertine', 'Georgia', 'Times', serif; color: #000; line-height: 1.15; }
+.wr-article { color: #202122; font-size: 16px; line-height: 1.65; overflow-wrap: anywhere; }
+.wr-article a { color: #0645ad; text-decoration: none; cursor: pointer; }
+.wr-article a:hover { text-decoration: underline; background: #eef2ff; }
+.wr-article a.new { color: #ba0000; pointer-events: none; }
+.wr-article p { margin: 0.7em 0; }
+.wr-article h2 { margin: 1.3em 0 0.5em; border-bottom: 1px solid #a2a9b1; font-family: 'Linux Libertine', Georgia, 'Times', serif; font-size: 1.5rem; font-weight: 400; line-height: 1.3; }
+.wr-article h3, .wr-article h4 { margin: 1em 0 0.4em; font-size: 1.15rem; font-weight: 700; }
+.wr-article ul, .wr-article ol { margin: 0.4em 0 0.4em 1.6em; }
+.wr-article ul { list-style: disc; }
+.wr-article ol { list-style: decimal; }
+.wr-article table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1em 0; font-size: 0.88rem; }
+.wr-article th, .wr-article td { border: 1px solid #a2a9b1; padding: 0.3em 0.5em; }
+.wr-article figure { margin: 0.8em 0; max-width: 100%; }
+.wr-article figure[typeof~='mw:File/Thumb'], .wr-article figure[typeof~='mw:File/Frame'] { float: right; clear: right; margin: 0.3em 0 0.8em 1.2em; max-width: 280px; border: 1px solid #c8ccd1; background: #f8f9fa; padding: 4px; font-size: 0.8rem; }
+.wr-article img { max-width: 100%; height: auto; }
+.wr-article .infobox { float: right; clear: right; margin: 0 0 1em 1.2em; max-width: 320px; background: #f8f9fa; font-size: 0.85rem; }
+.wr-article .navbox, .wr-article .navbox-styles, .wr-article .reflist, .wr-article .mw-references-wrap, .wr-article .references,
+.wr-article .mw-ref, .wr-article .hatnote, .wr-article .sistersitebox, .wr-article .metadata, .wr-article .ambox,
+.wr-article .mw-editsection, .wr-article .mw-empty-elt, .wr-article .vertical-navbox, .wr-article .sidebar, .wr-article [role='navigation'] { display: none !important; }
+.wr-article a.wr-radar { background: #fde68a; color: #7c2d12; border-radius: 4px; padding: 0 3px; box-shadow: 0 0 0 3px #fbbf24; animation: wr-pulse 1s ease-in-out infinite; }
+@media (max-width: 640px) {
+  .wr-article .infobox, .wr-article figure[typeof~='mw:File/Thumb'], .wr-article figure[typeof~='mw:File/Frame'] { float: none; max-width: 100%; margin: 1em 0; }
+}
+@keyframes wr-pulse { 50% { box-shadow: 0 0 0 7px rgba(251, 191, 36, 0.35); } }
+@keyframes wr-pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes wr-rise { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes wr-shake { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+.wr-pop { animation: wr-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.wr-rise { animation: wr-rise 0.45s ease-out both; }
+.wr-shake { animation: wr-shake 0.4s ease-in-out; }
+.wr-scroll { scroll-behavior: smooth; overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) {
+  .wr-pop, .wr-rise, .wr-shake, .wr-article a.wr-radar { animation: none !important; }
+  .wr-scroll { scroll-behavior: auto; }
+}
+
+/* Small phones: the four header links plus the logo are wider than the screen, which stretches the
+   whole page (and every full-screen game overlay) past the viewport. Submit stays in the footer. */
+@media (max-width: 430px) {
+  body > header nav a[href="/submit"] { display: none; }
+}
+/* While a WikiRush game is open, the floating community button would sit on top of the game UI. */
+html[data-wr-game] a[href*="discord.gg"] { display: none !important; }

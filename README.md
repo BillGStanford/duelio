@@ -24,7 +24,15 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - **Permanent matchups:** visitors can create any two-name matchup without accounts; names are enriched with short Wikipedia summaries and thumbnails when available. Each matchup has one canonical URL, anonymous one-vote-per-browser-per-round voting, automatic 14-day rounds, a recorded result history, a reigning champion, live vote totals, and downloadable “I voted for” share cards with custom social previews. Matchups and votes are managed in the existing authenticated admin workflow via `/admin/matchups`.
 - The share loop (below): vote cards, group chat rooms, and a "how often do you side with the crowd" take.
 
-WikiRush now includes player profiles, daily sign-in streaks, referral links and one-time bonuses, profile settings, and a public points leaderboard. A controlled full-screen Wikipedia-inspired reading view provides timer overlays and tracked article-link navigation.
+**WikiRush** (`/wikirush`) is "GeoGuessr for Wikipedia": you see a start page and a destination, then race there using only the links in the article.
+
+- **Modes:** a **Daily Challenge** (the same 5 pages for everyone, resets at midnight UTC, with a streak and weekly tracker), **Classic** (curated, always-winnable pages with a shareable seed), **Wild** (random Wikipedia start), and **Challenge** links (`/wikirush?c=SEED&t=90&r=5&s=SCORE&n=NAME`) that replay a friend's exact rounds and show you how you compare.
+- **Gameplay:** 1, 3 or 5 rounds at 45 s, 90 s or 3 min. The clock pauses while a page loads. Navboxes and references are hidden so only real in-article links count. **Radar** highlights the destination link on the current page for a 600-point cost. Back costs a click. A timeout one click away still earns a small near-miss credit.
+- **Scoring (max 5,000 a round):** 2,000 for arriving, up to 2,000 for speed, up to 1,000 for fewer clicks, minus 600 for Radar. Logic lives in `src/lib/wikirush/` and is unit tested; the same formula runs server-side in `supabase/wikirush-v2.sql`.
+- **Share:** results screen with a rank title, emoji row (`🟩🟨🟧🟥`), native share or copy, and a "Challenge a friend" link.
+- **Record my run (opt-in, before the game):** builds a video with the Duelio intro, watermark, live caption and a score outro. It stops when the game ends and downloads automatically. *Screen capture* records the real game tab inside a branded frame (desktop); *Vertical reel* draws a 9:16 branded scene from game state with no permission prompt (works on phones). Everything is built in the browser with canvas + MediaRecorder; nothing is uploaded. Output is MP4 where the browser supports it, otherwise WebM.
+- **Accounts:** profiles, login streaks, referral bonuses and the public leaderboard are unchanged. Finished games sync through `submit_wikirush_game` (run `supabase/wikirush-v2.sql`, see `supabase/WIKIRUSH_SETUP.md`); without it, scores and stats stay on the device.
+- **Art:** `python3 scripts/make-wikirush-art.py` regenerates `public/wikirush/` (watermark mark, recording backgrounds, social card).
 
 ## The share loop
 
