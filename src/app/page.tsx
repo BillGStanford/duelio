@@ -63,29 +63,30 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
         <div className="relative mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-white/80">
-              <span className="h-2 w-2 rounded-full bg-sidea" /> The public opinion arena
+              <span className="h-2 w-2 rounded-full bg-sidea" /> The Wikipedia speedrun arena
             </div>
             <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-7xl">
-              Pick a side.<br /><span className="text-sidea">Move the crowd.</span>
+              Explore the world.<br /><span className="text-sidea">Beat the clock.</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/75 sm:text-xl">
-              The home for settling GOAT debates. Pit legends, artists, athletes, characters, teams, and ideas against each other—then let the crowd decide. Vote, make your case, and share the verdict.
+              Race from one Wikipedia page to another in WikiRush, Duelio’s signature game. Follow the links, beat the timer, build your streak, and climb the leaderboard. When you want a debate, the Duel and Dilemma arenas are still here.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/matchups" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-sidea px-6 py-3 font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#4f5fdf]">Settle a GOAT debate <span className="ml-2" aria-hidden="true">↗</span></Link>
+              <Link href="/wikirush" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-sidea px-6 py-3 font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#4f5fdf]">Play WikiRush <span className="ml-2" aria-hidden="true">↗</span></Link>
+              <Link href="/matchups" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-extrabold text-white transition hover:bg-white/10">Settle a GOAT debate</Link>
               <Link href="/submit" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-extrabold text-white transition hover:bg-white/10">Start a debate</Link>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">01 / Choose</p>
-              <h2 className="mt-2 text-xl font-extrabold">Two sides. Your call.</h2>
-              <p className="mt-1 text-sm leading-relaxed text-white/65">Vote on competitors, ideas, and the questions your group chat can’t settle.</p>
+              <p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">01 / WikiRush</p>
+              <h2 className="mt-2 text-xl font-extrabold">Follow the links. Beat the clock.</h2>
+              <p className="mt-1 text-sm leading-relaxed text-white/65">Two random pages. Three timer modes. One race through the world’s knowledge.</p>
             </div>
             <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.15em] text-sideb">02 / Make your case</p>
-              <h2 className="mt-2 text-xl font-extrabold">The crowd has a verdict.</h2>
-              <p className="mt-1 text-sm leading-relaxed text-white/65">See the vote split, build your argument, and share the matchup with others.</p>
+              <p className="text-xs font-black uppercase tracking-[0.15em] text-sideb">02 / Duel + Dilemma</p>
+              <h2 className="mt-2 text-xl font-extrabold">Debate still lives here.</h2>
+              <p className="mt-1 text-sm leading-relaxed text-white/65">Settle matchups, choose a side, and see where the crowd lands.</p>
             </div>
           </div>
         </div>
