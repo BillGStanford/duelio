@@ -9,7 +9,7 @@ export function getWikiClient(): SupabaseClient | null {
 
 export function referralUrl(code: string) {
   if (typeof window === 'undefined') return '';
-  const url = new URL('/', window.location.origin);
+  const url = new URL('/wikirush', window.location.origin);
   url.searchParams.set('ref', code);
   return url.toString();
 }
