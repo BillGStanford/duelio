@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import WikiRush from '@/components/WikiRush';
 
-const title = 'WikiRush: GeoGuessr for Wikipedia';
-const description = 'Race from one Wikipedia page to another using only links. Daily challenge, shareable seeds, and a one-tap recorder that makes a post-ready video.';
+const title = 'WikiRush — The Wikipedia Speedrun Game | GeoGuessr for Wikipedia';
+const description = 'Play WikiRush, the Wikipedia speedrun game: race from a real Wikipedia article to a target using only clickable links. Try the daily challenge, challenge friends, climb the leaderboard, and share your run.';
 
 export const metadata: Metadata = {
   title,
