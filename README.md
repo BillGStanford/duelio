@@ -24,7 +24,7 @@ It tests one hypothesis: people will share a specific everyday disagreement, inv
 - **Permanent matchups:** visitors can create any two-name matchup without accounts; names are enriched with short Wikipedia summaries and thumbnails when available. Each matchup has one canonical URL, anonymous one-vote-per-browser-per-round voting, automatic 14-day rounds, a recorded result history, a reigning champion, live vote totals, and downloadable “I voted for” share cards with custom social previews. Matchups and votes are managed in the existing authenticated admin workflow via `/admin/matchups`.
 - The share loop (below): vote cards, group chat rooms, and a "how often do you side with the crowd" take.
 
-Not built on purpose: profiles, followers, feeds, streaks, leaderboards, AI judges, notifications.
+WikiRush now includes player profiles, daily sign-in streaks, referral links and one-time bonuses, profile settings, and a public points leaderboard. A controlled full-screen Wikipedia-inspired reading view provides timer overlays and tracked article-link navigation.
 
 ## The share loop
 
