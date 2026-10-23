@@ -119,10 +119,10 @@ export default function WikiRush() {
     const anchor = (event.target as HTMLElement).closest('a');
     if (!anchor) return;
     const href = anchor.getAttribute('href') || '';
-    if (href.startsWith('/wiki/')) {
+    if (href.startsWith('/wiki/') || href.startsWith('./') || href.startsWith('https://en.wikipedia.org/wiki/')) {
       event.preventDefault();
-      const rawTitle = href.slice('/wiki/'.length).split('#')[0];
-      try { await openLinked(decodeURIComponent(rawTitle).replaceAll('_', ' ')); } catch { setError('That Wikipedia link could not be opened.'); }
+      const rawTitle = href.startsWith('/wiki/') ? href.slice('/wiki/'.length) : href.startsWith('./') ? href.slice(2) : href.slice('https://en.wikipedia.org/wiki/'.length);
+      try { await openLinked(decodeURIComponent(rawTitle.split('#')[0]).replaceAll('_', ' ')); } catch { setError('That Wikipedia link could not be opened.'); }
     } else if (href.startsWith('#')) {
       event.preventDefault();
     } else if (href) {
