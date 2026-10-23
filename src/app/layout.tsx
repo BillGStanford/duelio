@@ -10,7 +10,7 @@ import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Duelio — Dilemmas, matchups, and public opinion', template: '%s | Duelio' },
+  title: { default: 'Duelio — WikiRush, dilemmas, matchups, and public opinion', template: '%s | Duelio' },
   description: 'Turn the argument your group chat can\u2019t settle into a question everyone can answer. Pick a side and see where everyone lands.',
   openGraph: {
     siteName: 'Duelio',
@@ -57,8 +57,9 @@ gtag('config', 'G-5HEWDYYCEC');`}
             Duelio
           </Link>
           <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
-            <Link href="/#debates" className="font-bold">Dilemma</Link>
+            <Link href="/wikirush" className="rounded-lg bg-[#6978f5] px-3 py-2 font-extrabold text-white">WikiRush ↗</Link>
             <Link href="/matchups" className="font-bold">Duel</Link>
+            <Link href="/#debates" className="font-bold">Dilemma</Link>
             <Link href="/submit" className="font-bold">Submit</Link>
           </nav>
         </header>
