@@ -39,7 +39,17 @@ export function planRounds(seed: string, count: number): RoundPlan[] {
   const starts = dedupe(shuffled(START_POOL, rng));
   const targets = dedupe(shuffled(TARGET_POOL, rng));
   const plans: RoundPlan[] = [];
+  const onboarding = seed.match(/^onboarding-([01])$/);
+  const easyPairs: Array<[string, string]> = [
+    ['Melania Trump', 'Mars'],
+    ['Pluto', 'Taylor Swift'],
+  ];
   for (let i = 0; i < rounds; i++) {
+    if (i === 0 && onboarding) {
+      const [start, target] = easyPairs[Number(onboarding[1])];
+      plans.push({ start, target, startAlts: ['Donald Trump', 'United States'], targetAlts: ['Solar System', 'Earth'] });
+      continue;
+    }
     const s = starts.slice(i * PER_ROUND, i * PER_ROUND + PER_ROUND);
     let t = targets.slice(i * PER_ROUND, i * PER_ROUND + PER_ROUND);
     if (normTitle(s[0]) === normTitle(t[0])) t = [t[1], t[0], t[2]];
