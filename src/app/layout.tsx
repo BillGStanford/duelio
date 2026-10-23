@@ -61,9 +61,9 @@ gtag('config', 'G-5HEWDYYCEC');`}
             <Link href="/matchups" className="font-bold">Duel</Link>
             <Link href="/#debates" className="font-bold">Dilemma</Link>
             <Link href="/submit" className="font-bold">Submit</Link>
-            <Link href="/leaderboard" className="font-bold">Ranks</Link>
-            <Link href="/profile" className="font-bold">Profile</Link>
-            <Link href="/settings" className="font-bold">Settings</Link>
+            <Link href="/leaderboard" className="hidden md:inline-flex font-bold">Ranks</Link>
+            <Link href="/profile" className="hidden md:inline-flex font-bold">Profile</Link>
+            <Link href="/settings" className="hidden md:inline-flex font-bold">Settings</Link>
           </nav>
         </header>
         <div id="main">{children}</div>
