@@ -10,14 +10,14 @@ import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Duelio — WikiRush, dilemmas, matchups, and public opinion', template: '%s | Duelio' },
-  description: 'Turn the argument your group chat can\u2019t settle into a question everyone can answer. Pick a side and see where everyone lands.',
+  title: { default: 'WikiRush — GeoGuessr for Wikipedia | Duelio', template: '%s | Duelio' },
+  description: 'Play WikiRush: the Wikipedia speedrun game. Race from one real Wikipedia article to another using only article links, beat the clock, challenge friends, and share your score. Plus Duel matchups and Dilemma debates.',
   openGraph: {
     siteName: 'Duelio',
     type: 'website',
-    title: 'Duelio — Dilemmas, matchups, and public opinion',
-    description: 'Pick a side in everyday dilemmas or head-to-head matchups. Vote, make your case, and see where the crowd lands.',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
+    title: 'WikiRush — The Wikipedia Speedrun Game',
+    description: 'Race through real Wikipedia articles, follow links to your destination, beat the timer, and challenge friends in WikiRush. Explore Duel and Dilemma too.',
+    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia speedrun game' }],
   },
   twitter: {
     card: 'summary_large_image',

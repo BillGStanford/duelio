@@ -104,13 +104,30 @@ export default function WikiRush() {
 
   // ---------- starting a game ----------
   async function start(mode: GameMode) {
-    setError(''); setNotice(''); setBusy(true);
+    setError(''); setNotice('');
+    if (!session?.user) {
+      const freeRuns = Number(window.localStorage.getItem('wikirush_free_runs') || '0');
+      if (freeRuns >= 1) {
+        setStartInSignup(true);
+        setError('Your free WikiRush run has been used. Create a free account to keep playing — your local stats stay on this device.');
+        document.getElementById('wikirush-auth')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+    setBusy(true);
     try {
       let settings: GameSettings;
       if (mode === 'daily') settings = { mode, ...DAILY_SETTINGS, seed: dailySeed(utcDateKey()) };
       else if (mode === 'challenge' && challenge) settings = { mode, rounds: challenge.rounds, seconds: challenge.seconds, seed: challenge.seed };
       else if (mode === 'wild') settings = { mode, rounds: prefs.rounds, seconds: prefs.seconds };
-      else settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed: randomSeed() };
+      else {
+        let seed = randomSeed();
+        if (!session?.user) {
+          const freeRuns = Number(window.localStorage.getItem('wikirush_free_runs') || '0');
+          seed = `onboarding-${freeRuns}`;
+        }
+        settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed };
+      }
       await launch(settings);
     } finally { setBusy(false); }
   }
@@ -137,6 +154,10 @@ export default function WikiRush() {
 
   const onFinish = useCallback(async (summary: GameSummary): Promise<string> => {
     setStats(prev => { const next = applyGame(prev, summary); saveStats(next); return next; });
+    if (!session?.user) {
+      const used = Number(window.localStorage.getItem('wikirush_free_runs') || '0');
+      window.localStorage.setItem('wikirush_free_runs', String(Math.max(used, 1)));
+    }
     if (!supabase || !session?.user) return 'Create a free account to put your score on the leaderboard.';
     const { data, error: err } = await supabase.rpc('submit_wikirush_game', {
       p_mode: summary.settings.mode, p_seed: summary.settings.seed ?? null, p_rounds: summary.settings.rounds, p_seconds: summary.settings.seconds,
@@ -184,8 +205,8 @@ export default function WikiRush() {
       <section className="min-w-0 space-y-6">
         <Lobby prefs={prefs} setPrefs={setPrefs} stats={stats} dailyKey={dailyKey} dailyScore={dailyScore} challenge={challenge}
           canScreen={caps.screen} canReel={caps.reel} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
-        <AuthPanel supabase={supabase} session={session} referralCode={referralCode} setReferralCode={setReferralCode} startInSignup={startInSignup}
-          onSession={(s, n) => { setSession(s); if (n) setNotice(n); }} />
+        <div id="wikirush-auth"><AuthPanel supabase={supabase} session={session} referralCode={referralCode} setReferralCode={setReferralCode} startInSignup={startInSignup}
+          onSession={(s, n) => { setSession(s); if (n) setNotice(n); }} /></div>
       </section>
       <aside className="space-y-4">
         <div className="rounded-3xl bg-[#101426] p-6 text-white">
