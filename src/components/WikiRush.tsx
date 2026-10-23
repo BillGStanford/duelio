@@ -6,12 +6,12 @@ import { createClient, type Session, type SupabaseClient } from '@supabase/supab
 import { ensureWikiProfile } from '@/lib/wikirush-client';
 
 type Article = { title: string; extract?: string; pageid?: number; thumbnail?: { source: string } };
-const URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const timers = [30, 60, 120];
 
 export default function WikiRush() {
-  const supabase = useMemo<SupabaseClient | null>(() => URL && KEY ? createClient(URL, KEY) : null, []);
+  const supabase = useMemo<SupabaseClient | null>(() => SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null, []);
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
