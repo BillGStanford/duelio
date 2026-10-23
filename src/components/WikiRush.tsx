@@ -22,6 +22,7 @@ export default function WikiRush() {
   const [start, setStart] = useState<Article | null>(null);
   const [target, setTarget] = useState<Article | null>(null);
   const [article, setArticle] = useState<Article | null>(null);
+  const [links, setLinks] = useState<string[]>([]);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<'idle'|'playing'|'won'|'lost'>('idle');
@@ -74,6 +75,16 @@ export default function WikiRush() {
     return { title: data.title, extract: data.extract, pageid: data.pageid, thumbnail: data.thumbnail };
   }
 
+  async function loadLinks(title: string) {
+    const url = new URL('https://en.wikipedia.org/w/api.php');
+    url.search = new URLSearchParams({ action: 'query', prop: 'links', titles: title, plnamespace: '0', pllimit: '50', format: 'json', origin: '*' }).toString();
+    const res = await fetch(url.toString());
+    if (!res.ok) throw new Error('Could not load article links.');
+    const data = await res.json();
+    const pages = Object.values(data.query?.pages || {}) as Array<{ links?: Array<{ title: string }> }>;
+    setLinks((pages[0]?.links || []).map(link => link.title).filter(Boolean));
+  }
+
   async function begin() {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -84,7 +95,7 @@ export default function WikiRush() {
         if (candidate.title !== a.title) { b = candidate; break; }
       }
       if (!b) throw new Error('Could not build a trail. Try again.');
-      setStart(a); setTarget(b); setArticle(a); setDuration(duration); setSeconds(duration);
+      setStart(a); setTarget(b); setArticle(a); await loadLinks(a.title); setDuration(duration); setSeconds(duration);
       setStartedAt(Date.now()); setStatus('playing'); setRuns(v => v + 1);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not start a run.'); }
     finally { setBusy(false); }
@@ -105,7 +116,7 @@ export default function WikiRush() {
       }
       return;
     }
-    try { setBusy(true); const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(' ','_'))}`); if (res.ok) { const d = await res.json(); setArticle({ title: d.title || title, extract: d.extract, pageid: d.pageid, thumbnail: d.thumbnail }); } }
+    try { setBusy(true); const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title.replaceAll(' ','_'))}`); if (res.ok) { const d = await res.json(); setArticle({ title: d.title || title, extract: d.extract, pageid: d.pageid, thumbnail: d.thumbnail }); await loadLinks(d.title || title); } }
     finally { setBusy(false); }
   }
 
@@ -128,7 +139,7 @@ export default function WikiRush() {
         <div className="mt-6 grid grid-cols-3 gap-2">{timers.map(t=><button key={t} disabled={status==='playing'} onClick={()=>{setDuration(t);setSeconds(t)}} className={`rounded-xl border px-3 py-3 text-sm font-extrabold transition ${duration===t?'border-[#6978f5] bg-[#eef0ff] text-[#4857d7]':'border-slate-200 hover:border-slate-400'}`}>{t} seconds</button>)}</div>
         {status==='idle' && <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef0ff] text-3xl">⌘</div><h3 className="mt-4 text-xl font-black">Ready to disappear down the rabbit hole?</h3><p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">We pick two random Wikipedia pages. Your job is to navigate from the first to the second using article links alone.</p><button disabled={busy} onClick={begin} className="mt-5 rounded-xl bg-[#6978f5] px-6 py-3 font-extrabold text-white hover:bg-[#5866df] disabled:opacity-50">{busy?'Finding your trail…':'Start a WikiRush →'}</button></div>}
         {start && target && status!=='idle' && <div className="mt-5 grid gap-4 sm:grid-cols-2"><div className="rounded-2xl border border-slate-200 p-4"><p className="text-xs font-black uppercase tracking-widest text-slate-400">Start here</p><h3 className="mt-2 text-lg font-black">{start.title}</h3><p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500">{start.extract}</p></div><div className="rounded-2xl border border-[#6978f5]/30 bg-[#f4f5ff] p-4"><p className="text-xs font-black uppercase tracking-widest text-[#6978f5]">Your destination</p><h3 className="mt-2 text-lg font-black">{target.title}</h3><p className="mt-2 text-sm text-slate-500">Find a path to this page before time runs out.</p></div></div>}
-        {status==='playing' && article && <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200"><div className="border-b border-slate-200 bg-slate-50 px-5 py-4"><p className="text-xs font-black uppercase tracking-widest text-slate-400">Current page</p><h3 className="mt-1 text-2xl font-black">{article.title}</h3></div><div className="p-5"><p className="leading-relaxed text-slate-600">{article.extract || 'Explore this page by following one of its links below.'}</p><p className="mt-5 text-xs font-black uppercase tracking-widest text-slate-400">Choose your next link</p><div className="mt-3 flex flex-wrap gap-2">{(article.title===start?.title ? [article.title, 'History', 'Science', 'Culture', 'Geography', 'Technology', 'Philosophy', 'Art'] : ['History','Science','Culture','Geography','Technology','Philosophy','Art','Society']).filter((x,i,a)=>a.indexOf(x)===i).map(x=><button key={x} disabled={busy} onClick={()=>openLinked(x)} className="rounded-full border border-slate-200 px-3 py-2 text-sm font-bold hover:border-[#6978f5] hover:bg-[#f4f5ff]">{x} ↗</button>)}</div><p className="mt-3 text-xs text-slate-400">Choose links to explore articles. Target arrival is validated against the active run timer.</p></div></div>}
+        {status==='playing' && article && <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200"><div className="border-b border-slate-200 bg-slate-50 px-5 py-4"><p className="text-xs font-black uppercase tracking-widest text-slate-400">Current page</p><h3 className="mt-1 text-2xl font-black">{article.title}</h3></div><div className="p-5"><p className="leading-relaxed text-slate-600">{article.extract || 'Explore this page by following one of its links below.'}</p><p className="mt-5 text-xs font-black uppercase tracking-widest text-slate-400">Choose your next link</p><div className="mt-3 flex flex-wrap gap-2">{links.map(x=><button key={x} disabled={busy} onClick={()=>openLinked(x)} className="rounded-full border border-slate-200 px-3 py-2 text-sm font-bold hover:border-[#6978f5] hover:bg-[#f4f5ff]">{x} ↗</button>)}{links.length===0&&<p className="text-sm text-slate-500">Loading article links…</p>}</div><p className="mt-3 text-xs text-slate-400">Choose links to explore articles. Target arrival is validated against the active run timer.</p></div></div>}
         {(status==='won'||status==='lost') && <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center"><p className="text-4xl">{status==='won'?'🏁':'⌛'}</p><h3 className="mt-2 text-2xl font-black">{status==='won'?'Trail conquered':'Time ran out'}</h3><p className="mt-2 text-sm text-slate-500">{notice}</p><button onClick={()=>{setStatus('idle');setStart(null);setTarget(null);setArticle(null);setSeconds(duration);setStartedAt(null);setNotice('')}} className="mt-5 rounded-xl bg-[#101426] px-5 py-3 font-extrabold text-white">Run it back ↻</button></div>}
         {error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
         {notice && status==='playing' && <p role="status" className="mt-4 rounded-xl bg-[#eef0ff] p-3 text-sm font-semibold text-[#4857d7]">{notice}</p>}
