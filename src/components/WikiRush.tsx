@@ -9,6 +9,7 @@ import Lobby, { type BoardRow } from './wikirush/Lobby';
 import AuthPanel from './wikirush/AuthPanel';
 import MenuHero from './wikirush/MenuHero';
 import { levelFor, pointsForGame } from '@/lib/wikirush/levels';
+import { featuredSeed, type Featured } from '@/lib/wikirush/featured';
 import { DAILY_SETTINGS, type ChallengeParams, type GameMode, type GameSettings, type GameSummary } from '@/lib/wikirush/types';
 import { dailyNumber, dailySeed, freshSeed, planRounds, utcDateKey } from '@/lib/wikirush/rounds';
 import { warmRound } from '@/lib/wikirush/wiki';
@@ -51,6 +52,8 @@ export default function WikiRush() {
   const [busy, setBusy] = useState(false);
   const [gate, setGate] = useState(false);
   const [stream, setStream] = useState(false);
+  const [featured, setFeatured] = useState<Featured[]>([]);
+  const [featuredId, setFeaturedId] = useState('');
   const [authReady, setAuthReady] = useState(!SUPABASE_URL || !SUPABASE_KEY);
   const [auto, setAuto] = useState<'play' | 'daily' | null>(null);
   const autoDone = useRef(false);
@@ -71,6 +74,7 @@ export default function WikiRush() {
     if (ref) { setReferralCode(ref.slice(0, 40)); setStartInSignup(true); }
     setChallenge(parseChallengeParams(window.location.search));
     try { if (params.get('stream') === '1') localStorage.setItem('wikirush:v2:stream', '1'); setStream(localStorage.getItem('wikirush:v2:stream') === '1'); } catch { setStream(params.get('stream') === '1'); }
+    setFeaturedId((params.get('f') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40));
     if (params.get('play') === '1') setAuto('play'); else if (params.get('daily') === '1') setAuto('daily');
   }, []);
 
@@ -145,11 +149,12 @@ export default function WikiRush() {
     if (!supabase) return;
     supabase.from('wiki_profiles').select('display_name, points').order('points', { ascending: false }).limit(8)
       .then(({ data, error: err }) => { if (!err && data) setTop(data as Array<{ display_name: string; points: number }>); });
-    if (session?.user && points > 0) {
-      supabase.from('wiki_profiles').select('user_id', { count: 'exact', head: true }).gt('points', points)
+    const mine = session?.user ? points : pointsForGame(stats.totalScore);
+    if (mine > 0) {
+      supabase.from('wiki_profiles').select('user_id', { count: 'exact', head: true }).gt('points', mine)
         .then(({ count, error: err }) => { if (!err && count !== null) setMyRank(count + 1); });
     } else setMyRank(null);
-  }, [supabase, session, points, active]);
+  }, [supabase, session, points, active, stats.totalScore]);
 
   const playerName = String(session?.user.user_metadata?.display_name || prefs.name || '').slice(0, 24) || undefined;
 
@@ -173,6 +178,25 @@ export default function WikiRush() {
     void start(auto === 'daily' ? 'daily' : 'classic', !prefs.record);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auto, authReady, prefs, caps]);
+
+  // Admin-built detail challenges, shown as featured cards in the lobby.
+  useEffect(() => {
+    fetch('/api/wikirush/featured').then(r => r.json()).then((d: { featured?: Featured[] }) => {
+      if (Array.isArray(d.featured)) setFeatured(d.featured);
+    }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!featuredId || !featured.some(f => f.id === featuredId)) return;
+    window.setTimeout(() => document.getElementById(`feat-${featuredId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+  }, [featuredId, featured]);
+
+  async function startFeatured(f: Featured) {
+    setError(''); setNotice(''); setBusy(true);
+    try {
+      if (await guestBlocked()) { openGate(); return; }
+      await launch({ mode: 'challenge', rounds: f.pairs.length, seconds: f.seconds, seed: featuredSeed(f.id), custom: f.pairs, featuredId: f.id });
+    } finally { setBusy(false); }
+  }
 
   // ---------- starting a game ----------
   const configured = !!supabase;
@@ -216,7 +240,6 @@ export default function WikiRush() {
       else if (mode === 'wild') settings = { mode, rounds: prefs.rounds, seconds: prefs.seconds };
       else settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed: freshSeed(stats.games) };
       await launch(settings, noRecord);
-      await claimFreeGame();
     } finally { setBusy(false); }
   }
 
@@ -250,7 +273,12 @@ export default function WikiRush() {
       p_mode: summary.settings.mode, p_seed: summary.settings.seed ?? null, p_rounds: summary.settings.rounds, p_seconds: summary.settings.seconds,
       p_results: summary.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
     });
-    if (err) return 'Saved on this device. The online leaderboard needs the WikiRush v2 database migration.';
+    if (err) {
+      // Never lose points: keep the game and retry automatically next time the page opens.
+      addPending(summary);
+      const needsSql = /function|does not exist|schema cache|relation/i.test(err.message);
+      return needsSql ? 'Points are saved on this device and will sync as soon as the WikiRush database setup (supabase/wikirush-v2.sql) is run.' : `Could not reach the leaderboard (${err.message}). Your points are kept and will sync automatically.`;
+    }
     await refreshProfile(session.user.id);
     const res = (data || {}) as { points?: number; ranked?: boolean };
     if (summary.settings.mode === 'daily' && res.ranked === false) return 'Already ranked today. This replay is practice only.';
@@ -277,7 +305,7 @@ export default function WikiRush() {
     <div id="play" className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section className="min-w-0 space-y-6">
         <Lobby prefs={prefs} setPrefs={setPrefs} stats={stats} dailyKey={dailyKey} dailyScore={dailyScore} challenge={challenge}
-          canScreen={caps.screen} canReel={caps.reel} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
+          featured={featured} highlightId={featuredId} onStartFeatured={f => void startFeatured(f)} canScreen={caps.screen} canReel={caps.reel} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
         {gate && !session && <div role="alert" className="wr-pop rounded-3xl bg-gradient-to-br from-[#6978f5] to-[#e75d87] p-6 text-white shadow-xl">
           <p className="text-xs font-black uppercase tracking-[.2em] text-white/80">Free game used</p>
           <h3 className="mt-1 text-2xl font-black">Loved it? Make a free account to keep playing.</h3>
@@ -296,7 +324,7 @@ export default function WikiRush() {
             const lv = levelFor(shown);
             return <>
               <p className="mt-4 text-4xl font-black tabular-nums">{shown.toLocaleString()}</p>
-              <p className="text-sm text-white/60">{session?.user ? 'leaderboard points' : 'points earned on this device'}{myRank ? ` · rank #${myRank.toLocaleString()}` : ''}</p>
+              <p className="text-sm text-white/60">{session?.user ? 'leaderboard points' : 'points earned on this device'}{myRank ? (session?.user ? ` · rank #${myRank.toLocaleString()}` : ` · would rank #${myRank.toLocaleString()}`) : ''}</p>
               <p className="mt-4 flex items-center justify-between text-sm font-black"><span>{lv.level.icon} {lv.level.name}</span><span className="text-white/50">{lv.next ? `${lv.toNext.toLocaleString()} to ${lv.next.name}` : 'Max level'}</span></p>
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#6978f5] to-[#e75d87]" style={{ width: `${Math.round(lv.progress * 100)}%` }} /></div>
               {!session?.user && configured && local > 0 && <p className="mt-3 rounded-xl bg-amber-300/15 p-3 text-xs font-bold text-amber-100">Sign up free and these {local.toLocaleString()} points go on the leaderboard.</p>}
@@ -330,6 +358,6 @@ export default function WikiRush() {
     </div>
 
     {active && <Game key={active.id} settings={active.settings} recorder={active.recorder} overlayRef={overlayRef} sound={prefs.sound}
-      playerName={playerName} stream={stream} challenge={active.settings.mode === 'challenge' ? challenge : null} onFinish={onFinish} onExit={exit} onPlayAgain={again} />}
+      playerName={playerName} stream={stream} onBegin={() => void claimFreeGame()} challenge={active.settings.mode === 'challenge' ? challenge : null} onFinish={onFinish} onExit={exit} onPlayAgain={again} />}
   </main>;
 }

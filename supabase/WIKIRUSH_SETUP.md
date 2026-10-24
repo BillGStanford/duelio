@@ -30,3 +30,9 @@ Run the new `wikirush_guest_claims` block at the bottom of `supabase/wikirush-v2
 - The free game is claimed when it **starts**, keyed on a browser fingerprint and a machine+network hash (salted, never raw IPs).
 - Games played before sign-up are queued in the browser and submitted automatically after login.
 - This is a conversion gate, not a security boundary: clearing storage on another browser *and* network gets around it.
+
+## Detail challenges (admin)
+Run the `wikirush_featured` block at the bottom of `supabase/wikirush-v2.sql`, then open `/admin/wikirush` to build challenges by picking the FROM and TO page for each round (1, 3 or 5 rounds). Live ones show as featured cards in the WikiRush lobby and have a `?f=<id>` share link.
+
+## Points
+Points are written by `submit_wikirush_game` (total / 10 per ranked game). If that function is missing, games are queued in the browser and sync automatically once the SQL has been run.

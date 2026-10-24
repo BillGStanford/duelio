@@ -422,3 +422,23 @@ describe('levels and difficulty', () => {
     }
   });
 });
+
+import { cleanFeatured, featuredSeed } from '../src/lib/wikirush/featured';
+
+describe('detail challenges', () => {
+  const pair = (s: string, t: string) => ({ start: s, target: t });
+  it('accepts 1/3/5 rounds and cleans titles', () => {
+    const r = cleanFeatured({ title: ' Melania to Mars ', pairs: [pair('Melania_Trump', 'Mars')], seconds: '90' });
+    expect(r.ok && r.value.pairs[0].start).toBe('Melania Trump');
+    expect(r.ok && r.value.seconds).toBe(90);
+  });
+  it('rejects bad round counts, missing sides and identical pages', () => {
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('A', 'B'), pair('C', 'D')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('A', '')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('Mars', 'mars')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'ab', pairs: [pair('A', 'B')] }).ok).toBe(false);
+  });
+  it('builds a short, safe seed', () => {
+    expect(featuredSeed('A1b2-C3d4-e5f6-0000-1111')).toMatch(/^feat-[a-z0-9]{1,16}$/);
+  });
+});

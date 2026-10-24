@@ -95,3 +95,18 @@ create table if not exists public.wikirush_guest_claims (
   created_at timestamptz not null default now()
 );
 alter table public.wikirush_guest_claims enable row level security; -- no policies: service role only
+
+-- ---------------------------------------------------------------------------------------------
+-- Detail challenges: hand-built FROM -> TO rounds created on the admin desk (/admin/wikirush).
+-- Server (service role) writes; the public reads active ones through /api/wikirush/featured.
+-- ---------------------------------------------------------------------------------------------
+create table if not exists public.wikirush_featured (
+  id uuid primary key default gen_random_uuid(),
+  title text not null check (char_length(title) between 3 and 60),
+  blurb text not null default '' check (char_length(blurb) <= 160),
+  pairs jsonb not null,
+  seconds integer not null default 90 check (seconds in (45,90,180)),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+alter table public.wikirush_featured enable row level security; -- no policies: service role only
