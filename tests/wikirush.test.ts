@@ -473,3 +473,21 @@ describe('day challenges', () => {
     expect(none.ok && none.value.day).toBeUndefined();
   });
 });
+
+import { loadPrefs } from '../src/lib/wikirush/stats';
+describe('prefs migration', () => {
+  const withStore = (value: string | null, fn: () => void) => {
+    (globalThis as unknown as { localStorage: unknown }).localStorage = { getItem: () => value, setItem: () => {} };
+    try { fn(); } finally { delete (globalThis as unknown as { localStorage?: unknown }).localStorage; }
+  };
+  it('moves old saved prefs to recording on + real screen capture, once', () => {
+    withStore(JSON.stringify({ rounds: 3, record: false, recordMethod: 'reel' }), () => {
+      const p = loadPrefs();
+      expect(p.record).toBe(true); expect(p.recordMethod).toBe('screen'); expect(p.rounds).toBe(3);
+    });
+    withStore(JSON.stringify({ record: false, recordMethod: 'reel', recVer: 3 }), () => {
+      const p = loadPrefs();
+      expect(p.record).toBe(false); expect(p.recordMethod).toBe('reel'); // a choice made after the migration is kept
+    });
+  });
+});

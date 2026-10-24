@@ -5,7 +5,7 @@
 //
 // The caller starts it from a click, calls finish(summary) when the game ends (this plays the
 // outro card, stops, and resolves the finished file) and can download it straight away.
-import { INTRO_MS, OUTRO_MS, drawFrame, type OverlayAssets, type OverlayState } from './overlay';
+import { INTRO_MS, OUTRO_MS, SCREEN_STRIP, drawFrame, type OverlayAssets, type OverlayState } from './overlay';
 import type { GameSummary } from './types';
 
 export type RecordMethod = 'screen' | 'reel';
@@ -93,6 +93,14 @@ export class RunRecorder {
       video.muted = true; video.playsInline = true; video.srcObject = this.display;
       await video.play().catch(() => {});
       this.video = video;
+      // Record at the page's own shape (not a fixed 16:9 box) so everything on screen is in the video.
+      const vw = video.videoWidth || 1280; const vh = video.videoHeight || 720;
+      const k = Math.min(1, 1920 / vw);
+      const w = vw * k; const hh = vh * k;
+      // The overlay scales by the shorter side of the finished canvas, so solve for a strip that is SCREEN_STRIP/720 of it.
+      const fullH = w >= hh ? hh / (1 - SCREEN_STRIP / 720) : hh + (SCREEN_STRIP * w) / 720;
+      this.canvas.width = Math.round(w / 2) * 2;
+      this.canvas.height = Math.round(fullH / 2) * 2;
       this.display.getVideoTracks()[0]?.addEventListener('ended', () => {
         this.endedEarly = true;
         this.onEndedEarly?.();

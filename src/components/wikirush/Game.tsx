@@ -283,14 +283,16 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   }, [say]);
 
   // ---------- finishing ----------
-  const finishGame = useCallback(() => {
+  const finishGame = useCallback((early = false) => {
     const s = g.current;
     if (s.finished) return;
     s.finished = true;
     const total = s.results.reduce((a, r) => a + r.score, 0);
-    const sum: GameSummary = { settings, results: s.results, total, max: maxScore(rounds), finishedAt: new Date().toISOString() };
+    const sum: GameSummary = { settings, results: s.results, total, max: maxScore(early ? Math.max(1, s.results.length) : rounds), finishedAt: new Date().toISOString() };
     setSummary(sum); setPhase('final'); sfx.final(); setBurst(b => b + 1);
-    Promise.resolve(onFinish(sum)).then(note => { if (note) setSaveNote(note); }).catch(() => {});
+    // A run quit early is not a complete game, so it is not ranked; the video is still yours.
+    if (early) setSaveNote('You quit early, so this run is not ranked. Your video is still ready.');
+    else Promise.resolve(onFinish(sum)).then(note => { if (note) setSaveNote(note); }).catch(() => {});
     if (recorder) {
       setRec({ state: 'saving' });
       recorder.finish(sum).then(result => {
@@ -300,8 +302,15 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     }
   }, [onFinish, recorder, rounds, settings]);
 
+  /** Quit mid-run but keep the footage: ends the round, plays the outro and offers the download. */
+  const quitWithVideo = useCallback(() => {
+    setConfirmExit(false);
+    if (g.current.live) endRound('gave-up');
+    finishGame(true);
+  }, [endRound, finishGame]);
+
   const nextRound = useCallback(() => {
-    if (roundIdx + 1 < rounds) void openRound(roundIdx + 1); else finishGame();
+    if (roundIdx + 1 < rounds) void openRound(roundIdx + 1); else finishGame(false);
   }, [finishGame, openRound, roundIdx, rounds]);
 
   // Recorder stopped from the browser's own "Stop sharing" bar: keep playing, drop the footage.
@@ -511,10 +520,11 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     {confirmExit && <div className="absolute inset-0 z-40 grid place-items-center bg-black/60 p-4">
       <div role="alertdialog" aria-label="Leave game" className="wr-pop w-full max-w-sm rounded-3xl bg-white p-6 text-[#101426]">
         <h3 className="text-xl font-black">Leave this run?</h3>
-        <p className="mt-2 text-sm text-slate-600">Your progress and any recording will be discarded.</p>
-        <div className="mt-5 flex gap-3">
-          <button autoFocus onClick={() => setConfirmExit(false)} className="flex-1 rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white">Keep playing</button>
-          <button onClick={() => { recorder?.cancel(); onExit(); }} className="rounded-xl border border-slate-300 px-4 py-3 font-bold">Leave</button>
+        <p className="mt-2 text-sm text-slate-600">{rec.state === 'recording' ? 'You can keep the recording of what you played so far, or discard everything.' : 'Your progress will be discarded.'}</p>
+        <div className="mt-5 grid gap-2">
+          <button autoFocus onClick={() => setConfirmExit(false)} className="rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white">Keep playing</button>
+          {rec.state === 'recording' && <button onClick={quitWithVideo} className="rounded-xl bg-[#6978f5] px-4 py-3 font-extrabold text-white">Quit and download my video</button>}
+          <button onClick={() => { recorder?.cancel(); onExit(); }} className="rounded-xl border border-slate-300 px-4 py-3 font-bold">Leave and discard</button>
         </div>
       </div>
     </div>}
