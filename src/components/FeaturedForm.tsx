@@ -25,7 +25,7 @@ function PagePicker({ label, value, onChange, listId }: { label: string; value: 
   </label>;
 }
 
-export default function FeaturedForm() {
+export default function FeaturedForm({ nextDay = 1 }: { nextDay?: number }) {
   const [pairs, setPairs] = useState<Pair[]>([{ start: '', target: '', blurb: '' }]);
   const set = (i: number, patch: Partial<Pair>) => setPairs(p => p.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const filled = pairs.filter(p => p.start.trim() || p.target.trim()).length;
@@ -33,6 +33,7 @@ export default function FeaturedForm() {
   return <form method="post" action="/api/admin/wikirush" className="mt-4 grid gap-4 bg-white p-4 sm:grid-cols-2">
     <input type="hidden" name="action" value="create" />
     <input type="hidden" name="pairs" value={JSON.stringify(pairs)} />
+    <label className="text-sm font-bold">Release number (shown as “Day N Challenge”)<input name="day" type="number" min={1} max={9999} defaultValue={nextDay} required className={inp} /></label>
     <label className="text-sm font-bold">Challenge name<input name="title" required minLength={3} maxLength={60} placeholder="Melania Trump to Mars" className={inp} /></label>
     <label className="text-sm font-bold">Time per round
       <select name="seconds" defaultValue="90" className={inp}><option value="45">45 seconds</option><option value="90">90 seconds</option><option value="180">3 minutes</option></select>

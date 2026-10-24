@@ -64,7 +64,7 @@ export function buildShareText({ summary, origin, playerName, link: linkOverride
     head = `WikiRush Daily #${dailyNumber(key)}`;
     link = `${origin}/wikirush`;
   } else if (settings.seed) {
-    head = 'WikiRush';
+    head = settings.featuredDay ? `WikiRush Day ${settings.featuredDay} Challenge` : 'WikiRush';
     link = buildChallengeUrl(origin, { seed: settings.seed, seconds: settings.seconds, rounds: settings.rounds, score: total, name: playerName });
   } else {
     head = 'WikiRush';

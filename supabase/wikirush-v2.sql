@@ -65,7 +65,7 @@ begin
     won := coalesce((r->>'won')::boolean, false);
     el := least(limit_ms, greatest(0, coalesce((r->>'elapsed_ms')::integer, limit_ms)));
     ck := least(60, greatest(0, coalesce((r->>'clicks')::integer, 0)));
-    if won and (ck < 1 or el < 600 * ck) then raise exception 'Round failed validation'; end if;
+    if won and (ck < 1 or el < 120 * ck) then raise exception 'Round failed validation'; end if;
     s := public.wikirush_round_score(won, el, limit_ms, ck, coalesce((r->>'radar')::boolean, false), coalesce((r->>'near')::boolean, false));
     total := total + s; n := n + 1;
   end loop;
@@ -110,3 +110,4 @@ create table if not exists public.wikirush_featured (
   created_at timestamptz not null default now()
 );
 alter table public.wikirush_featured enable row level security; -- no policies: service role only
+alter table public.wikirush_featured add column if not exists day integer; -- "Day N Challenge" release number

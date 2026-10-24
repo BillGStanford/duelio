@@ -19,10 +19,10 @@ export async function POST(req: Request) {
       case 'create': {
         let pairs: unknown = [];
         try { pairs = JSON.parse(str(form, 'pairs')); } catch { return done('Rounds could not be read. Try again.'); }
-        const checked = cleanFeatured({ title: str(form, 'title'), blurb: str(form, 'blurb'), pairs, seconds: str(form, 'seconds'), active: str(form, 'active') === 'on' });
+        const checked = cleanFeatured({ title: str(form, 'title'), blurb: str(form, 'blurb'), pairs, seconds: str(form, 'seconds'), day: str(form, 'day'), active: str(form, 'active') === 'on' });
         if (!checked.ok) return done(checked.error);
         const item = await createFeatured(checked.value);
-        return done(`Created “${item.title}” with ${item.pairs.length} round${item.pairs.length === 1 ? '' : 's'}.${item.active ? ' It is live in the WikiRush lobby.' : ' It is hidden.'}`);
+        return done(`Created Day ${item.day} Challenge “${item.title}” with ${item.pairs.length} round${item.pairs.length === 1 ? '' : 's'}.${item.active ? ' It is live in the WikiRush lobby.' : ' It is hidden.'}`);
       }
       case 'show': await setFeaturedActive(str(form, 'id'), true); return done('Challenge is live.');
       case 'hide': await setFeaturedActive(str(form, 'id'), false); return done('Challenge hidden.');

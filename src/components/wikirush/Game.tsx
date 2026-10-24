@@ -618,7 +618,7 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
       </div>
     </div>}
     <div className="relative z-20 mx-auto max-w-2xl px-4 py-8 sm:py-12">
-      <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : 'Run complete'} · {settingsLabel(summary.settings)}</p>
+      <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : summary.settings.featuredDay ? `Day ${summary.settings.featuredDay} Challenge` : 'Run complete'} · {settingsLabel(summary.settings)}</p>
       <p className="mt-4 text-center text-7xl font-black tabular-nums tracking-tight sm:text-8xl">{formatScore(shown)}</p>
       <p className="text-center text-sm font-bold text-white/50">out of {formatScore(summary.max)} · {pct}%</p>
       <p className="wr-pop mt-3 text-center text-lg font-black text-amber-200">⭐ +{pointsForGame(summary.total).toLocaleString()} points</p>

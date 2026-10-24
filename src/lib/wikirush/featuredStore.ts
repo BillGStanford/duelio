@@ -7,8 +7,8 @@ import { randomUUID } from 'crypto';
 import { storeKind } from '../store';
 import type { Featured, FeaturedInput } from './featured';
 
-type Row = { id: string; title: string; blurb: string; pairs: Featured['pairs']; seconds: number; active: boolean; created_at: string };
-const toFeatured = (r: Row): Featured => ({ id: r.id, title: r.title, blurb: r.blurb || '', pairs: r.pairs, seconds: r.seconds, active: r.active, createdAt: r.created_at });
+type Row = { id: string; day?: number | null; title: string; blurb: string; pairs: Featured['pairs']; seconds: number; active: boolean; created_at: string };
+const toFeatured = (r: Row): Featured => ({ id: r.id, day: Number(r.day || 0), title: r.title, blurb: r.blurb || '', pairs: r.pairs, seconds: r.seconds, active: r.active, createdAt: r.created_at });
 
 const rest = () => `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/wikirush_featured`;
 const headers = (extra: Record<string, string> = {}) => ({
@@ -41,12 +41,13 @@ export async function listFeatured(opts: { activeOnly?: boolean } = {}): Promise
 }
 
 export async function createFeatured(input: FeaturedInput): Promise<Featured> {
+  const day = input.day ?? (await listFeatured().then(l => l.reduce((m, f) => Math.max(m, f.day || 0), 0) + 1).catch(() => 1));
   if (storeKind() === 'supabase') {
-    const res = await fetch(rest(), { method: 'POST', headers: headers({ prefer: 'return=representation' }), body: JSON.stringify({ title: input.title, blurb: input.blurb, pairs: input.pairs, seconds: input.seconds, active: input.active }) });
+    const res = await fetch(rest(), { method: 'POST', headers: headers({ prefer: 'return=representation' }), body: JSON.stringify({ day, title: input.title, blurb: input.blurb, pairs: input.pairs, seconds: input.seconds, active: input.active }) });
     if (!res.ok) throw new Error(`Could not save (${res.status}). Run the wikirush_featured block in supabase/wikirush-v2.sql.`);
     return toFeatured(((await res.json()) as Row[])[0]);
   }
-  const item: Featured = { ...input, id: randomUUID().replace(/-/g, '').slice(0, 12), createdAt: new Date().toISOString() };
+  const item: Featured = { ...input, day, id: randomUUID().replace(/-/g, '').slice(0, 12), createdAt: new Date().toISOString() };
   writeFile([item, ...readFile()]);
   return item;
 }

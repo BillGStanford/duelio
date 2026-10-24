@@ -36,3 +36,6 @@ Run the `wikirush_featured` block at the bottom of `supabase/wikirush-v2.sql`, t
 
 ## Points
 Points are written by `submit_wikirush_game` (total / 10 per ranked game). If that function is missing, games are queued in the browser and sync automatically once the SQL has been run.
+
+## Points without the SQL function
+`/api/wikirush/points` (needs `SUPABASE_SERVICE_ROLE_KEY` and the original `wiki_profiles` table) verifies the player's session, recomputes the score and updates `wiki_profiles`. The client uses it whenever `submit_wikirush_game` is missing or rejects a game, and once per account it recovers points an earlier build only kept on the device.
