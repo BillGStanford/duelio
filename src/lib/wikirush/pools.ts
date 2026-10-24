@@ -49,6 +49,11 @@ export const TARGET_POOL: readonly string[] = [
 ];
 
 export const START_POOL: readonly string[] = [
+  // Pop culture and everyday things everyone has heard of
+  'Taylor Swift', 'Mickey Mouse', 'SpongeBob SquarePants', 'Spider-Man', 'Barbie', 'Darth Vader', 'Pikachu',
+  'Shrek', 'Oprah Winfrey', 'Kim Kardashian', 'LeBron James', 'Justin Bieber', 'Donut', 'Instagram', 'TikTok',
+  'Emoji', 'Selfie', 'Hot dog', 'Pancake', 'Popcorn', 'Bubble tea', 'Netflix', 'Disneyland', 'Santa Claus',
+  'Easter Bunny', 'Halloween', 'Valentine\'s Day', 'Black Friday', 'Super Bowl', 'Oscar',
   // Odd objects, crafts and instruments
   'Kazoo', 'Theremin', 'Bagpipes', 'Accordion', 'Origami', 'Lava lamp', 'Typewriter', 'Zeppelin', 'Abacus',
   'Sundial', 'Igloo', 'Pagoda', 'Windmill', 'Hot air balloon', 'Steam engine', 'Telescope', 'Submarine',

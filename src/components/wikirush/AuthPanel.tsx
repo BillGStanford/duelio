@@ -5,6 +5,8 @@ import { useState, type FormEvent } from 'react';
 import type { Session, SupabaseClient } from '@supabase/supabase-js';
 
 type Props = {
+  /** Streamer mode: never show email or account details on screen. */
+  stream?: boolean;
   supabase: SupabaseClient | null;
   session: Session | null;
   referralCode: string;
@@ -13,7 +15,7 @@ type Props = {
   onSession(session: Session | null, notice?: string): void;
 };
 
-export default function AuthPanel({ supabase, session, referralCode, setReferralCode, startInSignup, onSession }: Props) {
+export default function AuthPanel({ stream, supabase, session, referralCode, setReferralCode, startInSignup, onSession }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -39,7 +41,7 @@ export default function AuthPanel({ supabase, session, referralCode, setReferral
   }
 
   if (session) {
-    const name = String(session.user.user_metadata?.display_name || session.user.email || 'Explorer');
+    const name = stream ? 'Streamer' : String(session.user.user_metadata?.display_name || session.user.email || 'Explorer');
     return <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-4">
       <div>
         <p className="font-extrabold">Playing as {name}</p>

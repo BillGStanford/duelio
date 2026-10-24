@@ -219,3 +219,176 @@ describe('article sanitising', () => {
     expect(out).not.toContain('loading="lazy"');
   });
 });
+
+import { STARTER_GAMES, STARTER_PAIRS, parseStarterSeed, starterPlans, starterSeed, starterSeedForGame } from '@/lib/wikirush/starters';
+
+describe('starter games', () => {
+  it('opens with the fun pairs the first-time player sees', () => {
+    const plans = planRounds('starter-0', 3);
+    expect(plans.map(p => [p.start, p.target])).toEqual([['Melania Trump', 'Mars'], ['Taylor Swift', 'Ancient Egypt'], ['Mickey Mouse', 'Moon']]);
+    expect(plans.every(p => p.blurb && p.startAlts.length === 2 && p.targetAlts.length === 2)).toBe(true);
+  });
+  it('is deterministic and matches starterPlans', () => {
+    expect(planRounds('starter-1', 3)).toEqual(starterPlans(1, 3));
+    expect(planRounds('starter-2', 3)).toEqual(planRounds('starter-2', 3));
+  });
+  it('hands out starter seeds for the first games only', () => {
+    expect([0, 1, 2].map(starterSeedForGame)).toEqual(['starter-0', 'starter-1', 'starter-2']);
+    expect(starterSeedForGame(STARTER_GAMES)).toBeNull();
+    expect(parseStarterSeed(starterSeed(2))).toBe(2);
+    expect(parseStarterSeed('k7m2qx')).toBeNull();
+    expect(parseStarterSeed('starter-x')).toBeNull();
+  });
+  it('has unique, sensible pairs and wraps for longer games', () => {
+    expect(STARTER_PAIRS.length).toBeGreaterThanOrEqual(9);
+    const keys = STARTER_PAIRS.map(p => `${normTitle(p.start)}>${normTitle(p.target)}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    STARTER_PAIRS.forEach(p => expect(normTitle(p.start)).not.toBe(normTitle(p.target)));
+    expect(starterPlans(0, 5)).toHaveLength(5);
+    expect(starterPlans(40, 3)).toHaveLength(3);
+  });
+  it('accepts starter seeds in challenge links', () => {
+    expect(parseChallengeParams('?c=starter-0&t=90&r=3')).toMatchObject({ seed: 'starter-0', rounds: 3 });
+  });
+});
+
+import { createArticleCache } from '@/lib/wikirush/articleCache';
+
+describe('article cache and prefetch', () => {
+  function harness(opts?: { max?: number; concurrency?: number }) {
+    const calls: string[] = [];
+    let running = 0; let peak = 0;
+    const gates: Array<() => void> = [];
+    const cache = createArticleCache(async title => {
+      calls.push(title);
+      running++; peak = Math.max(peak, running);
+      await new Promise<void>(r => gates.push(r));
+      running--;
+      return { title: title === 'eiffel tower' ? 'Eiffel Tower' : title, html: `<p>${title}</p>` };
+    }, opts);
+    const release = async () => { gates.splice(0).forEach(g => g()); await new Promise(r => setTimeout(r, 0)); };
+    return { cache, calls, release, peak: () => peak };
+  }
+
+  it('fetches once for repeated and concurrent requests', async () => {
+    const { cache, calls, release } = harness();
+    const a = cache.get('Moon'); const b = cache.get('moon'); 
+    await release();
+    expect((await a).html).toBe('<p>Moon</p>');
+    expect(await b).toBe(await a);
+    await cache.get('Moon');
+    expect(calls).toEqual(['Moon']);
+  });
+  it('serves loaded pages synchronously via peek', async () => {
+    const { cache, release } = harness();
+    expect(cache.peek('Moon')).toBeNull();
+    const p = cache.get('Moon'); await release(); await p;
+    expect(cache.peek('Moon')?.title).toBe('Moon');
+  });
+  it('aliases a redirect to its canonical title', async () => {
+    const { cache, release } = harness();
+    const p = cache.get('eiffel tower'); await release(); await p;
+    expect(cache.peek('Eiffel Tower')?.html).toContain('eiffel tower');
+  });
+  it('limits background concurrency but lets urgent hints through', async () => {
+    const { cache, calls, release, peak } = harness({ concurrency: 2 });
+    cache.prefetchMany(['A', 'B', 'C', 'D', 'E']);
+    expect(calls).toEqual(['A', 'B']);
+    cache.hint('Z');
+    expect(calls).toEqual(['A', 'B', 'Z']);
+    await release(); await release(); await release(); await release();
+    expect(new Set(calls)).toEqual(new Set(['A', 'B', 'C', 'D', 'E', 'Z']));
+    expect(peak()).toBe(3);
+  });
+  it('replaces the waiting queue when a new page is prefetched, and skips what is cached', async () => {
+    const { cache, calls, release } = harness({ concurrency: 1 });
+    cache.prefetchMany(['A', 'B', 'C']);
+    cache.prefetchMany(['X', 'A', 'Y']);
+    await release(); await release(); await release();
+    expect(calls).toEqual(['A', 'X', 'Y']);
+  });
+  it('evicts the least recently used page and recovers from failures', async () => {
+    const { cache, release } = harness({ max: 2 });
+    for (const t of ['A', 'B', 'C']) { const p = cache.get(t); await release(); await p; }
+    expect(cache.peek('A')).toBeNull();
+    expect(cache.peek('C')).not.toBeNull();
+    const failing = createArticleCache(async () => { throw new Error('boom'); });
+    await expect(failing.get('X')).rejects.toThrow('boom');
+    expect(failing.has('X')).toBe(false);
+  });
+});
+
+import { slimWikipediaHtml } from '@/lib/wikirush/slim';
+
+describe('article slimming', () => {
+  const parsoid = `<!DOCTYPE html><html><head><title>Pizza</title></head><body>
+  <section data-mw-section-id="0"><p about="#mwt1" data-parsoid='{"dsr":[1,2]}'>Pizza is a dish from <a rel="mw:WikiLink" href="./Italy" title="Italy" data-mw='{"x":1}'>Italy</a>.<sup class="mw-ref reference"><a href="./Pizza#cite_note-1">[1]</a></sup></p>
+  <div class="hatnote"><a href="./Pizza_(disambiguation)">other</a></div>
+  <img src="//upload.wikimedia.org/p.png" srcset="//upload.wikimedia.org/p2.png 2x"></section>
+  <section data-mw-section-id="1"><h2 id="History">History</h2><p>See <a href="./Naples">Naples</a>.</p></section>
+  <section data-mw-section-id="2"><h2 id="See_also">See also</h2><ul><li><a href="./Calzone">Calzone</a></li></ul></section>
+  <section data-mw-section-id="3"><h2 id="References">References</h2><ol class="mw-references references"><li><a href="./ISBN">book</a></li></ol></section>
+  <section data-mw-section-id="4"><h2 id="External_links">External links</h2><ul><li><a href="./Wikimedia_Commons">Commons</a></li></ul></section>
+  <div class="navbox"><a href="./Hidden_Nav">nav</a></div></body></html>`;
+  const out = slimWikipediaHtml(parsoid);
+  it('keeps the readable article and its playable links', () => {
+    expect(linkedTitles(out)).toEqual(expect.arrayContaining(['Italy', 'Naples', 'Calzone']));
+    expect(out).toContain('Pizza is a dish from');
+    expect(out).toContain('src="https://upload.wikimedia.org/p.png"');
+  });
+  it('drops citations, navboxes, exits and heavy metadata', () => {
+    expect(out).not.toMatch(/Hidden_Nav|Wikimedia_Commons|ISBN|Pizza_\(disambiguation\)|cite_note/);
+    expect(out).not.toMatch(/data-mw=|data-parsoid|about=|srcset|title="|rel="mw:/);
+  });
+  it('is meaningfully smaller than the input', () => {
+    expect(out.length).toBeLessThan(parsoid.length * 0.75);
+  });
+});
+
+import { claimKeys, isUsed, mustSignUp, addPending, loadPending, clearPending, guestUsedLocally, markGuestUsed } from '../src/lib/wikirush/guest';
+
+describe('guest gate', () => {
+  const mem = () => { const m = new Map<string, string>(); return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) }; };
+  const ids = { fp: 'a'.repeat(32), hw: 'b'.repeat(32) };
+
+  it('builds salted-hash claim keys and ignores junk ids', () => {
+    expect(claimKeys(ids, 'ip1')).toEqual([`fp:${ids.fp}`, `hwip:${ids.hw}:ip1`]);
+    expect(claimKeys({ fp: 'x', hw: '<script>' }, 'ip1')).toEqual([]);
+  });
+  it('same browser on a new network is still caught by fp; same machine in another browser by hw+ip', () => {
+    const first = claimKeys(ids, 'ip1');
+    expect(isUsed(first, claimKeys(ids, 'ip2'))).toBe(true); // fp matches
+    expect(isUsed(first, claimKeys({ fp: 'c'.repeat(32), hw: ids.hw }, 'ip1'))).toBe(true); // other browser, same machine+network
+    expect(isUsed(first, claimKeys({ fp: 'c'.repeat(32), hw: ids.hw }, 'ip2'))).toBe(false); // identical model elsewhere is not blocked
+  });
+  it('only gates configured deployments and signed-out visitors', () => {
+    expect(mustSignUp({ configured: false, signedIn: false, usedLocally: true, usedOnServer: true })).toBe(false);
+    expect(mustSignUp({ configured: true, signedIn: true, usedLocally: true, usedOnServer: true })).toBe(false);
+    expect(mustSignUp({ configured: true, signedIn: false, usedLocally: false, usedOnServer: false })).toBe(false);
+    expect(mustSignUp({ configured: true, signedIn: false, usedLocally: false, usedOnServer: true })).toBe(true);
+  });
+  it('remembers the free game and queues finished games for sign-up', () => {
+    const s = mem();
+    expect(guestUsedLocally(s)).toBe(false);
+    markGuestUsed(s);
+    expect(guestUsedLocally(s)).toBe(true);
+    const game = { settings: { mode: 'classic', rounds: 3, seconds: 90 }, results: [{ won: true }], total: 4000, max: 15000, finishedAt: 'now' } as never;
+    for (let i = 0; i < 5; i++) addPending(game, s);
+    expect(loadPending(s)).toHaveLength(3);
+    clearPending(s);
+    expect(loadPending(s)).toHaveLength(0);
+  });
+});
+
+import { WR_FAQ, faqJsonLd, gameJsonLd } from '../src/lib/wikirush/seo';
+
+describe('seo data', () => {
+  it('has a FAQ schema matching the visible FAQ and a free VideoGame entity', () => {
+    const faq = faqJsonLd();
+    expect(faq.mainEntity).toHaveLength(WR_FAQ.length);
+    const g = gameJsonLd('https://example.com');
+    expect(g.name).toBe('WikiRush');
+    expect(g.offers.price).toBe('0');
+    expect(g.url).toBe('https://example.com/wikirush');
+  });
+});

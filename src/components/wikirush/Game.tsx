@@ -5,8 +5,8 @@ import ArticleView, { type ArticleHandle } from './ArticleView';
 import Confetti from './Confetti';
 import { planRounds, type RoundPlan } from '@/lib/wikirush/rounds';
 import { RADAR_PENALTY, maxScore, rankFor, scoreRound, scoreShare } from '@/lib/wikirush/scoring';
-import { normTitle } from '@/lib/wikirush/titles';
-import { fetchArticle, resolveRound, resolveWildRound, wikipediaUrl, type LoadedRound } from '@/lib/wikirush/wiki';
+import { linkedTitles, normTitle } from '@/lib/wikirush/titles';
+import { articles, resolveRound, resolveWildRound, wikipediaUrl, type LoadedRound } from '@/lib/wikirush/wiki';
 import { buildChallengeUrl, buildShareText, emojiRow, formatScore, settingsLabel } from '@/lib/wikirush/share';
 import { sfx } from '@/lib/wikirush/sfx';
 import { clock, type OverlayState } from '@/lib/wikirush/overlay';
@@ -24,6 +24,7 @@ type Props = {
   sound: boolean;
   playerName?: string;
   challenge?: ChallengeParams | null;
+  stream?: boolean;
   onFinish(summary: GameSummary): Promise<string | void> | string | void;
   onExit(): void;
   onPlayAgain(settings: GameSettings): void;
@@ -46,7 +47,7 @@ function useCountUp(value: number, ms = 900, active = true) {
   return shown;
 }
 
-export default function Game({ settings, recorder, overlayRef, sound, playerName, challenge, onFinish, onExit, onPlayAgain }: Props) {
+export default function Game({ settings, recorder, overlayRef, sound, playerName, challenge, stream, onFinish, onExit, onPlayAgain }: Props) {
   const limitMs = settings.seconds * 1000;
   const [phase, setPhase] = useState<Phase>('loading');
   const [roundIdx, setRoundIdx] = useState(0);
@@ -58,6 +59,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   const [radarUsed, setRadarUsed] = useState(false);
   const [toast, setToast] = useState('');
   const [navBusy, setNavBusy] = useState(false);
+  const [navSlow, setNavSlow] = useState(false);
   const [results, setResults] = useState<RoundResult[]>([]);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -76,7 +78,6 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     plans: [] as RoundPlan[],
     loads: new Map<number, Promise<LoadedRound>>(),
     used: new Set<string>(),
-    cache: new Map<string, string>(),
     stack: [] as string[],
     trail: [] as string[],
     clicks: 0,
@@ -126,8 +127,6 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     try {
       const r = await load(i);
       g.current.round = r;
-      g.current.cache.clear();
-      g.current.cache.set(normTitle(r.start.title), r.startHtml);
       setRound(r); setRoundIdx(i); setMsLeft(limitMs);
       setPage({ title: r.start.title, html: r.startHtml });
       setTrail([r.start.title]); setClicks(0); setRadarUsed(false); setLastResult(null);
@@ -141,6 +140,12 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   }, [load, limitMs, recorder, rounds, settings.mode]);
 
   useEffect(() => { void openRound(0); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  // Whatever page is on screen, quietly fetch the pages it links to, in reading order.
+  useEffect(() => {
+    if (!page) return;
+    articles.prefetchMany(linkedTitles(page.html));
+  }, [page]);
 
   // ---------- countdown ----------
   const beginCountdown = useCallback(() => {
@@ -162,6 +167,16 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     const id = window.setTimeout(() => { setCountdown(c => c - 1); if (countdown > 1) sfx.count(); }, 800);
     return () => window.clearTimeout(id);
   }, [phase, countdown]);
+
+  // First time ever: one line that explains the whole game.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    try {
+      if (localStorage.getItem('wikirush:v2:coached')) return;
+      localStorage.setItem('wikirush:v2:coached', '1');
+      say('Click any blue link in the article to hop. Reach the 🎯 page to win.', 6500);
+    } catch { /* storage blocked */ }
+  }, [phase, say]);
 
   const elapsedNow = useCallback(() => {
     const s = g.current; const now = performance.now();
@@ -213,15 +228,21 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       endRound('arrived', s.round.target.title);
       return;
     }
+    // Prefetched pages open synchronously: no await, no pause, no flash of loading.
+    const warm = articles.peek(title);
+    if (warm) {
+      s.clicks += 1; setClicks(s.clicks);
+      if (normTitle(warm.title) === normTitle(s.round.target.title)) { endRound('arrived', s.round.target.title); return; }
+      if (back) s.stack.pop(); else s.stack.push(warm.title);
+      s.trail = [...s.trail, warm.title]; setTrail(s.trail);
+      setPage({ title: warm.title, html: warm.html });
+      return;
+    }
     s.pausedAt = performance.now(); setNavBusy(true);
+    const slowTimer = window.setTimeout(() => setNavSlow(true), 250);
     try {
-      let html = s.cache.get(key);
-      let canonical = title;
-      if (!html) {
-        const art = await fetchArticle(title);
-        canonical = art.title; html = art.html;
-        s.cache.set(normTitle(art.title), art.html); s.cache.set(key, art.html);
-      }
+      const art = await articles.get(title);
+      const canonical = art.title; const html = art.html;
       if (s.pausedAt !== null) { s.paused += performance.now() - s.pausedAt; s.pausedAt = null; }
       s.clicks += 1; setClicks(s.clicks);
       if (normTitle(canonical) === normTitle(s.round.target.title)) { endRound('arrived', s.round.target.title); return; }
@@ -231,7 +252,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     } catch (e) {
       if (s.pausedAt !== null) { s.paused += performance.now() - s.pausedAt; s.pausedAt = null; }
       say(e instanceof Error ? e.message : 'Could not open that page.');
-    } finally { setNavBusy(false); }
+    } finally { window.clearTimeout(slowTimer); setNavBusy(false); setNavSlow(false); }
   }, [endRound, say]);
 
   const navigate = useCallback((title: string) => { void go(title); }, [go]);
@@ -335,6 +356,13 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     return buildChallengeUrl(origin, { seed: settings.seed, seconds: settings.seconds, rounds: settings.rounds, score: summary.total, name: playerName });
   }, [origin, playerName, settings.mode, settings.rounds, settings.seconds, settings.seed, summary]);
 
+  const chatText = useMemo(() => {
+    if (!summary) return '';
+    const link = challengeLink || `${origin}/wikirush`;
+    return `I scored ${formatScore(summary.total)} on WikiRush. Same pages, beat me: ${link}`;
+  }, [challengeLink, origin, summary]);
+  const cardUrl = summary ? `/wikirush/og?fmt=story&dl=1&r=${summary.settings.rounds}&s=${summary.total}${playerName ? `&n=${encodeURIComponent(playerName)}` : ''}` : '';
+
   // ---------- render ----------
   const frame = 'fixed inset-0 z-[100] flex flex-col bg-[#101426] text-white';
 
@@ -362,7 +390,8 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   if (phase === 'final' && summary) {
     return <FinalScreen
       summary={summary} rec={rec} saveNote={saveNote} challenge={challenge} burst={burst} copied={copied}
-      playerName={playerName} challengeLink={challengeLink}
+      playerName={playerName} challengeLink={challengeLink} stream={!!stream}
+      chatText={chatText} onChat={() => void copy(chatText, 'chat')} cardUrl={cardUrl}
       onShare={shareResult} onCopyLink={() => void copy(challengeLink, 'link')}
       onAgain={() => onPlayAgain(settings.mode === 'daily' || !settings.seed ? settings : { ...settings, mode: 'classic', seed: randomSeed() })}
       onSameSeed={() => onPlayAgain({ ...settings })}
@@ -413,9 +442,9 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
     {/* Article */}
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {page && <ArticleView ref={article} title={page.title} html={page.html} disabled={phase !== 'playing' || navBusy} onNavigate={navigate} onBlocked={say} />}
+      {page && <ArticleView ref={article} title={page.title} html={page.html} disabled={phase !== 'playing' || navBusy} onNavigate={navigate} onHint={articles.hint} onBlocked={say} />}
       {navBusy && <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-1 overflow-hidden bg-[#6978f5]/20"><div className="h-full w-1/3 animate-pulse bg-[#6978f5]" /></div>}
-      {navBusy && <p className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#101426]/90 px-3 py-1 text-xs font-bold text-white">Clock paused while the page loads</p>}
+      {navSlow && <p className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-[#101426]/90 px-3 py-1 text-xs font-bold text-white">Clock paused while the page loads</p>}
 
       {/* Bottom action bar */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-3 pb-3 sm:pb-4">
@@ -442,6 +471,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
         <p className="my-3 text-3xl text-[#aeb7ff]">↓</p>
         <h2 className="text-3xl font-black tracking-tight sm:text-5xl">…to there.</h2>
         <PageCard page={round.target} tone="target" />
+        {round.blurb && <p className="wr-pop mx-auto mt-4 max-w-md rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-amber-200">{round.blurb}</p>}
         <p className="mx-auto mt-5 max-w-md text-sm text-white/60">Links only. No search. The clock pauses while pages load.</p>
         <button autoFocus onClick={beginCountdown} className="mt-5 rounded-2xl bg-[#6978f5] px-10 py-4 text-lg font-black shadow-lg shadow-[#6978f5]/30 hover:bg-[#5866df]">I’m ready →</button>
         <p className="mt-2 text-xs text-white/40">or press Enter</p>
@@ -470,6 +500,14 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       </div>
     </div>}
   </div>;
+}
+
+function canShareFile(r: { blob: Blob; filename: string }): boolean {
+  try { return typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([r.blob], r.filename, { type: r.blob.type })] }); } catch { return false; }
+}
+
+async function shareVideo(r: { blob: Blob; filename: string }) {
+  try { await navigator.share({ files: [new File([r.blob], r.filename, { type: r.blob.type })], title: 'My WikiRush run' }); } catch { /* cancelled */ }
 }
 
 function PageCard({ page, tone }: { page: LoadedRound['start']; tone: 'start' | 'target' }) {
@@ -526,8 +564,8 @@ function RoundEnd({ result, round, roundIdx, rounds, total, burst, onNext }: { r
   </div>;
 }
 
-function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerName, challengeLink, onShare, onCopyLink, onAgain, onSameSeed, onExit }: {
-  summary: GameSummary; rec: RecState; saveNote: string; challenge?: ChallengeParams | null; burst: number; copied: string; playerName?: string; challengeLink: string;
+function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerName, challengeLink, stream, chatText, onChat, cardUrl, onShare, onCopyLink, onAgain, onSameSeed, onExit }: {
+  summary: GameSummary; rec: RecState; saveNote: string; challenge?: ChallengeParams | null; burst: number; copied: string; playerName?: string; challengeLink: string; stream: boolean; chatText: string; onChat(): void; cardUrl: string;
   onShare(): void; onCopyLink(): void; onAgain(): void; onSameSeed(): void; onExit(): void;
 }) {
   const rank = rankFor(summary.total, summary.max);
@@ -567,7 +605,10 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
           <p className="mt-2 text-sm text-white/70">Saved <span className="font-bold text-white">{rec.result.filename}</span> · {(rec.result.bytes / 1048576).toFixed(1)} MB. It should be in your downloads.</p>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video src={rec.result.url} controls playsInline className="mt-3 max-h-80 w-full rounded-xl bg-black" />
-          <button onClick={() => downloadRecording(rec.result!)} className="mt-3 rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Download again ↓</button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => downloadRecording(rec.result!)} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Download again ↓</button>
+            {canShareFile(rec.result) && <button onClick={() => void shareVideo(rec.result!)} className="rounded-xl bg-[#6978f5] px-4 py-2.5 text-sm font-bold hover:bg-[#5866df]">Share video ↗</button>}
+          </div>
         </>}
       </div>}
 
@@ -578,6 +619,10 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
         <button onClick={onCopyLink} disabled={!challengeLink} className="rounded-2xl border border-white/20 px-5 py-4 text-base font-black hover:bg-white/10 disabled:opacity-40">{copied === 'link' ? 'Link copied ✓' : summary.settings.mode === 'daily' ? 'Copy daily link' : 'Challenge a friend'}</button>
         <button onClick={onAgain} className="rounded-2xl border border-white/20 px-5 py-4 text-base font-black hover:bg-white/10">{summary.settings.mode === 'daily' ? 'Practice round again' : 'New pages ↻'}</button>
         <button onClick={onSameSeed} disabled={!summary.settings.seed} className="rounded-2xl border border-white/20 px-5 py-4 text-base font-black hover:bg-white/10 disabled:opacity-40">Replay these pages</button>
+      </div>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <button onClick={onChat} className={`rounded-2xl border px-5 py-3 text-sm font-black hover:bg-white/10 ${stream ? 'border-amber-300/70 text-amber-100' : 'border-white/20'}`}>{copied === 'chat' ? 'Copied for chat ✓' : '💬 Copy for chat'}</button>
+        <a href={cardUrl} download="wikirush-score.png" className="rounded-2xl border border-white/20 px-5 py-3 text-center text-sm font-black hover:bg-white/10">🖼️ Download score card</a>
       </div>
       <button onClick={onExit} className="mx-auto mt-5 block text-sm font-bold text-white/60 underline">Back to lobby</button>
       <span className="sr-only">{playerName}</span>

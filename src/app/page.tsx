@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import MatchupHome from '@/components/MatchupHome';
 import DuelStrip from '@/components/DuelStrip';
+import MenuHero from '@/components/wikirush/MenuHero';
+import JsonLd from '@/components/wikirush/JsonLd';
+import { gameJsonLd, siteJsonLd } from '@/lib/wikirush/seo';
 import { dailyCloseAt, effectiveCloseAt, previousUtcDate, utcDateKey } from '@/lib/daily';
 import { computeResults, isClosed, isDeadHeat, isHot, verdictLine } from '@/lib/results';
 import { countWord, formatCloseDate } from '@/lib/site';
@@ -57,45 +60,17 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
 
   return (
     <main className="pb-16">
-      <section className="relative overflow-hidden bg-ink text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-28 h-96 w-96 rounded-full border-[48px] border-sidea/20" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-[18%] h-80 w-80 rounded-full border-[34px] border-sideb/20" />
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-white/80">
-              <span className="h-2 w-2 rounded-full bg-sidea" /> The Wikipedia speedrun arena
-            </div>
-            <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-7xl">
-              Explore the world.<br /><span className="text-sidea">Beat the clock.</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/75 sm:text-xl">
-              Race from one Wikipedia page to another in WikiRush, Duelio’s signature game. Follow the links, beat the timer, build your streak, and climb the leaderboard. When you want a debate, the Duel and Dilemma arenas are still here.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/wikirush" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-sidea px-6 py-3 font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#4f5fdf]">Play WikiRush <span className="ml-2" aria-hidden="true">↗</span></Link>
-              <Link href="/matchups" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-extrabold text-white transition hover:bg-white/10">Settle a GOAT debate</Link>
-              <Link href="/submit" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/25 px-6 py-3 font-extrabold text-white transition hover:bg-white/10">Start a debate</Link>
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.15em] text-sidea">01 / WikiRush</p>
-              <h2 className="mt-2 text-xl font-extrabold">Follow the links. Beat the clock.</h2>
-              <p className="mt-1 text-sm leading-relaxed text-white/65">Two random pages. Three timer modes. One race through the world’s knowledge.</p>
-            </div>
-            <div className="rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm">
-              <p className="text-xs font-black uppercase tracking-[0.15em] text-sideb">02 / Duel + Dilemma</p>
-              <h2 className="mt-2 text-xl font-extrabold">Debate still lives here.</h2>
-              <p className="mt-1 text-sm leading-relaxed text-white/65">Settle matchups, choose a side, and see where the crowd lands.</p>
-            </div>
-          </div>
-        </div>
-        <div className="relative border-t border-white/10">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-3 text-xs font-bold uppercase tracking-[0.12em] text-white/55">
-            <span>Duelio · Public opinion, in motion</span><span>{n} published {n === 1 ? 'dilemma' : 'dilemmas'} · No account needed to vote</span>
-          </div>
-        </div>
-      </section>
+      <JsonLd data={siteJsonLd()} />
+      <JsonLd data={gameJsonLd()} />
+      <MenuHero
+        footer={<div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-bold text-white/70">
+          <Link href="/wikirush/how-to-play" className="underline underline-offset-4 hover:text-white">How to play</Link>
+          <Link href="/leaderboard" className="underline underline-offset-4 hover:text-white">Leaderboard</Link>
+          <Link href="/matchups" className="underline underline-offset-4 hover:text-white">Duel: settle a GOAT debate</Link>
+          <Link href="/#debates" className="underline underline-offset-4 hover:text-white">Dilemma: pick a side</Link>
+          <span className="w-full text-xs font-semibold text-white/45">{n} published {n === 1 ? 'dilemma' : 'dilemmas'} · No account needed to vote</span>
+        </div>}
+      />
 
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
         <section aria-label="Explore Duelio" className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -10,18 +10,22 @@ import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: 'Duelio — WikiRush, dilemmas, matchups, and public opinion', template: '%s | Duelio' },
-  description: 'Turn the argument your group chat can\u2019t settle into a question everyone can answer. Pick a side and see where everyone lands.',
+  title: { default: 'WikiRush: The Wikipedia Link Race Game | Duelio', template: '%s | Duelio' },
+  description: 'WikiRush is a free Wikipedia game: race from one page to another using only links. Daily challenge, leaderboard and shareable runs. Plus Duelio dilemmas and matchups.',
+  keywords: ['WikiRush', 'Wiki Rush', 'Wikipedia game', 'wikiracing', 'Wikipedia race', 'GeoGuessr for Wikipedia', 'Duelio'],
+  alternates: { canonical: '/' },
   openGraph: {
     siteName: 'Duelio',
     type: 'website',
-    title: 'Duelio — Dilemmas, matchups, and public opinion',
-    description: 'Pick a side in everyday dilemmas or head-to-head matchups. Vote, make your case, and see where the crowd lands.',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
+    title: 'WikiRush: The Wikipedia Link Race Game',
+    description: 'Get from one Wikipedia page to another using only links. Free, instant, and built to share. Play the Daily Challenge.',
+    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
   },
   twitter: {
     card: 'summary_large_image',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'Duelio: pick a side on everyday dilemmas' }],
+    title: 'WikiRush: The Wikipedia Link Race Game',
+    description: 'Get from one Wikipedia page to another using only links. Free, instant, and built to share.',
+    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
   },
   other: { 'google-adsense-account': 'ca-pub-5222388837833339' },
 };

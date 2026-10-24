@@ -11,7 +11,9 @@ export default function MatchupWelcomeModal() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (pathname !== '/') { setOpen(false); return; }
+    // The landing page is the WikiRush title screen now: a first-visit popup would cover the game.
+    // Kept opt-in via ?welcome=1 so the matchup creator is still reachable.
+    if (pathname !== '/' || !new URLSearchParams(window.location.search).has('welcome')) { setOpen(false); return; }
     try {
       if (window.localStorage.getItem(DISMISSED_KEY) !== 'yes') setOpen(true);
     } catch {

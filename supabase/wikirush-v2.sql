@@ -85,3 +85,13 @@ begin
 end; $$;
 revoke all on function public.submit_wikirush_game(text, text, integer, integer, jsonb) from public;
 grant execute on function public.submit_wikirush_game(text, text, integer, integer, jsonb) to authenticated;
+
+-- ---------------------------------------------------------------------------------------------
+-- Guest gate: one free game per browser/device before an account is required.
+-- Only the server (service role) touches this table. Keys are salted hashes, never raw IPs.
+-- ---------------------------------------------------------------------------------------------
+create table if not exists public.wikirush_guest_claims (
+  key text primary key,
+  created_at timestamptz not null default now()
+);
+alter table public.wikirush_guest_claims enable row level security; -- no policies: service role only

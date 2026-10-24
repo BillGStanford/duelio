@@ -2,6 +2,7 @@ import type { WikiPage } from './types';
 import type { RoundPlan } from './rounds';
 import { TARGET_POOL } from './pools';
 import { normTitle } from './titles';
+import { createArticleCache } from './articleCache';
 
 const SUMMARY = 'https://en.wikipedia.org/api/rest_v1/page/summary/';
 const RANDOM = 'https://en.wikipedia.org/api/rest_v1/page/random/summary';
@@ -51,6 +52,8 @@ export async function fetchRandomSummary() {
 
 export type Article = { title: string; html: string };
 
+// Shared by every round so navigation, Back and prefetching all hit one cache.
+
 export async function fetchArticle(title: string): Promise<Article> {
   const res = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`);
   if (!res.ok) throw new Error(res.status === 404 ? 'That article does not exist.' : 'Wikipedia is slow right now.');
@@ -58,6 +61,8 @@ export async function fetchArticle(title: string): Promise<Article> {
   if (!data.html) throw new Error('Empty article');
   return { title: data.title || title, html: data.html };
 }
+
+export const articles = createArticleCache(fetchArticle);
 
 async function firstUsable(titles: string[], avoid: Set<string>): Promise<WikiPage> {
   for (const title of titles) {
@@ -70,15 +75,33 @@ async function firstUsable(titles: string[], avoid: Set<string>): Promise<WikiPa
   throw new Error('Could not load a playable page.');
 }
 
-export type LoadedRound = { start: WikiPage; target: WikiPage; startHtml: string };
+export type LoadedRound = { start: WikiPage; target: WikiPage; startHtml: string; blurb?: string };
 
-async function withStartHtml(start: WikiPage, target: WikiPage): Promise<LoadedRound> {
-  const art = await fetchArticle(start.title);
-  return { start: { ...start, title: art.title }, target, startHtml: art.html };
+async function withStartHtml(start: WikiPage, target: WikiPage, blurb?: string): Promise<LoadedRound> {
+  const art = await articles.get(start.title);
+  return { start: { ...start, title: art.title }, target, startHtml: art.html, blurb };
 }
 
 /** Resolves a seeded plan into two real, playable pages plus the start page's HTML. */
-export async function resolveRound(plan: RoundPlan): Promise<LoadedRound> {
+const roundCache = new Map<string, Promise<LoadedRound>>();
+
+/** Memoized, so the lobby can warm up the likely first round while the player is still deciding. */
+export function resolveRound(plan: RoundPlan): Promise<LoadedRound> {
+  const key = `${plan.start}|${plan.target}`;
+  const hit = roundCache.get(key);
+  if (hit) return hit;
+  const job = loadRound(plan);
+  roundCache.set(key, job);
+  job.catch(() => roundCache.delete(key));
+  return job;
+}
+
+/** Fire-and-forget version of resolveRound for warming. */
+export function warmRound(plan: RoundPlan) {
+  resolveRound(plan).catch(() => {});
+}
+
+async function loadRound(plan: RoundPlan): Promise<LoadedRound> {
   const [start, target] = await Promise.all([
     firstUsable([plan.start, ...plan.startAlts], new Set()),
     firstUsable([plan.target, ...plan.targetAlts], new Set()),
@@ -86,7 +109,7 @@ export async function resolveRound(plan: RoundPlan): Promise<LoadedRound> {
   const finalTarget = normTitle(start.title) === normTitle(target.title)
     ? await firstUsable([...plan.targetAlts, plan.target], new Set([normTitle(start.title)]))
     : target;
-  return withStartHtml(start, finalTarget);
+  return withStartHtml(start, finalTarget, plan.blurb);
 }
 
 const LISTY = /^(list|lists|index|outline|timeline|glossary) of\b/i;

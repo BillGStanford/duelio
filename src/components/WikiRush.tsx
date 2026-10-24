@@ -7,9 +7,14 @@ import { ensureWikiProfile } from '@/lib/wikirush-client';
 import Game from './wikirush/Game';
 import Lobby, { type BoardRow } from './wikirush/Lobby';
 import AuthPanel from './wikirush/AuthPanel';
+import MenuHero from './wikirush/MenuHero';
 import { DAILY_SETTINGS, type ChallengeParams, type GameMode, type GameSettings, type GameSummary } from '@/lib/wikirush/types';
-import { dailySeed, utcDateKey } from '@/lib/wikirush/rounds';
+import { dailyNumber, dailySeed, planRounds, utcDateKey } from '@/lib/wikirush/rounds';
+import { warmRound } from '@/lib/wikirush/wiki';
 import { randomSeed } from '@/lib/wikirush/rng';
+import { starterSeedForGame } from '@/lib/wikirush/starters';
+import { addPending, clearPending, guestUsedCookie, guestUsedLocally, loadPending, markGuestUsed, mustSignUp } from '@/lib/wikirush/guest';
+import { guestIds } from '@/lib/wikirush/fingerprint';
 import { parseChallengeParams } from '@/lib/wikirush/share';
 import { DEFAULT_PREFS, EMPTY_STATS, applyGame, loadPrefs, loadStats, savePrefs, saveStats, type WikiPrefs, type WikiStats } from '@/lib/wikirush/stats';
 import { RunRecorder, canReel, canScreen } from '@/lib/wikirush/recorder';
@@ -42,6 +47,11 @@ export default function WikiRush() {
   const [dailyKey, setDailyKey] = useState(() => utcDateKey());
   const [board, setBoard] = useState<BoardRow[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [gate, setGate] = useState(false);
+  const [stream, setStream] = useState(false);
+  const [authReady, setAuthReady] = useState(!SUPABASE_URL || !SUPABASE_KEY);
+  const [auto, setAuto] = useState<'play' | 'daily' | null>(null);
+  const autoDone = useRef(false);
   const [active, setActive] = useState<Active | null>(null);
   const overlayRef = useRef<OverlayState>(IDLE_OVERLAY);
   const gameId = useRef(0);
@@ -58,6 +68,8 @@ export default function WikiRush() {
     const ref = params.get('ref');
     if (ref) { setReferralCode(ref.slice(0, 40)); setStartInSignup(true); }
     setChallenge(parseChallengeParams(window.location.search));
+    try { if (params.get('stream') === '1') localStorage.setItem('wikirush:v2:stream', '1'); setStream(localStorage.getItem('wikirush:v2:stream') === '1'); } catch { setStream(params.get('stream') === '1'); }
+    if (params.get('play') === '1') setAuto('play'); else if (params.get('daily') === '1') setAuto('daily');
   }, []);
 
   const setPrefs = useCallback((p: WikiPrefs) => { setPrefsState(p); savePrefs(p); }, []);
@@ -71,7 +83,7 @@ export default function WikiRush() {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    supabase.auth.getSession().then(({ data }) => { setSession(data.session); setAuthReady(true); }, () => setAuthReady(true));
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => data.subscription.unsubscribe();
   }, [supabase]);
@@ -94,6 +106,32 @@ export default function WikiRush() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, supabase]);
 
+  // Everything played before the account existed is saved the moment the player signs in.
+  useEffect(() => {
+    if (!session?.user || !supabase) return;
+    const queued = loadPending();
+    if (!queued.length) return;
+    let alive = true;
+    (async () => {
+      let saved = 0;
+      for (const game of queued) {
+        if (!alive) return;
+        const { error: err } = await supabase.rpc('submit_wikirush_game', {
+          p_mode: game.settings.mode, p_seed: game.settings.seed ?? null, p_rounds: game.settings.rounds, p_seconds: game.settings.seconds,
+          p_results: game.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
+        });
+        if (err) break;
+        saved += 1;
+        if (saved < queued.length) await new Promise(r => setTimeout(r, 8500)); // the database rate-limits submissions
+      }
+      if (!alive) return;
+      if (saved === queued.length) clearPending();
+      if (saved) { setNotice(`Welcome aboard! Your ${saved === 1 ? 'first game was' : `${saved} games were`} saved to your profile.`); void refreshProfile(session.user.id); }
+      setGate(false);
+    })();
+    return () => { alive = false; };
+  }, [session, supabase, refreshProfile]);
+
   useEffect(() => {
     if (!supabase) return;
     supabase.from('wikirush_daily_board').select('display_name, total').eq('seed', dailySeed(dailyKey)).order('total', { ascending: false }).limit(10)
@@ -102,22 +140,71 @@ export default function WikiRush() {
 
   const playerName = String(session?.user.user_metadata?.display_name || prefs.name || '').slice(0, 24) || undefined;
 
+  // While the player reads the lobby, quietly load the first Daily round (and its links) so it opens instantly.
+  useEffect(() => {
+    const first = planRounds(dailySeed(utcDateKey()), DAILY_SETTINGS.rounds)[0];
+    if (first) warmRound(first);
+  }, []);
+
+  // Landing-page PLAY / Daily buttons arrive here with ?play=1 or ?daily=1 and drop straight into a round.
+  // Screen recording needs a click on this page for browser permission, so auto-started games skip it.
+  useEffect(() => {
+    if (!auto || !authReady || autoDone.current) return;
+    autoDone.current = true;
+    window.history.replaceState(null, '', '/wikirush');
+    void start(auto === 'daily' ? 'daily' : 'classic', true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, authReady]);
+
   // ---------- starting a game ----------
-  async function start(mode: GameMode) {
+  const configured = !!supabase;
+
+  /** True when this visitor already used their free game (this browser, or this device on the server). */
+  async function guestBlocked(): Promise<boolean> {
+    if (!configured || session?.user) return false;
+    const local = guestUsedLocally() || guestUsedCookie();
+    if (local) return mustSignUp({ configured, signedIn: false, usedLocally: true, usedOnServer: false });
+    try {
+      const ids = await guestIds();
+      if (!ids) return false;
+      const res = await fetch('/api/wikirush/guest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'check', ...ids }) });
+      const data = (await res.json()) as { gate?: boolean; used?: boolean };
+      return mustSignUp({ configured: configured && data.gate !== false, signedIn: false, usedLocally: false, usedOnServer: !!data.used });
+    } catch { return false; } // fail open: never lock someone out because a check failed
+  }
+
+  /** Burn the free game when it STARTS, so quitting and reloading mid-game is not a free retry. */
+  async function claimFreeGame() {
+    if (!configured || session?.user) return;
+    markGuestUsed();
+    try {
+      const ids = await guestIds();
+      if (ids) void fetch('/api/wikirush/guest', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'claim', ...ids }) }).catch(() => {});
+    } catch { /* ignore */ }
+  }
+
+  function openGate() {
+    setGate(true);
+    window.setTimeout(() => document.getElementById('account')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60);
+  }
+
+  async function start(mode: GameMode, noRecord = false) {
     setError(''); setNotice(''); setBusy(true);
     try {
+      if (await guestBlocked()) { openGate(); return; }
       let settings: GameSettings;
       if (mode === 'daily') settings = { mode, ...DAILY_SETTINGS, seed: dailySeed(utcDateKey()) };
       else if (mode === 'challenge' && challenge) settings = { mode, rounds: challenge.rounds, seconds: challenge.seconds, seed: challenge.seed };
       else if (mode === 'wild') settings = { mode, rounds: prefs.rounds, seconds: prefs.seconds };
-      else settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed: randomSeed() };
-      await launch(settings);
+      else settings = { mode: 'classic', rounds: prefs.rounds, seconds: prefs.seconds, seed: starterSeedForGame(stats.games) || randomSeed() };
+      await launch(settings, noRecord);
+      await claimFreeGame();
     } finally { setBusy(false); }
   }
 
-  async function launch(settings: GameSettings) {
+  async function launch(settings: GameSettings, noRecord = false) {
     let recorder: RunRecorder | null = null;
-    if (prefs.record && (caps.screen || caps.reel)) {
+    if (!noRecord && prefs.record && (caps.screen || caps.reel)) {
       const method = prefs.recordMethod === 'screen' && caps.screen ? 'screen' : caps.reel ? 'reel' : null;
       if (method) {
         try {
@@ -137,7 +224,10 @@ export default function WikiRush() {
 
   const onFinish = useCallback(async (summary: GameSummary): Promise<string> => {
     setStats(prev => { const next = applyGame(prev, summary); saveStats(next); return next; });
-    if (!supabase || !session?.user) return 'Create a free account to put your score on the leaderboard.';
+    if (!supabase || !session?.user) {
+      if (supabase) { addPending(summary); return 'Create a free account and this score is saved to your profile and the leaderboard.'; }
+      return 'Accounts are not enabled here yet, so this score stays on this device.';
+    }
     const { data, error: err } = await supabase.rpc('submit_wikirush_game', {
       p_mode: summary.settings.mode, p_seed: summary.settings.seed ?? null, p_rounds: summary.settings.rounds, p_seconds: summary.settings.seconds,
       p_results: summary.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
@@ -149,43 +239,32 @@ export default function WikiRush() {
     return res.points ? `+${res.points.toLocaleString()} leaderboard points saved.` : 'Saved to your profile.';
   }, [refreshProfile, session, supabase]);
 
-  const exit = useCallback(() => { setActive(null); overlayRef.current = IDLE_OVERLAY; if (typeof window !== 'undefined' && window.location.search) window.history.replaceState(null, '', '/wikirush'); setChallenge(null); }, []);
+  const exit = useCallback(() => { setActive(null); overlayRef.current = IDLE_OVERLAY; if (typeof window !== 'undefined' && window.location.search) window.history.replaceState(null, '', '/wikirush'); setChallenge(null); if (configured && !session?.user && (guestUsedLocally() || guestUsedCookie())) { setGate(true); window.setTimeout(() => document.getElementById('account')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80); } }, [configured, session]);
 
   const again = useCallback((settings: GameSettings) => {
+    if (configured && !session?.user && (guestUsedLocally() || guestUsedCookie())) { exit(); return; } // free game is spent
     setActive(null);
     // Let the old game unmount (and release its recorder) before the next one mounts.
     window.setTimeout(() => { void (async () => { setBusy(true); try { await launch(settings); } finally { setBusy(false); } })(); }, 50);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs, caps]);
+  }, [prefs, caps, configured, session, exit]);
 
   const dailyScore = stats.daily[dailyKey];
 
   return <main className="min-h-[80vh] bg-[#f6f7fb] pb-16">
-    <section className="relative overflow-hidden bg-[#101426] text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-60" aria-hidden="true" style={{ background: 'radial-gradient(60% 80% at 90% 0%, rgba(105,120,245,.45), transparent 60%), radial-gradient(40% 60% at 0% 100%, rgba(231,93,135,.28), transparent 60%)' }} />
-      <div className="relative mx-auto grid max-w-6xl gap-8 px-5 py-12 sm:py-16 lg:grid-cols-[1fr_340px] lg:items-end">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-black uppercase tracking-[.18em] text-[#aeb7ff]"><span className="h-2 w-2 animate-pulse rounded-full bg-[#aeb7ff]" /> Duelio original · WikiRush</p>
-          <h1 className="mt-5 max-w-3xl text-5xl font-black leading-[.95] tracking-[-.06em] sm:text-7xl">GeoGuessr,<br /><span className="text-[#aeb7ff]">but for Wikipedia.</span></h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/70">You’re dropped on a random page and shown a destination. Click only the links inside the article to get there before the clock runs out. Five rounds. One score. Your friends will want a rematch.</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#play" className="rounded-xl bg-[#6978f5] px-5 py-3 font-extrabold text-white hover:bg-[#5866df]">Play now ↓</a>
-            <Link href="/leaderboard" className="rounded-xl border border-white/15 px-4 py-3 text-sm font-bold text-white/80 hover:bg-white/5">Global leaderboard ↗</Link>
-          </div>
-        </div>
-        <ol className="grid gap-2 text-sm">
-          {[['1', 'See your start and destination', 'Two real pages, shown before the clock starts.'], ['2', 'Hop through links', 'No search. Use Radar if you’re stuck (−600).'], ['3', 'Arrive, score, share', 'Speed and fewer clicks earn more. Post your emoji row.']].map(([n, t, d]) =>
-            <li key={n} className="flex gap-3 rounded-2xl border border-white/10 bg-white/[.05] p-4"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#6978f5] text-xs font-black">{n}</span><span><span className="block font-extrabold">{t}</span><span className="text-white/60">{d}</span></span></li>)}
-        </ol>
-      </div>
-    </section>
+    <MenuHero onPlay={() => void start('classic')} onDaily={() => void start('daily')} busy={busy} dailyNumber={dailyNumber(dailyKey)} dailyDone={dailyScore !== undefined} />
 
     <div id="play" className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section className="min-w-0 space-y-6">
         <Lobby prefs={prefs} setPrefs={setPrefs} stats={stats} dailyKey={dailyKey} dailyScore={dailyScore} challenge={challenge}
           canScreen={caps.screen} canReel={caps.reel} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
-        <AuthPanel supabase={supabase} session={session} referralCode={referralCode} setReferralCode={setReferralCode} startInSignup={startInSignup}
-          onSession={(s, n) => { setSession(s); if (n) setNotice(n); }} />
+        {gate && !session && <div role="alert" className="wr-pop rounded-3xl bg-gradient-to-br from-[#6978f5] to-[#e75d87] p-6 text-white shadow-xl">
+          <p className="text-xs font-black uppercase tracking-[.2em] text-white/80">Free game used</p>
+          <h3 className="mt-1 text-2xl font-black">Loved it? Make a free account to keep playing.</h3>
+          <p className="mt-2 text-sm text-white/90">Your first game and score are already saved. They go straight onto your profile and the leaderboard when you sign up.</p>
+        </div>}
+        <div id="account"><AuthPanel key={gate ? 'gate' : 'open'} stream={stream} supabase={supabase} session={session} referralCode={referralCode} setReferralCode={setReferralCode} startInSignup={startInSignup || gate}
+          onSession={(s, n) => { setSession(s); if (n) setNotice(n); }} /></div>
       </section>
       <aside className="space-y-4">
         <div className="rounded-3xl bg-[#101426] p-6 text-white">
@@ -214,6 +293,6 @@ export default function WikiRush() {
     </div>
 
     {active && <Game key={active.id} settings={active.settings} recorder={active.recorder} overlayRef={overlayRef} sound={prefs.sound}
-      playerName={playerName} challenge={active.settings.mode === 'challenge' ? challenge : null} onFinish={onFinish} onExit={exit} onPlayAgain={again} />}
+      playerName={playerName} stream={stream} challenge={active.settings.mode === 'challenge' ? challenge : null} onFinish={onFinish} onExit={exit} onPlayAgain={again} />}
   </main>;
 }
