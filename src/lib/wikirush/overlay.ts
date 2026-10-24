@@ -35,7 +35,7 @@ export type OverlayAssets = {
 };
 
 export const INTRO_MS = 2200;
-export const OUTRO_MS = 4200;
+export const OUTRO_MS = 3200;
 
 const FONT = '"Avenir Next","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif';
 const C = { ink: '#101426', indigo: '#6978f5', soft: '#aeb7ff', pink: '#e75d87', mint: '#4ade80', amber: '#fbbf24', red: '#f87171' };

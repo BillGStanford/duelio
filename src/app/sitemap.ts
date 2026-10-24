@@ -14,7 +14,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   const matchups = await listMatchups(1000);
   return [
-    { url: `${SITE_URL}/` },
+    { url: `${SITE_URL}/wikirush`, changeFrequency: 'daily' as const, priority: 1 },
+    { url: `${SITE_URL}/wikirush/how-to-play`, priority: 0.8 },
+    { url: `${SITE_URL}/wikirush/streamers`, priority: 0.8 },
+    { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily' as const },
+    { url: `${SITE_URL}/`, priority: 0.9 },
     { url: `${SITE_URL}/submit` },
     { url: `${SITE_URL}/guidelines` },
     ...dilemmas.map((d) => ({ url: `${SITE_URL}/d/${d.slug}`, lastModified: d.updatedAt })),

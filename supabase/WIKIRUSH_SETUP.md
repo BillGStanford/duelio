@@ -22,3 +22,11 @@ Score validation enforces duration/elapsed bounds and a server-side points cap. 
 - **Leaderboard points** from v2 games are `total / 10`.
 - **Recording** happens entirely in the player's browser (canvas + MediaRecorder). Nothing is uploaded.
 - Regenerate the brand art with `python3 scripts/make-wikirush-art.py` (needs `pillow` and `numpy`).
+
+## Guest gate (one free game)
+
+Run the new `wikirush_guest_claims` block at the bottom of `supabase/wikirush-v2.sql`. It needs `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` on the server. Without them the gate is off and everyone plays freely.
+
+- The free game is claimed when it **starts**, keyed on a browser fingerprint and a machine+network hash (salted, never raw IPs).
+- Games played before sign-up are queued in the browser and submitted automatically after login.
+- This is a conversion gate, not a security boundary: clearing storage on another browser *and* network gets around it.

@@ -16,6 +16,8 @@ type Props = {
   thumbnail?: string;
   disabled: boolean;
   onNavigate(title: string): void;
+  /** Pointer is over (or finger is on) a link: the player is probably about to click it. */
+  onHint?(title: string): void;
   onBlocked(message: string): void;
 };
 
@@ -32,7 +34,7 @@ function playableAnchors(root: HTMLElement): Array<{ a: HTMLAnchorElement; title
   return out;
 }
 
-function ArticleViewBase({ title, html, thumbnail, disabled, onNavigate, onBlocked }: Props, ref: React.Ref<ArticleHandle>) {
+function ArticleViewBase({ title, html, thumbnail, disabled, onNavigate, onHint, onBlocked }: Props, ref: React.Ref<ArticleHandle>) {
   const scroller = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
 
@@ -53,6 +55,13 @@ function ArticleViewBase({ title, html, thumbnail, disabled, onNavigate, onBlock
   }), []);
 
   useEffect(() => { scroller.current?.scrollTo({ top: 0 }); }, [title]);
+
+  function hint(event: { target: EventTarget }) {
+    if (!onHint || disabled) return;
+    const anchor = (event.target as HTMLElement).closest?.('a');
+    const next = anchor ? titleFromHref(anchor.getAttribute('href')) : null;
+    if (next) onHint(next);
+  }
 
   function onClick(event: MouseEvent<HTMLDivElement>) {
     const anchor = (event.target as HTMLElement).closest('a');
@@ -82,7 +91,7 @@ function ArticleViewBase({ title, html, thumbnail, disabled, onNavigate, onBlock
       <article className="mx-auto max-w-4xl px-4 pb-24 pt-6 sm:px-8 sm:pt-8">
         <h1 className="wr-title border-b border-[#a2a9b1] pb-3 text-3xl font-normal sm:text-5xl">{title}</h1>
         {thumbnail && <p className="sr-only">Lead image available on the full page.</p>}
-        <div ref={body} className="wr-article mt-5" onClick={onClick} dangerouslySetInnerHTML={{ __html: html }} />
+        <div ref={body} className="wr-article mt-5" onClick={onClick} onPointerOver={hint} onTouchStart={hint} dangerouslySetInnerHTML={{ __html: html }} />
         <p className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-500">
           Article text from Wikipedia, available under CC BY-SA 4.0. WikiRush by Duelio is not affiliated with the Wikimedia Foundation.
         </p>

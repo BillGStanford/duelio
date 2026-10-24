@@ -178,3 +178,9 @@ supabase/schema.sql database schema
 scripts/            background image generator
 tests/              unit tests and the end-to-end smoke script
 ```
+
+### WikiRush growth features
+- Title-screen landing on `/` and `/wikirush` (`?play=1` starts a game, `?daily=1` starts the Daily, `?stream=1` turns on streamer mode).
+- Pages prefetch (`articleCache.ts`), the API slims and caches Wikipedia HTML, and the first round warms up from the lobby.
+- First games use hand-picked starter pairs (`starters.ts`).
+- Share score cards at `/wikirush/og`, challenge links get their own social preview, plus `/wikirush/how-to-play` and `/wikirush/streamers`.

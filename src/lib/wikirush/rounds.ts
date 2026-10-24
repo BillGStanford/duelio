@@ -1,6 +1,7 @@
 import { seededRng, shuffled } from './rng';
 import { START_POOL, TARGET_POOL } from './pools';
 import { normTitle } from './titles';
+import { parseStarterSeed, starterPlans } from './starters';
 
 export type RoundPlan = {
   start: string;
@@ -8,6 +9,8 @@ export type RoundPlan = {
   /** Fallbacks used when a primary title cannot be loaded or is a disambiguation page. */
   startAlts: string[];
   targetAlts: string[];
+  /** A short, fun caption shown on the round intro (hand-picked rounds only). */
+  blurb?: string;
 };
 
 /** Days are counted from the launch of the Daily Challenge (2026-10-23 is #1). */
@@ -34,6 +37,8 @@ const PER_ROUND = 3; // one primary and two alternates per side
  * within a game and a start never equals its own target.
  */
 export function planRounds(seed: string, count: number): RoundPlan[] {
+  const starter = parseStarterSeed(seed);
+  if (starter !== null) return starterPlans(starter, count);
   const rounds = Math.max(1, Math.min(5, Math.floor(count)));
   const rng = seededRng(`wikirush:${seed}`);
   const starts = dedupe(shuffled(START_POOL, rng));
