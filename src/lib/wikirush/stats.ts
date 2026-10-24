@@ -84,13 +84,16 @@ export function saveStats(stats: WikiStats, storage?: StorageLike | null) {
 }
 
 const PREF_KEY = 'wikirush:v2:prefs';
-export type WikiPrefs = { rounds: number; seconds: number; record: boolean; recordMethod: 'screen' | 'reel'; sound: boolean; name: string };
-export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 90, record: false, recordMethod: 'screen', sound: true, name: '' };
+export type WikiPrefs = { rounds: number; seconds: number; record: boolean; recordMethod: 'screen' | 'reel'; sound: boolean; name: string; recVer?: number };
+export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 90, record: true, recordMethod: 'screen', sound: true, name: '', recVer: 2 };
 
 export function loadPrefs(): WikiPrefs {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREF_KEY) : null;
-    return raw ? { ...DEFAULT_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_PREFS };
+    const saved = raw ? { ...DEFAULT_PREFS, ...JSON.parse(raw) } : { ...DEFAULT_PREFS };
+    // Recording used to default to off and was easy to miss. One time, switch everyone to on; they can still turn it off.
+    if (saved.recVer !== 2) { saved.record = true; saved.recVer = 2; }
+    return saved;
   } catch { return { ...DEFAULT_PREFS }; }
 }
 

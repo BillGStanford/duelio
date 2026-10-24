@@ -12,6 +12,7 @@ import { sfx } from '@/lib/wikirush/sfx';
 import { clock, type OverlayState } from '@/lib/wikirush/overlay';
 import { downloadRecording, type RecordingResult, type RunRecorder } from '@/lib/wikirush/recorder';
 import { randomSeed } from '@/lib/wikirush/rng';
+import { pointsForGame } from '@/lib/wikirush/levels';
 import type { ChallengeParams, GameSettings, GameSummary, RoundResult } from '@/lib/wikirush/types';
 
 type Phase = 'loading' | 'intro' | 'countdown' | 'playing' | 'roundEnd' | 'final' | 'error';
@@ -393,7 +394,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       playerName={playerName} challengeLink={challengeLink} stream={!!stream}
       chatText={chatText} onChat={() => void copy(chatText, 'chat')} cardUrl={cardUrl}
       onShare={shareResult} onCopyLink={() => void copy(challengeLink, 'link')}
-      onAgain={() => onPlayAgain(settings.mode === 'daily' || !settings.seed ? settings : { ...settings, mode: 'classic', seed: randomSeed() })}
+      onAgain={() => onPlayAgain(settings.mode === 'daily' || !settings.seed ? settings : { ...settings, mode: 'classic', seed: 'new' })}
       onSameSeed={() => onPlayAgain({ ...settings })}
       onExit={onExit}
     />;
@@ -420,6 +421,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
           </span>
           <span className="ml-auto hidden text-xs font-bold text-white/50 sm:block">{showTarget ? 'Hide' : 'Details'}</span>
         </button>
+        {rec.state === 'recording' && <span role="status" className="shrink-0 self-center rounded-full bg-rose-500/90 px-2.5 py-1 text-[10px] font-black tracking-widest"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-white" />REC</span>}
         <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${low && phase === 'playing' ? 'bg-red-500/20 text-red-200' : 'bg-white/10'}`} aria-live="off">
           <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Time</p>
           <p className="text-2xl font-black tabular-nums leading-none">{clock(msLeft)}</p>
@@ -580,6 +582,7 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
       <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : 'Run complete'} · {settingsLabel(summary.settings)}</p>
       <p className="mt-4 text-center text-7xl font-black tabular-nums tracking-tight sm:text-8xl">{formatScore(shown)}</p>
       <p className="text-center text-sm font-bold text-white/50">out of {formatScore(summary.max)} · {pct}%</p>
+      <p className="wr-pop mt-3 text-center text-lg font-black text-amber-200">⭐ +{pointsForGame(summary.total).toLocaleString()} points</p>
       <div className="mt-4 text-center"><span className="wr-pop inline-block rounded-full bg-amber-300 px-5 py-2 text-lg font-black text-[#101426]">{rank.title}</span><p className="mx-auto mt-2 max-w-sm text-sm text-white/65">{rank.blurb}</p></div>
       <p className="mt-4 text-center text-3xl tracking-widest" aria-label={`${wins} of ${summary.results.length} pages reached`}>{emojiRow(summary.results)}</p>
       {vs !== null && <p className={`mx-auto mt-4 max-w-md rounded-2xl px-4 py-3 text-center text-sm font-extrabold ${vs > 0 ? 'bg-emerald-400/15 text-emerald-200' : vs < 0 ? 'bg-rose-400/15 text-rose-200' : 'bg-white/10'}`}>

@@ -392,3 +392,33 @@ describe('seo data', () => {
     expect(g.url).toBe('https://example.com/wikirush');
   });
 });
+
+import { levelFor, pointsForGame } from '../src/lib/wikirush/levels';
+import { freshSeed, isHardSeed, planRounds as plan2 } from '../src/lib/wikirush/rounds';
+import { HARD_TARGET_POOL, POP_STARTS } from '../src/lib/wikirush/pools';
+
+describe('levels and difficulty', () => {
+  it('maps points to levels with progress', () => {
+    expect(levelFor(0).level.name).toBe('Rookie');
+    expect(levelFor(100).level.name).toBe('Explorer');
+    expect(levelFor(300).progress).toBeCloseTo(0.5, 1);
+    expect(levelFor(99999).next).toBeNull();
+    expect(pointsForGame(18299)).toBe(1829);
+  });
+  it('goes starter, normal, then hard as a player finishes games', () => {
+    expect(freshSeed(0)).toMatch(/^starter-/);
+    expect(isHardSeed(freshSeed(3))).toBe(false);
+    expect(freshSeed(3)).not.toMatch(/^starter-/);
+    expect(isHardSeed(freshSeed(6))).toBe(true);
+  });
+  it('hard rounds avoid pop starts and use the specific-target pool, deterministically', () => {
+    const a = plan2('hard-abc123', 5), b = plan2('hard-abc123', 5);
+    expect(a).toEqual(b);
+    const pop = new Set(POP_STARTS.map(t => t.toLowerCase()));
+    for (const r of a) {
+      expect(pop.has(r.start.toLowerCase())).toBe(false);
+      expect(HARD_TARGET_POOL).toContain(r.target);
+      expect(r.blurb).toMatch(/Hard/);
+    }
+  });
+});

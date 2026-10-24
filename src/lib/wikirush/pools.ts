@@ -48,12 +48,28 @@ export const TARGET_POOL: readonly string[] = [
   'Buddhism', 'Hinduism',
 ];
 
-export const START_POOL: readonly string[] = [
-  // Pop culture and everyday things everyone has heard of
+/** Familiar, friendly starting pages: used while players are learning. Hard mode skips them. */
+export const POP_STARTS: readonly string[] = [
   'Taylor Swift', 'Mickey Mouse', 'SpongeBob SquarePants', 'Spider-Man', 'Barbie', 'Darth Vader', 'Pikachu',
   'Shrek', 'Oprah Winfrey', 'Kim Kardashian', 'LeBron James', 'Justin Bieber', 'Donut', 'Instagram', 'TikTok',
   'Emoji', 'Selfie', 'Hot dog', 'Pancake', 'Popcorn', 'Bubble tea', 'Netflix', 'Disneyland', 'Santa Claus',
   'Easter Bunny', 'Halloween', 'Valentine\'s Day', 'Black Friday', 'Super Bowl', 'Oscar',
+];
+
+/** Specific ideas rather than big hubs: reachable, but they take real detours. Hard mode only. */
+export const HARD_TARGET_POOL: readonly string[] = [
+  'Rosetta Stone', 'Fibonacci sequence', 'Higgs boson', 'CRISPR', 'Entropy', 'Plate tectonics', 'Magna Carta',
+  'Treaty of Versailles', 'Byzantine Empire', 'Mongol Empire', 'Pythagorean theorem', 'Large Hadron Collider',
+  'Voyager 1', 'Hubble Space Telescope', 'Antikythera mechanism', 'Library of Alexandria', 'Double-slit experiment',
+  'Turing test', 'Enigma machine', 'Manhattan Project', 'Sputnik 1', 'Mitochondrion', 'Gutenberg Bible',
+  'Domesday Book', 'Peace of Westphalia', 'Bretton Woods system', 'Hanseatic League', 'Kuiper belt', 'Event horizon',
+  'Cosmic microwave background', 'Standard Model', 'Jet stream', 'Coriolis force', 'P versus NP problem',
+  'Prisoner\'s dilemma', 'Nash equilibrium', 'Tragedy of the commons', 'Rosalind Franklin', 'Tardigrade',
+  'Fermat\'s Last Theorem', 'Ig Nobel Prize', 'Schrödinger\'s cat', 'Mariana Trench', 'Krakatoa',
+];
+
+export const START_POOL: readonly string[] = [
+  ...POP_STARTS,
   // Odd objects, crafts and instruments
   'Kazoo', 'Theremin', 'Bagpipes', 'Accordion', 'Origami', 'Lava lamp', 'Typewriter', 'Zeppelin', 'Abacus',
   'Sundial', 'Igloo', 'Pagoda', 'Windmill', 'Hot air balloon', 'Steam engine', 'Telescope', 'Submarine',
