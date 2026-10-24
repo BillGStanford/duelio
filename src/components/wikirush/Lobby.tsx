@@ -155,7 +155,7 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-black">🎥 Record my run</h3>
-            <p className="mt-0.5 text-sm text-slate-500">Makes a video with the Duelio intro, watermark and score outro. It ends when the game does and downloads automatically.</p>
+            <p className="mt-0.5 text-sm text-slate-500">Makes a video with the Duelio intro, watermark and score outro. It ends when the game does, then a popup lets you download it.</p>
           </div>
           <button role="switch" aria-checked={prefs.record && !noRecording} disabled={noRecording} aria-label="Record my run" onClick={() => setPrefs({ ...prefs, record: !prefs.record })}
             className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40 ${prefs.record && !noRecording ? 'bg-[#e75d87]' : 'bg-slate-300'}`}>

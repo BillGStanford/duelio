@@ -294,7 +294,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     if (recorder) {
       setRec({ state: 'saving' });
       recorder.finish(sum).then(result => {
-        if (result) { downloadRecording(result); setRec({ state: 'done', result }); }
+        if (result) setRec({ state: 'done', result }); // the popup on the results screen asks whether to download
         else setRec({ state: 'failed', message: 'Nothing was recorded.' });
       }).catch(e => setRec({ state: 'failed', message: e instanceof Error ? e.message : 'Recording failed.' }));
     }
@@ -587,6 +587,7 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
   summary: GameSummary; rec: RecState; saveNote: string; challenge?: ChallengeParams | null; burst: number; copied: string; playerName?: string; challengeLink: string; stream: boolean; chatText: string; onChat(): void; cardUrl: string;
   onShare(): void; onCopyLink(): void; onAgain(): void; onSameSeed(): void; onExit(): void;
 }) {
+  const [popupClosed, setPopupClosed] = useState(false);
   const rank = rankFor(summary.total, summary.max);
   const shown = useCountUp(summary.total, 1400);
   const pct = Math.round(scoreShare(summary.total, summary.max) * 100);
@@ -595,6 +596,27 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
   const wins = summary.results.filter(r => r.won).length;
   return <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#101426] text-white" role="dialog" aria-modal="true" aria-label="WikiRush results">
     <Confetti burst={burst} big />
+    {rec.state !== 'off' && !popupClosed && (rec.state === 'recording' || rec.state === 'saving' || rec.state === 'done') && <div className="fixed inset-0 z-[130] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Your recording">
+      <div className="wr-pop w-full max-w-lg rounded-3xl bg-white p-5 text-[#101426] shadow-2xl">
+        {rec.state === 'done' && rec.result ? <>
+          <p className="text-xs font-black uppercase tracking-widest text-[#5968ec]">🎥 Your recording is ready</p>
+          <h3 className="mt-1 text-2xl font-black">Download your video?</h3>
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video src={rec.result.url} controls autoPlay muted loop playsInline className="mt-3 max-h-[50vh] w-full rounded-xl bg-black" />
+          <p className="mt-2 text-xs text-slate-500">{rec.result.filename} · {(rec.result.bytes / 1048576).toFixed(1)} MB · with the WikiRush overlay</p>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <button autoFocus onClick={() => { downloadRecording(rec.result!); setPopupClosed(true); }} className="rounded-xl bg-[#6978f5] px-4 py-3 font-black text-white hover:bg-[#5866df]">⬇ Download</button>
+            {canShareFile(rec.result) ? <button onClick={() => void shareVideo(rec.result!)} className="rounded-xl border border-slate-300 px-4 py-3 font-black hover:bg-slate-50">Share ↗</button> : <button onClick={() => setPopupClosed(true)} className="rounded-xl border border-slate-300 px-4 py-3 font-black hover:bg-slate-50">No thanks</button>}
+          </div>
+          {canShareFile(rec.result) && <button onClick={() => setPopupClosed(true)} className="mx-auto mt-3 block text-sm font-bold text-slate-500 underline">No thanks</button>}
+        </> : <div className="py-6 text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#6978f5]" />
+          <h3 className="mt-4 text-xl font-black">Finishing your video…</h3>
+          <p className="mt-1 text-sm text-slate-500">Adding the WikiRush outro. This takes a few seconds.</p>
+          <button onClick={() => setPopupClosed(true)} className="mt-4 text-sm font-bold text-slate-500 underline">Hide</button>
+        </div>}
+      </div>
+    </div>}
     <div className="relative z-20 mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : 'Run complete'} · {settingsLabel(summary.settings)}</p>
       <p className="mt-4 text-center text-7xl font-black tabular-nums tracking-tight sm:text-8xl">{formatScore(shown)}</p>
@@ -619,14 +641,14 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
 
       {rec.state !== 'off' && <div className="mt-5 rounded-2xl border border-white/10 bg-white/[.05] p-4">
         <p className="text-xs font-black uppercase tracking-widest text-[#aeb7ff]">🎥 Your recording</p>
-        {rec.state === 'recording' || rec.state === 'saving' ? <p className="mt-2 text-sm text-white/70">Finishing your video with the Duelio outro… it downloads automatically.</p> : null}
+        {rec.state === 'recording' || rec.state === 'saving' ? <p className="mt-2 text-sm text-white/70">Finishing your video with the Duelio outro… a Download popup appears when it is ready.</p> : null}
         {rec.state === 'failed' && <p className="mt-2 text-sm text-rose-200">{rec.message || 'Recording failed.'}</p>}
         {rec.state === 'done' && rec.result && <>
-          <p className="mt-2 text-sm text-white/70">Saved <span className="font-bold text-white">{rec.result.filename}</span> · {(rec.result.bytes / 1048576).toFixed(1)} MB. It should be in your downloads.</p>
+          <p className="mt-2 text-sm text-white/70">Saved <span className="font-bold text-white">{rec.result.filename}</span> · {(rec.result.bytes / 1048576).toFixed(1)} MB. Ready whenever you are.</p>
           {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
           <video src={rec.result.url} controls playsInline className="mt-3 max-h-80 w-full rounded-xl bg-black" />
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => downloadRecording(rec.result!)} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Download again ↓</button>
+            <button onClick={() => downloadRecording(rec.result!)} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Download ↓</button>
             {canShareFile(rec.result) && <button onClick={() => void shareVideo(rec.result!)} className="rounded-xl bg-[#6978f5] px-4 py-2.5 text-sm font-bold hover:bg-[#5866df]">Share video ↗</button>}
           </div>
         </>}

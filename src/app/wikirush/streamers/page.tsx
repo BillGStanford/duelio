@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const perks = [
   ['Chat plays along', 'Every game makes a challenge link. Paste it in chat and viewers play the exact same pages, then post their scores to compare.'],
   ['Streamer mode', 'Hides your account name and email on screen. Add ?stream=1 to any WikiRush link to switch it on.'],
-  ['Clip that makes itself', 'Turn on recording and the run, with the WikiRush overlay, downloads automatically when the game ends. Upload it straight to TikTok, Shorts or Reels.'],
+  ['Clip that makes itself', 'Turn on recording and the run, with the WikiRush overlay, shows a Download popup when the game ends. Upload it straight to TikTok, Shorts or Reels.'],
   ['Daily Challenge', 'One shared daily set gives your community a reason to come back every stream.'],
   ['No download, no login to start', 'It runs in the browser, so it works as an OBS browser or window capture. The first game needs no account.'],
 ];
