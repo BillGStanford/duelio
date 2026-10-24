@@ -68,14 +68,14 @@ export default function MenuHero({ onPlay, onDaily, busy, dailyDone, dailyNumber
           📅 Daily Challenge{dailyNumber ? ` #${dailyNumber}` : ''}{dailyDone ? ' · played ✓' : ''}
         </Cta>
         {able && <button type="button" role="switch" aria-checked={on} onClick={toggle} className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${on ? 'border-rose-400/70 bg-rose-500/15' : 'border-white/15 bg-white/5'}`}>
-          <span><span className="block text-sm font-black">🎥 Record my run {on ? '· ON' : '· OFF'}</span><span className="block text-xs font-semibold text-white/60">Branded video downloads by itself when the game ends</span></span>
+          <span><span className="block text-sm font-black">🎥 Record my run {on ? '· ON' : '· OFF'}</span><span className="block text-xs font-semibold text-white/60">A branded video pops up with Download when the game ends</span></span>
           <span className={`relative h-7 w-12 shrink-0 rounded-full ${on ? 'bg-rose-500' : 'bg-white/25'}`}><span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} /></span>
         </button>}
         <p className="text-sm font-semibold text-white/60">Free to play · first game needs no account · 90 seconds a round</p>
       </div>
 
       <ul className="mt-8 grid w-full max-w-3xl grid-cols-3 gap-2 text-xs font-bold text-white/70 sm:gap-3 sm:text-sm">
-        {[['⚡', 'Instant pages', 'Prefetched, no waiting'], ['🎥', 'Auto-record', 'Clip downloads itself'], ['🔗', 'Challenge friends', 'One link, same pages']].map(([i, t, d]) =>
+        {[['⚡', 'Instant pages', 'Prefetched, no waiting'], ['🎥', 'Auto-record', 'Download popup at the end'], ['🔗', 'Challenge friends', 'One link, same pages']].map(([i, t, d]) =>
           <li key={t} className="rounded-2xl border border-white/10 bg-white/[.06] p-3 backdrop-blur-sm"><span aria-hidden="true" className="text-xl">{i}</span><span className="mt-1 block font-black text-white">{t}</span><span className="hidden sm:block">{d}</span></li>)}
       </ul>
       {footer}
