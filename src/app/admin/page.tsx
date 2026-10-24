@@ -85,7 +85,7 @@ export default async function AdminPage({ searchParams }: { searchParams: { msg?
   return (
     <main className="mx-auto max-w-5xl px-5 pb-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h1 className="text-4xl font-extrabold tracking-tight">Editor desk</h1><Link href="/admin/matchups" className="mt-2 inline-flex min-h-10 items-center rounded-lg bg-sidea px-4 py-2 font-bold text-white hover:brightness-95">Manage matchups →</Link></div>
+        <div><h1 className="text-4xl font-extrabold tracking-tight">Editor desk</h1><Link href="/admin/matchups" className="mt-2 inline-flex min-h-10 items-center rounded-lg bg-sidea px-4 py-2 font-bold text-white hover:brightness-95">Manage matchups →</Link> <Link href="/admin/wikirush" className="mt-2 inline-flex min-h-10 items-center rounded-lg bg-ink px-4 py-2 font-bold text-white hover:brightness-95">WikiRush detail challenges →</Link></div>
         <form method="post" action="/api/admin/logout"><button className="border-2 border-ink px-4 py-2 font-bold hover:bg-white" type="submit">Sign out</button></form>
       </div>
       <p className="mt-1 text-mute">Storage: {storeKind() === 'supabase' ? 'Supabase' : 'local JSON file (development only)'}</p>

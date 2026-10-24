@@ -8,6 +8,7 @@ import { liveDailyStreak } from '@/lib/wikirush/stats';
 import { dailyNumber } from '@/lib/wikirush/rounds';
 import { formatScore, settingsLabel } from '@/lib/wikirush/share';
 import { maxScore } from '@/lib/wikirush/scoring';
+import type { Featured } from '@/lib/wikirush/featured';
 
 export type BoardRow = { display_name: string; total: number };
 
@@ -25,6 +26,9 @@ type Props = {
   notice: string;
   board: BoardRow[] | null;
   onStart(mode: GameMode): void;
+  featured?: Featured[];
+  highlightId?: string;
+  onStartFeatured?(f: Featured): void;
 };
 
 function untilNextDaily() {
@@ -43,7 +47,7 @@ function Seg<T extends string | number>({ value, options, onChange, label }: { v
   </div>;
 }
 
-export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, canScreen, canReel, busy, error, notice, board, onStart }: Props) {
+export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, canScreen, canReel, busy, error, notice, board, onStart, featured = [], highlightId, onStartFeatured }: Props) {
   const [until, setUntil] = useState('');
   useEffect(() => { setUntil(untilNextDaily()); const id = window.setInterval(() => setUntil(untilNextDaily()), 30000); return () => window.clearInterval(id); }, []);
   const streak = liveDailyStreak(stats, dailyKey);
@@ -65,6 +69,20 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
           <p className="text-sm text-white/60">Same pages · {settingsLabel({ mode: 'challenge', rounds: challenge.rounds, seconds: challenge.seconds })}</p>
         </div>
         <button disabled={busy} onClick={() => onStart('challenge')} className="rounded-2xl bg-white px-6 py-3.5 font-black text-[#101426] hover:bg-[#eef0ff] disabled:opacity-60">Accept challenge →</button>
+      </div>
+    </section>}
+
+    {featured.length > 0 && <section aria-label="Featured challenges">
+      <p className="mb-2 text-xs font-black uppercase tracking-[.2em] text-[#5968ec]">⭐ Featured challenges</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {featured.map(f => <article key={f.id} id={`feat-${f.id}`} className={`flex flex-col justify-between rounded-3xl border bg-white p-5 ${highlightId === f.id ? 'border-[#6978f5] ring-4 ring-[#6978f5]/25' : 'border-slate-200'}`}>
+          <div>
+            <h3 className="text-lg font-black leading-tight">{f.title}</h3>
+            {f.blurb && <p className="mt-1 text-sm text-slate-500">{f.blurb}</p>}
+            <p className="mt-2 text-sm font-bold text-slate-700">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>
+          </div>
+          <button disabled={busy} onClick={() => onStartFeatured?.(f)} className="mt-4 rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white hover:bg-[#1c2240] disabled:opacity-60">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button>
+        </article>)}
       </div>
     </section>}
 

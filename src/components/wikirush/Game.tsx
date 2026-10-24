@@ -12,6 +12,7 @@ import { sfx } from '@/lib/wikirush/sfx';
 import { clock, type OverlayState } from '@/lib/wikirush/overlay';
 import { downloadRecording, type RecordingResult, type RunRecorder } from '@/lib/wikirush/recorder';
 import { randomSeed } from '@/lib/wikirush/rng';
+import { pointsForGame } from '@/lib/wikirush/levels';
 import type { ChallengeParams, GameSettings, GameSummary, RoundResult } from '@/lib/wikirush/types';
 
 type Phase = 'loading' | 'intro' | 'countdown' | 'playing' | 'roundEnd' | 'final' | 'error';
@@ -25,6 +26,8 @@ type Props = {
   playerName?: string;
   challenge?: ChallengeParams | null;
   stream?: boolean;
+  /** Fires once, the moment play actually begins (after the countdown). */
+  onBegin?(): void;
   onFinish(summary: GameSummary): Promise<string | void> | string | void;
   onExit(): void;
   onPlayAgain(settings: GameSettings): void;
@@ -47,7 +50,7 @@ function useCountUp(value: number, ms = 900, active = true) {
   return shown;
 }
 
-export default function Game({ settings, recorder, overlayRef, sound, playerName, challenge, stream, onFinish, onExit, onPlayAgain }: Props) {
+export default function Game({ settings, recorder, overlayRef, sound, playerName, challenge, stream, onBegin, onFinish, onExit, onPlayAgain }: Props) {
   const limitMs = settings.seconds * 1000;
   const [phase, setPhase] = useState<Phase>('loading');
   const [roundIdx, setRoundIdx] = useState(0);
@@ -72,6 +75,8 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   const [showTarget, setShowTarget] = useState(false);
   const [copied, setCopied] = useState('');
 
+  const onBeginRef = useRef(onBegin);
+  onBeginRef.current = onBegin;
   const article = useRef<ArticleHandle>(null);
   const toastTimer = useRef<number | null>(null);
   const g = useRef({
@@ -90,6 +95,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     results: [] as RoundResult[],
     lastTickSecond: -1,
     finished: false,
+    begun: false,
     round: null as LoadedRound | null,
   });
 
@@ -114,13 +120,17 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     const cache = g.current.loads;
     const hit = cache.get(i);
     if (hit) return hit;
-    if (settings.mode !== 'wild' && !g.current.plans.length) g.current.plans = planRounds(settings.seed || randomSeed(), rounds);
+    if (settings.mode !== 'wild' && !g.current.plans.length) {
+      g.current.plans = settings.custom?.length
+        ? settings.custom.map(c => ({ start: c.start, target: c.target, startAlts: [], targetAlts: [], blurb: c.blurb }))
+        : planRounds(settings.seed || randomSeed(), rounds);
+    }
     const p = settings.mode === 'wild' ? resolveWildRound(g.current.used) : resolveRound(g.current.plans[i]);
     const tracked = p.then(r => { g.current.used.add(normTitle(r.target.title)); return r; });
     tracked.catch(() => { cache.delete(i); });
     cache.set(i, tracked);
     return tracked;
-  }, [settings.mode, settings.seed, rounds]);
+  }, [settings.mode, settings.seed, settings.custom, rounds]);
 
   const openRound = useCallback(async (i: number) => {
     setPhase('loading'); setError(''); setRoundIdx(i);
@@ -162,6 +172,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       s.stack = [r.start.title]; s.trail = [r.start.title]; s.clicks = 0; s.radar = false; s.paused = 0; s.pausedAt = null;
       s.ended = false; s.lastTickSecond = -1; s.live = true; s.startedAt = performance.now();
       sfx.go(); setPhase('playing');
+      if (!s.begun) { s.begun = true; onBeginRef.current?.(); }
       return;
     }
     const id = window.setTimeout(() => { setCountdown(c => c - 1); if (countdown > 1) sfx.count(); }, 800);
@@ -343,7 +354,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
   async function shareResult() {
     if (!summary) return;
-    const text = buildShareText({ summary, origin, playerName });
+    const text = buildShareText({ summary, origin, playerName, link: settings.featuredId ? `${origin}/wikirush?f=${settings.featuredId}` : undefined });
     if (typeof navigator.share === 'function') {
       try { await navigator.share({ text }); return; } catch (e) { if ((e as Error)?.name === 'AbortError') return; }
     }
@@ -353,8 +364,9 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   const challengeLink = useMemo(() => {
     if (!summary || !settings.seed) return '';
     if (settings.mode === 'daily') return `${origin}/wikirush`;
+    if (settings.featuredId) return `${origin}/wikirush?f=${settings.featuredId}`;
     return buildChallengeUrl(origin, { seed: settings.seed, seconds: settings.seconds, rounds: settings.rounds, score: summary.total, name: playerName });
-  }, [origin, playerName, settings.mode, settings.rounds, settings.seconds, settings.seed, summary]);
+  }, [origin, playerName, settings.featuredId, settings.mode, settings.rounds, settings.seconds, settings.seed, summary]);
 
   const chatText = useMemo(() => {
     if (!summary) return '';
@@ -365,9 +377,13 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
   // ---------- render ----------
   const frame = 'fixed inset-0 z-[100] flex flex-col bg-[#101426] text-white';
+  // Quitting before play begins is free: no score, no streak, and the free game is not used up.
+  const quitX = <button type="button" onClick={onExit} aria-label="Quit before the game starts" title="Quit (nothing is counted)"
+    className="absolute right-3 top-3 z-[60] grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-white/10 text-2xl font-black leading-none text-white hover:bg-white/25">×</button>;
 
   if (phase === 'loading' || phase === 'error') {
     return <div className={frame} role="dialog" aria-modal="true" aria-label="WikiRush">
+      {quitX}
       <div className="m-auto max-w-md px-6 text-center">
         {phase === 'loading' ? <>
           <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-white/15 border-t-[#aeb7ff]" />
@@ -393,7 +409,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       playerName={playerName} challengeLink={challengeLink} stream={!!stream}
       chatText={chatText} onChat={() => void copy(chatText, 'chat')} cardUrl={cardUrl}
       onShare={shareResult} onCopyLink={() => void copy(challengeLink, 'link')}
-      onAgain={() => onPlayAgain(settings.mode === 'daily' || !settings.seed ? settings : { ...settings, mode: 'classic', seed: randomSeed() })}
+      onAgain={() => onPlayAgain(settings.mode === 'daily' || !settings.seed ? settings : { ...settings, custom: undefined, featuredId: undefined, mode: 'classic', seed: 'new' })}
       onSameSeed={() => onPlayAgain({ ...settings })}
       onExit={onExit}
     />;
@@ -420,6 +436,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
           </span>
           <span className="ml-auto hidden text-xs font-bold text-white/50 sm:block">{showTarget ? 'Hide' : 'Details'}</span>
         </button>
+        {rec.state === 'recording' && <span role="status" className="shrink-0 self-center rounded-full bg-rose-500/90 px-2.5 py-1 text-[10px] font-black tracking-widest"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-white" />REC</span>}
         <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${low && phase === 'playing' ? 'bg-red-500/20 text-red-200' : 'bg-white/10'}`} aria-live="off">
           <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Time</p>
           <p className="text-2xl font-black tabular-nums leading-none">{clock(msLeft)}</p>
@@ -464,6 +481,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
     {/* Intro */}
     {phase === 'intro' && round && <div className="absolute inset-0 z-30 flex items-center justify-center overflow-y-auto bg-[#101426]/95 p-4 backdrop-blur-sm">
+      {quitX}
       <div className="wr-rise w-full max-w-2xl text-center">
         <p className="text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">Round {roundIdx + 1} of {rounds} · {settingsLabel(settings)}</p>
         <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">Get from here…</h2>
@@ -480,6 +498,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
     {/* Countdown */}
     {phase === 'countdown' && <div className="absolute inset-0 z-30 grid place-items-center bg-[#101426]/80 backdrop-blur-sm" aria-live="assertive">
+      {quitX}
       <p key={countdown} className="wr-pop text-[10rem] font-black leading-none text-white sm:text-[14rem]">{countdown > 0 ? countdown : 'GO'}</p>
     </div>}
 
@@ -580,6 +599,7 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
       <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : 'Run complete'} · {settingsLabel(summary.settings)}</p>
       <p className="mt-4 text-center text-7xl font-black tabular-nums tracking-tight sm:text-8xl">{formatScore(shown)}</p>
       <p className="text-center text-sm font-bold text-white/50">out of {formatScore(summary.max)} · {pct}%</p>
+      <p className="wr-pop mt-3 text-center text-lg font-black text-amber-200">⭐ +{pointsForGame(summary.total).toLocaleString()} points</p>
       <div className="mt-4 text-center"><span className="wr-pop inline-block rounded-full bg-amber-300 px-5 py-2 text-lg font-black text-[#101426]">{rank.title}</span><p className="mx-auto mt-2 max-w-sm text-sm text-white/65">{rank.blurb}</p></div>
       <p className="mt-4 text-center text-3xl tracking-widest" aria-label={`${wins} of ${summary.results.length} pages reached`}>{emojiRow(summary.results)}</p>
       {vs !== null && <p className={`mx-auto mt-4 max-w-md rounded-2xl px-4 py-3 text-center text-sm font-extrabold ${vs > 0 ? 'bg-emerald-400/15 text-emerald-200' : vs < 0 ? 'bg-rose-400/15 text-rose-200' : 'bg-white/10'}`}>

@@ -1,7 +1,8 @@
 import { seededRng, shuffled } from './rng';
-import { START_POOL, TARGET_POOL } from './pools';
+import { HARD_TARGET_POOL, POP_STARTS, START_POOL, TARGET_POOL } from './pools';
 import { normTitle } from './titles';
-import { parseStarterSeed, starterPlans } from './starters';
+import { STARTER_GAMES, parseStarterSeed, starterPlans, starterSeedForGame } from './starters';
+import { randomSeed } from './rng';
 
 export type RoundPlan = {
   start: string;
@@ -30,6 +31,22 @@ export function utcDateKey(date: Date = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Seeds that start with `hard-` draw obscure starts and specific, non-hub destinations. */
+export const HARD_PREFIX = 'hard-';
+export const isHardSeed = (seed: string) => seed.startsWith(HARD_PREFIX);
+/** Games after the starters before random games turn hard. */
+export const WARMUP_GAMES = 3;
+
+/**
+ * Seed for a fresh classic game, by how many games this player has finished:
+ * hand-picked fun pairs first, a few normal random games, then hard mode.
+ */
+export function freshSeed(gamesPlayed: number): string {
+  const starter = starterSeedForGame(gamesPlayed);
+  if (starter) return starter;
+  return gamesPlayed >= STARTER_GAMES + WARMUP_GAMES ? `${HARD_PREFIX}${randomSeed()}` : randomSeed();
+}
+
 const PER_ROUND = 3; // one primary and two alternates per side
 
 /**
@@ -40,15 +57,17 @@ export function planRounds(seed: string, count: number): RoundPlan[] {
   const starter = parseStarterSeed(seed);
   if (starter !== null) return starterPlans(starter, count);
   const rounds = Math.max(1, Math.min(5, Math.floor(count)));
+  const hard = isHardSeed(seed);
   const rng = seededRng(`wikirush:${seed}`);
-  const starts = dedupe(shuffled(START_POOL, rng));
-  const targets = dedupe(shuffled(TARGET_POOL, rng));
+  const popular = new Set(POP_STARTS.map(normTitle));
+  const starts = dedupe(shuffled(hard ? START_POOL.filter(t => !popular.has(normTitle(t))) : START_POOL, rng));
+  const targets = dedupe(shuffled(hard ? HARD_TARGET_POOL : TARGET_POOL, rng));
   const plans: RoundPlan[] = [];
   for (let i = 0; i < rounds; i++) {
     const s = starts.slice(i * PER_ROUND, i * PER_ROUND + PER_ROUND);
     let t = targets.slice(i * PER_ROUND, i * PER_ROUND + PER_ROUND);
     if (normTitle(s[0]) === normTitle(t[0])) t = [t[1], t[0], t[2]];
-    plans.push({ start: s[0], target: t[0], startAlts: s.slice(1), targetAlts: t.slice(1) });
+    plans.push({ start: s[0], target: t[0], startAlts: s.slice(1), targetAlts: t.slice(1), ...(hard ? { blurb: '🔥 Hard mode: no hubs, expect detours.' } : {}) });
   }
   return plans;
 }

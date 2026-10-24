@@ -16,6 +16,9 @@ export type GameSettings = {
   seconds: number;
   /** Deterministic seed; absent for wild games. */
   seed?: string;
+  /** Hand-built rounds from the admin desk ("detail challenges"). Overrides seed-based planning. */
+  custom?: Array<{ start: string; target: string; blurb?: string }>;
+  featuredId?: string;
 };
 
 export type RoundResult = {

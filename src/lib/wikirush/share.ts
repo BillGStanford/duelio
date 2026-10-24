@@ -49,9 +49,11 @@ export type ShareInput = {
   summary: GameSummary;
   origin: string;
   playerName?: string;
+  /** Overrides the generated link (featured challenges use their own URL). */
+  link?: string;
 };
 
-export function buildShareText({ summary, origin, playerName }: ShareInput): string {
+export function buildShareText({ summary, origin, playerName, link: linkOverride }: ShareInput): string {
   const { settings, results, total, max } = summary;
   const rank = rankFor(total, max);
   const wins = results.filter(r => r.won).length;
@@ -68,6 +70,7 @@ export function buildShareText({ summary, origin, playerName }: ShareInput): str
     head = 'WikiRush';
     link = `${origin}/wikirush`;
   }
+  if (linkOverride) link = linkOverride;
   const lines = [
     `${head} · ${formatScore(total)}/${formatScore(max)}`,
     `${emojiRow(results)} ${rank.title}`,

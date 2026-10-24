@@ -392,3 +392,53 @@ describe('seo data', () => {
     expect(g.url).toBe('https://example.com/wikirush');
   });
 });
+
+import { levelFor, pointsForGame } from '../src/lib/wikirush/levels';
+import { freshSeed, isHardSeed, planRounds as plan2 } from '../src/lib/wikirush/rounds';
+import { HARD_TARGET_POOL, POP_STARTS } from '../src/lib/wikirush/pools';
+
+describe('levels and difficulty', () => {
+  it('maps points to levels with progress', () => {
+    expect(levelFor(0).level.name).toBe('Rookie');
+    expect(levelFor(100).level.name).toBe('Explorer');
+    expect(levelFor(300).progress).toBeCloseTo(0.5, 1);
+    expect(levelFor(99999).next).toBeNull();
+    expect(pointsForGame(18299)).toBe(1829);
+  });
+  it('goes starter, normal, then hard as a player finishes games', () => {
+    expect(freshSeed(0)).toMatch(/^starter-/);
+    expect(isHardSeed(freshSeed(3))).toBe(false);
+    expect(freshSeed(3)).not.toMatch(/^starter-/);
+    expect(isHardSeed(freshSeed(6))).toBe(true);
+  });
+  it('hard rounds avoid pop starts and use the specific-target pool, deterministically', () => {
+    const a = plan2('hard-abc123', 5), b = plan2('hard-abc123', 5);
+    expect(a).toEqual(b);
+    const pop = new Set(POP_STARTS.map(t => t.toLowerCase()));
+    for (const r of a) {
+      expect(pop.has(r.start.toLowerCase())).toBe(false);
+      expect(HARD_TARGET_POOL).toContain(r.target);
+      expect(r.blurb).toMatch(/Hard/);
+    }
+  });
+});
+
+import { cleanFeatured, featuredSeed } from '../src/lib/wikirush/featured';
+
+describe('detail challenges', () => {
+  const pair = (s: string, t: string) => ({ start: s, target: t });
+  it('accepts 1/3/5 rounds and cleans titles', () => {
+    const r = cleanFeatured({ title: ' Melania to Mars ', pairs: [pair('Melania_Trump', 'Mars')], seconds: '90' });
+    expect(r.ok && r.value.pairs[0].start).toBe('Melania Trump');
+    expect(r.ok && r.value.seconds).toBe(90);
+  });
+  it('rejects bad round counts, missing sides and identical pages', () => {
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('A', 'B'), pair('C', 'D')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('A', '')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'abc', pairs: [pair('Mars', 'mars')] }).ok).toBe(false);
+    expect(cleanFeatured({ title: 'ab', pairs: [pair('A', 'B')] }).ok).toBe(false);
+  });
+  it('builds a short, safe seed', () => {
+    expect(featuredSeed('A1b2-C3d4-e5f6-0000-1111')).toMatch(/^feat-[a-z0-9]{1,16}$/);
+  });
+});

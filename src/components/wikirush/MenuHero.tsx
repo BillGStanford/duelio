@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { loadPrefs, savePrefs } from '@/lib/wikirush/stats';
+import { canReel } from '@/lib/wikirush/recorder';
 
 type Props = {
   /** On /wikirush these start the game in place; on the home page they are plain links. */
@@ -11,6 +13,9 @@ type Props = {
   dailyDone?: boolean;
   dailyNumber?: number;
   headline?: 'h1' | 'p';
+  /** Controlled on /wikirush. On the home page the toggle manages itself through saved preferences. */
+  record?: boolean;
+  onRecordChange?(on: boolean): void;
   footer?: ReactNode;
 };
 
@@ -23,8 +28,17 @@ function Cta({ onClick, href, className, children, disabled }: { onClick?(): voi
 }
 
 /** The title screen: reads as a game at a glance, before any gameplay. */
-export default function MenuHero({ onPlay, onDaily, busy, dailyDone, dailyNumber, headline = 'h1', footer }: Props) {
+export default function MenuHero({ onPlay, onDaily, busy, dailyDone, dailyNumber, headline = 'h1', footer, record, onRecordChange }: Props) {
   const H = headline;
+  const [own, setOwn] = useState(true);
+  const [able, setAble] = useState(false);
+  useEffect(() => { setOwn(loadPrefs().record); setAble(canReel()); }, []);
+  const on = record ?? own;
+  function toggle() {
+    const next = !on;
+    if (onRecordChange) onRecordChange(next);
+    else { setOwn(next); savePrefs({ ...loadPrefs(), record: next }); }
+  }
   return <section aria-label="WikiRush title screen" className="wr-menu relative isolate overflow-hidden bg-[#0b0f1f] text-white">
     <div aria-hidden="true" className="absolute inset-0 -z-10 bg-cover bg-center opacity-50" style={{ backgroundImage: 'url(/wikirush/wr-bg-landscape.jpg)' }} />
     <div aria-hidden="true" className="absolute inset-0 -z-10" style={{ background: 'radial-gradient(70% 90% at 50% 0%, rgba(105,120,245,.35), transparent 60%), linear-gradient(180deg, rgba(11,15,31,.2), #0b0f1f 96%)' }} />
@@ -53,6 +67,10 @@ export default function MenuHero({ onPlay, onDaily, busy, dailyDone, dailyNumber
         <Cta onClick={onDaily} disabled={busy} href="/wikirush?daily=1" className="min-h-14 rounded-2xl border-2 border-amber-300/70 bg-amber-300/10 px-6 py-3 text-lg font-black text-amber-100 transition hover:bg-amber-300/20 disabled:opacity-60">
           📅 Daily Challenge{dailyNumber ? ` #${dailyNumber}` : ''}{dailyDone ? ' · played ✓' : ''}
         </Cta>
+        {able && <button type="button" role="switch" aria-checked={on} onClick={toggle} className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition ${on ? 'border-rose-400/70 bg-rose-500/15' : 'border-white/15 bg-white/5'}`}>
+          <span><span className="block text-sm font-black">🎥 Record my run {on ? '· ON' : '· OFF'}</span><span className="block text-xs font-semibold text-white/60">Branded video downloads by itself when the game ends</span></span>
+          <span className={`relative h-7 w-12 shrink-0 rounded-full ${on ? 'bg-rose-500' : 'bg-white/25'}`}><span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} /></span>
+        </button>}
         <p className="text-sm font-semibold text-white/60">Free to play · first game needs no account · 90 seconds a round</p>
       </div>
 
