@@ -112,6 +112,35 @@ export default function WikiRush() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, supabase]);
 
+  /** Saves one game: the SQL function first, then the server route, which needs no migration. */
+  const saveGame = useCallback(async (game: GameSummary): Promise<{ ok: true; points: number; ranked: boolean } | { ok: false; error: string }> => {
+    if (!supabase || !session) return { ok: false, error: 'Not signed in' };
+    const results = game.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near }));
+    const { data, error: err } = await supabase.rpc('submit_wikirush_game', { p_mode: game.settings.mode, p_seed: game.settings.seed ?? null, p_rounds: game.settings.rounds, p_seconds: game.settings.seconds, p_results: results });
+    if (!err) { const res = (data || {}) as { points?: number; ranked?: boolean }; return { ok: true, points: Number(res.points || 0), ranked: res.ranked !== false }; }
+    try {
+      const res = await fetch('/api/wikirush/points', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ mode: game.settings.mode, seed: game.settings.seed ?? null, rounds: game.settings.rounds, seconds: game.settings.seconds, results }) });
+      const body = (await res.json()) as { points?: number; ranked?: boolean; error?: string };
+      if (res.ok) return { ok: true, points: Number(body.points || 0), ranked: body.ranked !== false };
+      return { ok: false, error: body.error || err.message };
+    } catch { return { ok: false, error: err.message }; }
+  }, [session, supabase]);
+
+  // Points a previous build only kept on this device are recovered once per account.
+  useEffect(() => {
+    if (!session?.user || !supabase) return;
+    const flag = `wikirush:v2:backfilled:${session.user.id}`;
+    let device = 0;
+    try { if (localStorage.getItem(flag)) return; device = pointsForGame(loadStats().totalScore) - loadPending().reduce((n, g) => n + pointsForGame(g.total), 0); } catch { return; }
+    if (device <= 0) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/wikirush/points', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ backfill: device }) });
+        if (res.ok) { try { localStorage.setItem(flag, '1'); } catch { /* ignore */ } await refreshProfile(session.user.id); }
+      } catch { /* try again next visit */ }
+    })();
+  }, [session, supabase, refreshProfile]);
+
   // Everything played before the account existed is saved the moment the player signs in.
   useEffect(() => {
     if (!session?.user || !supabase) return;
@@ -122,21 +151,19 @@ export default function WikiRush() {
       let saved = 0;
       for (const game of queued) {
         if (!alive) return;
-        const { error: err } = await supabase.rpc('submit_wikirush_game', {
-          p_mode: game.settings.mode, p_seed: game.settings.seed ?? null, p_rounds: game.settings.rounds, p_seconds: game.settings.seconds,
-          p_results: game.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
-        });
-        if (err) break;
+        const r = await saveGame(game);
+        if (!r.ok) break;
         saved += 1;
-        if (saved < queued.length) await new Promise(r => setTimeout(r, 8500)); // the database rate-limits submissions
+        if (saved < queued.length) await new Promise(res => setTimeout(res, 8500)); // the database rate-limits submissions
       }
       if (!alive) return;
-      if (saved === queued.length) clearPending();
+      clearPending();
+      queued.slice(saved).forEach(g => addPending(g)); // keep only what is still unsaved
       if (saved) { setNotice(`Welcome aboard! Your ${saved === 1 ? 'first game was' : `${saved} games were`} saved to your profile.`); void refreshProfile(session.user.id); }
       setGate(false);
     })();
     return () => { alive = false; };
-  }, [session, supabase, refreshProfile]);
+  }, [session, supabase, refreshProfile, saveGame]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -194,7 +221,7 @@ export default function WikiRush() {
     setError(''); setNotice(''); setBusy(true);
     try {
       if (await guestBlocked()) { openGate(); return; }
-      await launch({ mode: 'challenge', rounds: f.pairs.length, seconds: f.seconds, seed: featuredSeed(f.id), custom: f.pairs, featuredId: f.id });
+      await launch({ mode: 'challenge', rounds: f.pairs.length, seconds: f.seconds, seed: featuredSeed(f.id), custom: f.pairs, featuredId: f.id, featuredDay: f.day || undefined });
     } finally { setBusy(false); }
   }
 
@@ -269,21 +296,16 @@ export default function WikiRush() {
       if (supabase) { addPending(summary); return 'Create a free account and this score is saved to your profile and the leaderboard.'; }
       return 'Accounts are not enabled here yet, so this score stays on this device.';
     }
-    const { data, error: err } = await supabase.rpc('submit_wikirush_game', {
-      p_mode: summary.settings.mode, p_seed: summary.settings.seed ?? null, p_rounds: summary.settings.rounds, p_seconds: summary.settings.seconds,
-      p_results: summary.results.map(r => ({ won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near })),
-    });
-    if (err) {
+    const r = await saveGame(summary);
+    if (!r.ok) {
       // Never lose points: keep the game and retry automatically next time the page opens.
       addPending(summary);
-      const needsSql = /function|does not exist|schema cache|relation/i.test(err.message);
-      return needsSql ? 'Points are saved on this device and will sync as soon as the WikiRush database setup (supabase/wikirush-v2.sql) is run.' : `Could not reach the leaderboard (${err.message}). Your points are kept and will sync automatically.`;
+      return `Could not save to the leaderboard yet (${r.error}). Your points are kept and will sync automatically.`;
     }
     await refreshProfile(session.user.id);
-    const res = (data || {}) as { points?: number; ranked?: boolean };
-    if (summary.settings.mode === 'daily' && res.ranked === false) return 'Already ranked today. This replay is practice only.';
-    return res.points ? `+${res.points.toLocaleString()} leaderboard points saved.` : 'Saved to your profile.';
-  }, [refreshProfile, session, supabase]);
+    if (summary.settings.mode === 'daily' && !r.ranked) return 'Already ranked today. This replay is practice only.';
+    return r.points ? `+${r.points.toLocaleString()} leaderboard points saved to your account.` : 'Saved to your profile.';
+  }, [refreshProfile, saveGame, session]);
 
   const exit = useCallback(() => { setActive(null); overlayRef.current = IDLE_OVERLAY; if (typeof window !== 'undefined' && window.location.search) window.history.replaceState(null, '', '/wikirush'); setChallenge(null); if (configured && !session?.user && (guestUsedLocally() || guestUsedCookie())) { setGate(true); window.setTimeout(() => document.getElementById('account')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80); } }, [configured, session]);
 

@@ -29,7 +29,7 @@ export default async function AdminWikiRush({ searchParams }: { searchParams: { 
     {loadError && <p role="alert" className="mt-4 border-l-4 border-sideb bg-white px-3 py-2 font-semibold">{loadError}</p>}
 
     <h2 className="mt-8 text-2xl font-extrabold">New challenge</h2>
-    <FeaturedForm />
+    <FeaturedForm nextDay={list.reduce((m, f) => Math.max(m, f.day || 0), 0) + 1} />
 
     <h2 className="mt-10 text-2xl font-extrabold">All challenges ({list.length})</h2>
     <div className="mt-3 space-y-3">
@@ -37,7 +37,7 @@ export default async function AdminWikiRush({ searchParams }: { searchParams: { 
       {list.map(f => <article key={f.id} className="bg-white p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-extrabold">{f.title} <span className={`ml-1 text-xs font-bold uppercase ${f.active ? 'text-green-700' : 'text-mute'}`}>{f.active ? 'live' : 'hidden'}</span></h3>
+            <h3 className="text-lg font-extrabold">{f.day ? `Day ${f.day} Challenge · ` : ''}{f.title} <span className={`ml-1 text-xs font-bold uppercase ${f.active ? 'text-green-700' : 'text-mute'}`}>{f.active ? 'live' : 'hidden'}</span></h3>
             {f.blurb && <p className="text-sm text-mute">{f.blurb}</p>}
             <ol className="mt-2 list-decimal pl-5 text-sm">{f.pairs.map((p, i) => <li key={i}>{p.start} → {p.target}{p.blurb ? <span className="text-mute"> · {p.blurb}</span> : null}</li>)}</ol>
             <p className="mt-1 text-xs text-mute">{f.seconds}s per round · link: /wikirush?f={f.id}</p>

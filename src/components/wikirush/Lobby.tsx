@@ -77,6 +77,7 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
       <div className="grid gap-3 sm:grid-cols-2">
         {featured.map(f => <article key={f.id} id={`feat-${f.id}`} className={`flex flex-col justify-between rounded-3xl border bg-white p-5 ${highlightId === f.id ? 'border-[#6978f5] ring-4 ring-[#6978f5]/25' : 'border-slate-200'}`}>
           <div>
+            {f.day > 0 && <p className="text-xs font-black uppercase tracking-[.18em] text-[#e75d87]">Day {f.day} Challenge</p>}
             <h3 className="text-lg font-black leading-tight">{f.title}</h3>
             {f.blurb && <p className="mt-1 text-sm text-slate-500">{f.blurb}</p>}
             <p className="mt-2 text-sm font-bold text-slate-700">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>

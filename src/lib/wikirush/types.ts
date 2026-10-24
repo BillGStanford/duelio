@@ -19,6 +19,8 @@ export type GameSettings = {
   /** Hand-built rounds from the admin desk ("detail challenges"). Overrides seed-based planning. */
   custom?: Array<{ start: string; target: string; blurb?: string }>;
   featuredId?: string;
+  /** Release number of a featured challenge ("Day N Challenge"). */
+  featuredDay?: number;
 };
 
 export type RoundResult = {

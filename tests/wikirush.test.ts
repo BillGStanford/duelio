@@ -442,3 +442,34 @@ describe('detail challenges', () => {
     expect(featuredSeed('A1b2-C3d4-e5f6-0000-1111')).toMatch(/^feat-[a-z0-9]{1,16}$/);
   });
 });
+
+import { checkGame } from '../src/lib/wikirush/points';
+
+describe('server points check', () => {
+  const win = { won: true, elapsed_ms: 10000, clicks: 3, radar: false, near: false };
+  it('computes the same total as the client and points = total/10', () => {
+    const r = checkGame({ mode: 'classic', seed: 'abc123', rounds: 1, seconds: 90, results: [win] }, '2026-10-24');
+    expect(r.ok && r.total).toBe(2000 + Math.floor((2000 * 80000) / 90000) + 900);
+    expect(r.ok && r.points).toBe(Math.floor((r.ok ? r.total : 0) / 10));
+  });
+  it('allows quick, prefetched runs but rejects impossible ones', () => {
+    expect(checkGame({ mode: 'classic', rounds: 1, seconds: 90, results: [{ ...win, elapsed_ms: 900, clicks: 4 }] }, 'x').ok).toBe(true);
+    expect(checkGame({ mode: 'classic', rounds: 1, seconds: 90, results: [{ ...win, elapsed_ms: 100, clicks: 5 }] }, 'x').ok).toBe(false);
+  });
+  it('only accepts today\'s daily', () => {
+    const d = { mode: 'daily', rounds: 5, seconds: 90, results: Array(5).fill(win) };
+    expect(checkGame({ ...d, seed: 'daily-2026-10-24' }, '2026-10-24').ok).toBe(true);
+    expect(checkGame({ ...d, seed: 'daily-2026-10-01' }, '2026-10-24').ok).toBe(false);
+  });
+});
+
+import { dayLabel } from '../src/lib/wikirush/featured';
+describe('day challenges', () => {
+  it('labels releases and keeps a valid day number', () => {
+    expect(dayLabel(7)).toBe('Day 7 Challenge');
+    const ok = cleanFeatured({ title: 'abc', pairs: [{ start: 'A', target: 'B' }], day: '12' });
+    expect(ok.ok && ok.value.day).toBe(12);
+    const none = cleanFeatured({ title: 'abc', pairs: [{ start: 'A', target: 'B' }] });
+    expect(none.ok && none.value.day).toBeUndefined();
+  });
+});
