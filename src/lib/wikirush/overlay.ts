@@ -34,7 +34,7 @@ export type OverlayAssets = {
   targetThumb: HTMLImageElement | null;
 };
 
-export const INTRO_MS = 2200;
+export const INTRO_MS = 1400;
 export const OUTRO_MS = 3200;
 
 const FONT = '"Avenir Next","Helvetica Neue",Helvetica,Arial,system-ui,sans-serif';
@@ -116,36 +116,25 @@ function wrap(ctx: Ctx, text: string, maxW: number, maxLines: number): string[] 
 const FRAME_TOP = 64;
 const FRAME_BOTTOM = 60;
 
+/** Screen mode: the captured page fills the frame untouched. Branding sits in a thin strip BELOW it, never over it. */
+export const SCREEN_STRIP = 46;
 function screenChrome(ctx: Ctx, w: number, h: number, s: number, st: OverlayState, assets: OverlayAssets, video: HTMLVideoElement | null) {
-  const top = FRAME_TOP * s; const bottom = FRAME_BOTTOM * s;
-  // stage with the live capture
-  const sx = 14 * s; const sw = w - sx * 2; const sy = top; const sh = h - top - bottom;
-  if (video && video.videoWidth) {
-    const k = Math.min(sw / video.videoWidth, sh / video.videoHeight);
-    const dw = video.videoWidth * k; const dh = video.videoHeight * k;
-    const dx = sx + (sw - dw) / 2; const dy = sy + (sh - dh) / 2;
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 24 * s;
-    ctx.fillStyle = '#000'; rr(ctx, dx, dy, dw, dh, 10 * s); ctx.fill();
-    ctx.restore();
-    ctx.save(); rr(ctx, dx, dy, dw, dh, 10 * s); ctx.clip();
-    ctx.drawImage(video, dx, dy, dw, dh);
-    ctx.restore();
-    ctx.strokeStyle = 'rgba(174,183,255,.35)'; ctx.lineWidth = 1.5 * s; rr(ctx, dx, dy, dw, dh, 10 * s); ctx.stroke();
-  }
-  // top bar
-  brandPill(ctx, s, assets, 18 * s, (top - 46 * s) / 2);
-  ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
-  font(ctx, 800, 18 * s); ctx.fillStyle = C.soft;
-  const live = st.phase === 'idle' || !st.rounds ? '' : `ROUND ${Math.min(st.roundIdx + 1, st.rounds)}/${st.rounds}   ·   ${formatScore(st.totalScore)} PTS`;
-  ctx.fillText(live, w - 22 * s, top / 2 + 1 * s);
-  // bottom bar
-  const y = h - bottom / 2;
-  font(ctx, 800, 20 * s); ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
-  const route = st.phase === 'idle' || !st.startTitle ? 'Race from one Wikipedia page to another' : `${st.startTitle}  →  ${st.targetTitle}`;
-  ctx.fillText(fit(ctx, route, w * 0.6), 24 * s, y);
+  const strip = SCREEN_STRIP * s;
+  ctx.fillStyle = '#0b0f1f'; ctx.fillRect(0, 0, w, h);
+  if (video && video.videoWidth) ctx.drawImage(video, 0, 0, w, h - strip);
+  const y0 = h - strip;
+  ctx.fillStyle = '#101426'; ctx.fillRect(0, y0, w, strip);
+  const mark = strip - 12 * s;
+  if (assets.mark) ctx.drawImage(assets.mark, 10 * s, y0 + 6 * s, mark, mark);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  font(ctx, 900, 18 * s); ctx.fillStyle = '#fff';
+  ctx.fillText('WikiRush', 10 * s + mark + 8 * s, y0 + strip / 2 + 1 * s);
+  const route = st.phase === 'idle' || !st.startTitle ? '' : `${st.startTitle}  →  ${st.targetTitle}`;
+  font(ctx, 700, 16 * s); ctx.fillStyle = C.soft; ctx.textAlign = 'center';
+  ctx.fillText(fit(ctx, route, w * 0.5), w / 2, y0 + strip / 2 + 1 * s);
   ctx.textAlign = 'right'; ctx.fillStyle = C.soft;
-  ctx.fillText('Play free · duelio.ink/wikirush', w - 24 * s, y);
+  const live = st.phase === 'idle' || !st.rounds ? '' : `${formatScore(st.totalScore)} pts  ·  `;
+  ctx.fillText(`${live}Play free · duelio.ink/wikirush`, w - 12 * s, y0 + strip / 2 + 1 * s);
 }
 
 function ring(ctx: Ctx, cx: number, cy: number, r: number, frac: number, color: string, s: number) {
