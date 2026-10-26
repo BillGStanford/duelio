@@ -20,7 +20,7 @@ const TABS = [
   { href: '/', label: 'Play', icon: ICONS.play, match: (p: string) => p === '/' || p.startsWith('/wikirush') },
   { href: '/matchups', label: 'Duel', icon: ICONS.duel, match: (p: string) => p.startsWith('/matchup') },
   { href: '/#debates', label: 'Dilemma', icon: ICONS.dilemma, match: (p: string) => p.startsWith('/d/') || p.startsWith('/submit') },
-  { href: '/leaderboard', label: 'Ranks', icon: ICONS.ranks, match: (p: string) => p.startsWith('/leaderboard') },
+  { href: '/leaderboard', label: 'Ranks', icon: ICONS.ranks, match: (p: string) => p.startsWith('/leaderboard') || p.startsWith('/records') },
   { href: '/profile', label: 'Me', icon: ICONS.me, match: (p: string) => p.startsWith('/profile') || p.startsWith('/settings') || p.startsWith('/login') },
 ];
 
@@ -36,7 +36,8 @@ export default function GameNav() {
       <div className="gx-nav-in">
         <Link href="/" className="gx-brand" aria-label="Duelio home"><Pip size={34} /><span>Duelio</span></Link>
         <nav aria-label="Main" className="gx-links">
-          {TABS.slice(0, 4).map(t => <Link key={t.label} href={t.href} aria-current={t.match(path) ? 'page' : undefined} className="gx-link">{t.label}</Link>)}
+          {TABS.slice(0, 4).map(t => <Link key={t.label} href={t.href} aria-current={(t.label === 'Ranks' ? path.startsWith('/leaderboard') : t.match(path)) ? 'page' : undefined} className="gx-link">{t.label}</Link>)}
+          <Link href="/records" aria-current={path.startsWith('/records') ? 'page' : undefined} className="gx-link">Records</Link>
         </nav>
         <div className="gx-me">
           {!a.ready ? <span className="gx-chip-skel" aria-hidden="true" />

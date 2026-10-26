@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import MatchupHome from '@/components/MatchupHome';
 import DuelStrip from '@/components/DuelStrip';
+import DayChallengeBanner from '@/components/game/DayChallengeBanner';
 import HomeHero from '@/components/game/HomeHero';
 import ModeCard from '@/components/game/ModeCard';
 import TopPlayers from '@/components/game/TopPlayers';
@@ -68,15 +69,16 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
       <HomeHero dailyKey={today} dailyNumber={dailyNumber(today)} />
 
       <div className="gx-screen pb-24">
-        <div className="mx-auto max-w-6xl px-5">
+        <DayChallengeBanner />
+        <div className="mx-auto mt-10 max-w-6xl px-5">
           <section aria-labelledby="modes-h" className="pt-2">
             <p className="gx-eyebrow">WikiRush</p>
             <h2 id="modes-h" className="gx-h mt-2 text-3xl sm:text-4xl">Pick your challenge</h2>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-              <ModeCard href="/wikirush?daily=1" img="/game/mode-daily.jpg" tag="Same for all" title="Daily Challenge" text="Five rounds. The same pages for everyone, once a day." />
-              <ModeCard href="/wikirush?play=1" img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages, picked for your level. Jump straight in." />
-              <ModeCard href="/wikirush?mode=hard" img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." />
-              <ModeCard href="/wikirush?mode=wild" img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still famous." />
+              <ModeCard href="/wikirush?pick=daily#play" img="/game/mode-daily.jpg" tag="Same for all" title="Daily Challenge" text="Five rounds. The same pages for everyone, once a day." />
+              <ModeCard href="/wikirush?pick=quick#play" img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages, picked for your level. Jump straight in." />
+              <ModeCard href="/wikirush?pick=hard#play" img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." />
+              <ModeCard href="/wikirush?pick=wild#play" img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still famous." />
             </div>
           </section>
 

@@ -6,6 +6,11 @@ import { createClient, type Session, type SupabaseClient } from '@supabase/supab
 import { ensureWikiProfile } from '@/lib/wikirush-client';
 import Game from './wikirush/Game';
 import Lobby, { type BoardRow } from './wikirush/Lobby';
+import { getWikiClient } from '@/lib/wikirush-client';
+import { recordById } from '@/lib/recordsClient';
+import type { RecordRow } from '@/lib/wikirush/records';
+import { announcePoints } from '@/lib/account';
+import { fmtMs } from '@/lib/wikirush/records';
 import { createPortal } from 'react-dom';
 import PlayerCard from '@/components/game/PlayerCard';
 import TopPlayers from '@/components/game/TopPlayers';
@@ -48,6 +53,8 @@ export default function WikiRush() {
   const [stream, setStream] = useState(false);
   const [featured, setFeatured] = useState<Featured[]>([]);
   const [featuredId, setFeaturedId] = useState('');
+  const [pick, setPick] = useState('');
+  const [beat, setBeat] = useState<RecordRow | null>(null);
   const [authReady, setAuthReady] = useState(!SUPABASE_URL || !SUPABASE_KEY);
   const [auto, setAuto] = useState<'play' | 'daily' | 'hard' | 'wild' | null>(null);
   const autoDone = useRef(false);
@@ -65,6 +72,9 @@ export default function WikiRush() {
     if (ref) { setReferralCode(ref.slice(0, 40)); setStartInSignup(true); }
     setChallenge(parseChallengeParams(window.location.search));
     try { if (params.get('stream') === '1') localStorage.setItem('wikirush:v2:stream', '1'); setStream(localStorage.getItem('wikirush:v2:stream') === '1'); } catch { setStream(params.get('stream') === '1'); }
+    setPick(['daily', 'quick', 'hard', 'wild'].includes(params.get('pick') || '') ? (params.get('pick') as string) : '');
+    const beatId = (params.get('beat') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40);
+    if (beatId) { const c = getWikiClient(); if (c) void recordById(c, beatId).then(r => setBeat(r)); }
     setFeaturedId((params.get('f') || '').replace(/[^a-z0-9-]/gi, '').slice(0, 40));
     if (params.get('play') === '1') setAuto('play'); else if (params.get('daily') === '1') setAuto('daily'); else if (params.get('mode') === 'hard') setAuto('hard'); else if (params.get('mode') === 'wild') setAuto('wild');
   }, []);
@@ -117,6 +127,27 @@ export default function WikiRush() {
     } catch { return { ok: false, error: err.message }; }
   }, [session, supabase]);
 
+  /** Sends the finished game to the world-record tables and returns short lines for the results screen. */
+  const submitRecords = useCallback(async (game: GameSummary): Promise<string[]> => {
+    if (!session) return [];
+    try {
+      const ctl = new AbortController(); const t = window.setTimeout(() => ctl.abort(), 6000);
+      const res = await fetch('/api/wikirush/records', { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json', authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ mode: game.settings.mode, seed: game.settings.seed ?? null, featuredId: game.settings.featuredId ?? null, day: game.settings.featuredDay ?? null, rounds: game.settings.rounds, seconds: game.settings.seconds, results: game.results.map(r => ({ start: r.start, target: r.target, won: r.won, elapsed_ms: Math.round(r.elapsedMs), clicks: r.clicks, radar: r.radar, near: r.near, path: r.path })) }) });
+      window.clearTimeout(t);
+      if (!res.ok) return [];
+      const d = (await res.json()) as { rounds?: Array<{ start: string; target: string; ms: number; rank: number; record: boolean; personalBest: boolean }>; fastest?: { ms: number; rank: number } | null; game?: { rank: number | null; featured?: boolean } | null };
+      const lines: string[] = [];
+      for (const r of d.rounds || []) {
+        if (r.record) lines.push(`🏆 NEW WORLD RECORD: ${r.start} → ${r.target} in ${fmtMs(r.ms)}`);
+        else if (r.personalBest && r.rank <= 10) lines.push(`#${r.rank} fastest ever: ${r.start} → ${r.target} (${fmtMs(r.ms)})`);
+      }
+      if (d.fastest && d.fastest.rank <= 25) lines.push(`⚡ #${d.fastest.rank} on the all-time fastest finds`);
+      if (d.game?.featured && d.game.rank) lines.push(`${game.settings.featuredDay ? `Day ${game.settings.featuredDay} Challenge` : 'Challenge'}: you are #${d.game.rank} on the board`);
+      announcePoints();
+      return lines.slice(0, 4);
+    } catch { return []; }
+  }, [session]);
+
   // Points a previous build only kept on this device are recovered once per account.
   useEffect(() => {
     if (!session?.user || !supabase) return;
@@ -144,6 +175,7 @@ export default function WikiRush() {
         if (!alive) return;
         const r = await saveGame(game);
         if (!r.ok) break;
+        void submitRecords(game);
         saved += 1;
         if (saved < queued.length) await new Promise(res => setTimeout(res, 8500)); // the database rate-limits submissions
       }
@@ -154,7 +186,7 @@ export default function WikiRush() {
       setGate(false);
     })();
     return () => { alive = false; };
-  }, [session, supabase, refreshProfile, saveGame]);
+  }, [session, supabase, refreshProfile, saveGame, submitRecords]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -201,6 +233,15 @@ export default function WikiRush() {
     if (!featuredId || !featured.some(f => f.id === featuredId)) return;
     window.setTimeout(() => document.getElementById(`feat-${featuredId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
   }, [featuredId, featured]);
+
+  async function startBeat() {
+    if (!beat?.start_title || !beat.target_title) return;
+    setError(''); setNotice(''); setBusy(true);
+    try {
+      if (await guestBlocked()) { openGate(); return; }
+      await launch({ mode: 'classic', rounds: 1, seconds: 90, custom: [{ start: beat.start_title, target: beat.target_title }] });
+    } finally { setBusy(false); }
+  }
 
   async function startFeatured(f: Featured) {
     setError(''); setNotice(''); setBusy(true);
@@ -274,9 +315,10 @@ export default function WikiRush() {
       return `Could not save to the leaderboard yet (${r.error}). Your points are kept and will sync automatically.`;
     }
     await refreshProfile(session.user.id);
-    if (summary.settings.mode === 'daily' && !r.ranked) return 'Already ranked today. This replay is practice only.';
-    return r.points ? `+${r.points.toLocaleString()} leaderboard points saved to your account.` : 'Saved to your profile.';
-  }, [refreshProfile, saveGame, session]);
+    const lines = await submitRecords(summary);
+    const head = summary.settings.mode === 'daily' && !r.ranked ? 'Already ranked today. This replay is practice only.' : r.points ? `+${r.points.toLocaleString()} leaderboard points saved to your account.` : 'Saved to your profile.';
+    return [head, ...lines].join('\n');
+  }, [refreshProfile, saveGame, session, submitRecords]);
 
   const exit = useCallback(() => { setActive(null); if (typeof window !== 'undefined' && window.location.search) window.history.replaceState(null, '', '/wikirush'); setChallenge(null); if (configured && !session?.user && (guestUsedLocally() || guestUsedCookie())) { setGate(true); window.setTimeout(() => document.getElementById('account')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80); } }, [configured, session]);
 
@@ -305,7 +347,7 @@ export default function WikiRush() {
     <div id="play" className="mx-auto grid max-w-6xl gap-6 px-5 py-8 lg:grid-cols-[minmax(0,1fr)_320px]">
       <section className="min-w-0 space-y-6">
         <Lobby prefs={prefs} setPrefs={setPrefs} stats={stats} dailyKey={dailyKey} dailyScore={dailyScore} challenge={challenge}
-          featured={featured} highlightId={featuredId} onStartFeatured={f => void startFeatured(f)} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
+          featured={featured} highlightId={featuredId} pick={pick} beat={beat} onPlayBeat={() => void startBeat()} onStartFeatured={f => void startFeatured(f)} busy={busy} error={error} notice={notice} board={board} onStart={m => void start(m)} />
         {gate && !session && <div role="alert" className="gx-pop rounded-3xl bg-gradient-to-br from-[#6978f5] to-[#fb7185] p-6 text-white shadow-xl">
           <p className="text-xs font-bold uppercase tracking-[.2em] text-white/80">Free game used</p>
           <h3 className="mt-1 text-2xl font-bold">Loved it? Make a free account to keep playing.</h3>

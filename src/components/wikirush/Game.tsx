@@ -580,7 +580,8 @@ function FinalScreen({ summary, saveNote, challenge, burst, copied, playerName, 
         </li>)}
       </ol>
 
-      {saveNote && <p role="status" className="mt-4 text-center text-sm text-white/60">{saveNote}</p>}
+      {saveNote && <p role="status" className="mt-4 whitespace-pre-line text-center text-sm font-semibold text-white/70">{saveNote}</p>}
+      <p className="mt-2 text-center text-sm"><a href="/records" className="font-bold text-[#aeb7ff] underline">See the world records →</a></p>
 
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         <button onClick={onShare} className="rounded-2xl bg-[#6978f5] px-5 py-4 text-base font-black hover:bg-[#5866df]">{copied === 'result' ? 'Copied ✓' : 'Share result'}</button>

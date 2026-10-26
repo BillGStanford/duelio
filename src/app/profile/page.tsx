@@ -65,7 +65,7 @@ export default function ProfilePage() {
       </div>
       <div className="gx-bar mt-5"><i style={{ width: `${Math.max(3, Math.round(lv.progress * 100))}%` }} /></div>
       <p className="mt-2 text-sm font-semibold text-white/70">{lv.next ? `${lv.toNext.toLocaleString()} points to ${lv.next.name}` : 'You reached the top level.'}</p>
-      <div className="mt-5 flex flex-wrap gap-3"><Link href="/wikirush?play=1" className="gx-btn">▶ Play</Link><Link href="/settings" className="gx-btn gx-btn-ghost">Edit profile</Link><Link href="/leaderboard" className="gx-btn gx-btn-ghost">Leaderboard</Link></div>
+      <div className="mt-5 flex flex-wrap gap-3"><Link href="/wikirush#play" className="gx-btn">▶ Play</Link><Link href="/settings" className="gx-btn gx-btn-ghost">Edit profile</Link><Link href="/leaderboard" className="gx-btn gx-btn-ghost">Leaderboard</Link></div>
     </section>
 
     <section aria-label="Stats" className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">

@@ -38,8 +38,9 @@ export default function LeaderboardPage() {
   const medal = ['#cbd5e1', '#fbbf24', '#f59e63'];
 
   return <Shell wide eyebrow="Global standings" title="Leaderboard" sub="Every finished game earns points. Climb the board and level up.">
+    <div className="mb-6 flex gap-2"><span className="gx-btn gx-btn-sm" aria-current="page">Players</span><Link href="/records" className="gx-btn gx-btn-ghost gx-btn-sm">World records</Link></div>
     <div className="flex flex-wrap items-center gap-3">
-      <Link href="/wikirush?play=1" className="gx-btn gx-btn-lg !min-h-[3.4rem] !text-xl">▶ Play to climb</Link>
+      <Link href="/wikirush#play" className="gx-btn gx-btn-lg !min-h-[3.4rem] !text-xl">▶ Play to climb</Link>
       {me ? <div className="gx-card flex items-center gap-3 px-4 py-2.5"><Emblem index={idxOf(me.points)} size={34} /><p className="font-bold">You: <span className="text-[var(--gx-gold)]">{me.points.toLocaleString()} pts</span>{me.rank ? ` · #${me.rank.toLocaleString()}` : ''}</p></div>
         : device > 0 ? <p className="gx-card px-4 py-2.5 text-sm font-semibold">{device.toLocaleString()} pts on this device. <Link href="/login?mode=signup&next=/leaderboard" className="text-[var(--gx-gold)] underline">Join free</Link> to put them on the board.</p> : null}
     </div>

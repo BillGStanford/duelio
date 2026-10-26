@@ -114,3 +114,38 @@ alter table public.wikirush_featured add column if not exists day integer; -- "D
 
 -- Optional avatar choice (1-12) shown on the leaderboard. The app works without it.
 alter table public.wiki_profiles add column if not exists avatar smallint;
+
+-- ---------------------------------------------------------------------------------------------
+-- World records: fastest finds per page pair, best games and challenge boards.
+-- Public read (display names only); written only by the server (service role) via /api/wikirush/records.
+-- ---------------------------------------------------------------------------------------------
+create table if not exists public.wikirush_records (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('round','game')),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  display_name text not null,
+  avatar smallint,
+  pair_key text,
+  start_title text,
+  target_title text,
+  seed text,
+  featured_id text,
+  day integer,
+  rounds integer,
+  seconds integer,
+  elapsed_ms integer,
+  clicks integer,
+  total integer,
+  all_won boolean,
+  path jsonb,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists wikirush_records_round_user_pair on public.wikirush_records(user_id, pair_key) where kind = 'round';
+create unique index if not exists wikirush_records_game_user_seed on public.wikirush_records(user_id, seed) where kind = 'game' and (featured_id is not null or seed like 'daily-%');
+create index if not exists wikirush_records_fastest on public.wikirush_records(elapsed_ms) where kind = 'round';
+create index if not exists wikirush_records_pair on public.wikirush_records(pair_key, elapsed_ms) where kind = 'round';
+create index if not exists wikirush_records_games on public.wikirush_records(total desc) where kind = 'game';
+create index if not exists wikirush_records_featured on public.wikirush_records(featured_id, total desc) where kind = 'game';
+alter table public.wikirush_records enable row level security;
+drop policy if exists "Public records" on public.wikirush_records;
+create policy "Public records" on public.wikirush_records for select using (true);

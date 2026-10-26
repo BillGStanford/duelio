@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/wikirush/how-to-play`, priority: 0.8 },
     { url: `${SITE_URL}/wikirush/streamers`, priority: 0.8 },
     { url: `${SITE_URL}/leaderboard`, changeFrequency: 'daily' as const },
+    { url: `${SITE_URL}/records`, changeFrequency: 'daily' as const },
     { url: `${SITE_URL}/`, priority: 0.9 },
     { url: `${SITE_URL}/submit` },
     { url: `${SITE_URL}/guidelines` },

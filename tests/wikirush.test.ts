@@ -1,3 +1,4 @@
+import { cleanSubmission, fmtMs } from '@/lib/wikirush/records';
 import { describe, expect, it } from 'vitest';
 import { randomSeed, seededRng, shuffled } from '@/lib/wikirush/rng';
 import { START_POOL, TARGET_POOL } from '@/lib/wikirush/pools';
@@ -486,4 +487,25 @@ describe('prefs migration', () => {
       expect(p.rounds).toBe(3); expect(p.sound).toBe(false); expect('record' in p).toBe(false); expect('recVer' in p).toBe(false);
     });
   });
+});
+
+describe('world records', () => {
+  const round = (over: Record<string, unknown> = {}) => ({ start: 'Taylor Swift', target: 'Mars', won: true, elapsed_ms: 9000, clicks: 3, path: ['Taylor Swift', 'United States', 'Planet', 'Mars'], ...over });
+  const sub = (results: unknown[], over: Record<string, unknown> = {}) => ({ mode: 'classic', rounds: results.length, seconds: 90, results, ...over }) as Parameters<typeof cleanSubmission>[0];
+  it('accepts a believable winning route and marks it eligible', () => {
+    const r = cleanSubmission(sub([round()]));
+    expect(r.ok).toBe(true);
+    if (r.ok) { expect(r.game.rounds[0].eligible).toBe(true); expect(r.game.allWon).toBe(true); expect(r.game.rounds[0].pair).toBe('taylor swift>mars'); }
+  });
+  it('rejects a route that does not match its click count or endpoints, or is too fast', () => {
+    for (const bad of [round({ path: ['Taylor Swift', 'Mars'] }), round({ path: ['A', 'B', 'C', 'D'] }), round({ elapsed_ms: 500 })]) {
+      const r = cleanSubmission(sub([bad]));
+      if (r.ok) expect(r.game.rounds[0].eligible).toBe(false); else expect(r.error).toMatch(/validation/);
+    }
+  });
+  it('rejects impossible games', () => {
+    expect(cleanSubmission(sub([round({ elapsed_ms: 100, clicks: 3 })])).ok).toBe(false);
+    expect(cleanSubmission(sub([round(), round()], { rounds: 3 })).ok).toBe(false);
+  });
+  it('formats times', () => { expect(fmtMs(4210)).toBe('4.21s'); expect(fmtMs(12340)).toBe('12.3s'); expect(fmtMs(95000)).toBe('1m 35s'); });
 });

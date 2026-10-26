@@ -9,6 +9,10 @@ import { dailyNumber } from '@/lib/wikirush/rounds';
 import { formatScore, settingsLabel } from '@/lib/wikirush/share';
 import { maxScore } from '@/lib/wikirush/scoring';
 import type { Featured } from '@/lib/wikirush/featured';
+import type { RecordRow } from '@/lib/wikirush/records';
+import { fmtMs } from '@/lib/wikirush/records';
+import ChallengeBoard from '@/components/game/ChallengeBoard';
+import ShareChallenge from '@/components/game/ShareChallenge';
 
 export type BoardRow = { display_name: string; total: number };
 
@@ -27,6 +31,10 @@ type Props = {
   featured?: Featured[];
   highlightId?: string;
   onStartFeatured?(f: Featured): void;
+  /** Mode highlighted when the player arrives from a home-screen card. */
+  pick?: string;
+  beat?: RecordRow | null;
+  onPlayBeat?(): void;
 };
 
 function untilNextDaily() {
@@ -46,8 +54,8 @@ function Seg<T extends string | number>({ value, options, onChange, label }: { v
 }
 
 /* eslint-disable @next/next/no-img-element */
-function Mode({ img, tag, title, text, onClick, disabled, cta = 'Play' }: { img: string; tag: string; title: string; text: string; onClick(): void; disabled?: boolean; cta?: string }) {
-  return <button type="button" onClick={onClick} disabled={disabled} className="gx-mode group w-full text-left disabled:opacity-60">
+function Mode({ id, extra = '', img, tag, title, text, onClick, disabled, cta = 'Play' }: { id: string; extra?: string; img: string; tag: string; title: string; text: string; onClick(): void; disabled?: boolean; cta?: string }) {
+  return <button type="button" onClick={onClick} disabled={disabled} id={id} className={`gx-mode group h-full w-full text-left disabled:opacity-60${extra}`}>
     <img src={img} alt="" loading="lazy" width={960} height={600} />
     <span className="gx-mode-tag">{tag}</span>
     <div className="gx-mode-body">
@@ -58,9 +66,11 @@ function Mode({ img, tag, title, text, onClick, disabled, cta = 'Play' }: { img:
   </button>;
 }
 
-export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, busy, error, notice, board, onStart, featured = [], highlightId, onStartFeatured }: Props) {
+export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, busy, error, notice, board, onStart, featured = [], highlightId, onStartFeatured, pick = '', beat, onPlayBeat }: Props) {
   const [until, setUntil] = useState('');
   useEffect(() => { setUntil(untilNextDaily()); const id = window.setInterval(() => setUntil(untilNextDaily()), 30000); return () => window.clearInterval(id); }, []);
+  useEffect(() => { if (pick) window.setTimeout(() => document.getElementById(`mode-${pick}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 250); }, [pick]);
+  const ring = (k: string) => pick === k ? ' outline outline-4 outline-offset-2 outline-[#fbbf24]/80 gx-pop' : '';
   const streak = liveDailyStreak(stats, dailyKey);
   const week = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(Date.parse(`${dailyKey}T00:00:00Z`) - (6 - i) * 86400000);
@@ -81,6 +91,17 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
       </div>
     </section>}
 
+    {beat && beat.start_title && <section aria-label="Beat the record" className="gx-rise overflow-hidden rounded-3xl bg-gradient-to-r from-[#fbbf24] to-[#fb7185] p-[2px]">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-[#0e1330] p-5">
+        <div>
+          <p className="gx-eyebrow !text-[var(--gx-gold)]">🏆 Beat the world record</p>
+          <p className="mt-1 text-xl font-bold">{beat.start_title} → {beat.target_title}</p>
+          <p className="text-sm text-white/65">Record: <b className="text-[var(--gx-gold)]">{fmtMs(beat.elapsed_ms || 0)}</b> in {beat.clicks} click{beat.clicks === 1 ? '' : 's'} by {beat.display_name}</p>
+        </div>
+        <button disabled={busy} onClick={onPlayBeat} className="gx-btn gx-btn-gold">▶ Take the record</button>
+      </div>
+    </section>}
+
     {featured.length > 0 && <section aria-label="Featured challenges">
       <p className="gx-eyebrow mb-3">⭐ Featured challenges</p>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -91,13 +112,14 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
             {f.blurb && <p className="mt-1 text-sm text-white/65">{f.blurb}</p>}
             <p className="mt-2 text-sm font-semibold text-white/85">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>
           </div>
-          <button disabled={busy} onClick={() => onStartFeatured?.(f)} className="gx-btn mt-4">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button>
+          <div className="mt-4"><p className="gx-label">Top scores</p><ChallengeBoard featuredId={f.id} limit={3} /></div>
+          <div className="mt-4 flex flex-wrap gap-2"><button disabled={busy} onClick={() => onStartFeatured?.(f)} className="gx-btn">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button><ShareChallenge f={f} className="gx-btn gx-btn-ghost" /></div>
         </article>)}
       </div>
     </section>}
 
     {/* Daily mission */}
-    <section aria-label="Daily challenge" className="gx-mode block !cursor-default">
+    <section id="mode-daily" aria-label="Daily challenge" className={`gx-mode block !cursor-default${ring('daily')}`}>
       <div className="grid md:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
         <img src="/game/mode-daily.jpg" alt="" width={960} height={600} className="h-full min-h-[180px] w-full object-cover md:!aspect-auto" />
         <div className="p-5 sm:p-6">
@@ -124,9 +146,9 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
     <section aria-label="Free play">
       <p className="gx-eyebrow mb-3">Free play</p>
       <div className="grid gap-3 sm:grid-cols-3 sm:gap-5">
-        <Mode img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages picked for your level. Share the link and a friend gets your exact rounds." onClick={() => onStart('classic')} disabled={busy} />
-        <Mode img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." onClick={() => onStart('hard')} disabled={busy} />
-        <Mode img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still a famous one." onClick={() => onStart('wild')} disabled={busy} />
+        <Mode id="mode-quick" extra={ring('quick')} img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages picked for your level. Share the link and a friend gets your exact rounds." onClick={() => onStart('classic')} disabled={busy} />
+        <Mode id="mode-hard" extra={ring('hard')} img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." onClick={() => onStart('hard')} disabled={busy} />
+        <Mode id="mode-wild" extra={ring('wild')} img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still a famous one." onClick={() => onStart('wild')} disabled={busy} />
       </div>
     </section>
 
