@@ -55,7 +55,7 @@ export type Article = { title: string; html: string };
 // Shared by every round so navigation, Back and prefetching all hit one cache.
 
 export async function fetchArticle(title: string): Promise<Article> {
-  const res = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`);
+  const res = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`, { priority: 'high' } as RequestInit);
   if (!res.ok) throw new Error(res.status === 404 ? 'That article does not exist.' : 'Wikipedia is slow right now.');
   const data = (await res.json()) as { title?: string; html?: string };
   if (!data.html) throw new Error('Empty article');

@@ -17,7 +17,7 @@ export type ArticleCacheOptions = {
   concurrency?: number;
 };
 
-export function createArticleCache(fetcher: Fetcher, { max = 48, concurrency = 4 }: ArticleCacheOptions = {}) {
+export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 8 }: ArticleCacheOptions = {}) {
   const ready = new Map<string, CachedArticle>(); // insertion order = recency
   const inflight = new Map<string, Promise<CachedArticle>>();
   let queue: string[] = [];
@@ -73,7 +73,7 @@ export function createArticleCache(fetcher: Fetcher, { max = 48, concurrency = 4
       return ready.has(k) || inflight.has(k);
     },
     /** Queue links in order. A new call replaces what was still waiting from the previous page. */
-    prefetchMany(list: string[], limit = 40) {
+    prefetchMany(list: string[], limit = 90) {
       queue = [];
       for (const t of list) {
         if (queue.length >= limit) break;
