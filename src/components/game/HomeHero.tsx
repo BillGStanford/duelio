@@ -22,8 +22,8 @@ export default function HomeHero({ dailyKey, dailyNumber }: { dailyKey: string; 
         <h1 className="gx-h mt-3 text-6xl sm:text-8xl">Wiki<span className="text-[#aeb7ff]">Rush</span></h1>
         <p className="mt-4 max-w-md text-lg font-medium text-white/80 sm:text-xl">Get from one Wikipedia page to another using only links. Fastest route wins.</p>
         <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Link href="/wikirush?play=1" className="gx-btn gx-btn-lg">▶ PLAY</Link>
-          <Link href="/wikirush?daily=1" className="gx-btn gx-btn-gold">📅 Daily #{dailyNumber}{done ? ' ✓' : ''}</Link>
+          <Link href="/wikirush#play" className="gx-btn gx-btn-lg">▶ PLAY</Link>
+          <Link href="/wikirush?pick=daily#play" className="gx-btn gx-btn-gold">📅 Daily #{dailyNumber}{done ? ' ✓' : ''}</Link>
         </div>
         <p className="mt-4 text-sm font-medium text-white/60">Free · your first game needs no account · 90 seconds a round</p>
       </div>

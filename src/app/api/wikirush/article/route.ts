@@ -6,8 +6,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const MAX_HTML = 2_500_000;
-const TTL_MS = 15 * 60 * 1000;
-const MAX_ENTRIES = 120;
+const TTL_MS = 6 * 60 * 60 * 1000;
+const MAX_ENTRIES = 400;
 
 type Entry = { at: number; title: string; html: string };
 // Hot pages (countries, big cities, years) are requested over and over by different players.
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'A valid Wikipedia article title is required.' }, { status: 400 });
   }
   const key = title.replace(/_/g, ' ').toLowerCase();
-  const headers = { 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=86400' };
+  const headers = { 'Cache-Control': 'public, max-age=600, s-maxage=21600, stale-while-revalidate=86400' };
   const hit = memory.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return NextResponse.json({ title: hit.title, html: hit.html }, { headers });
   try {

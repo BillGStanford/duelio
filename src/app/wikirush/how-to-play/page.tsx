@@ -36,6 +36,6 @@ export default function HowToPlay() {
     </ul>
     <h2 className="mt-12 text-2xl font-black text-[#101426]">Game modes</h2>
     <p className="mt-3 leading-relaxed">Play the <strong>Daily Challenge</strong> (same five rounds for everyone), <strong>Classic</strong> (fresh curated pairs with a shareable seed), <strong>Wild</strong> (a truly random Wikipedia page) or accept a friend&apos;s <strong>challenge link</strong>.</p>
-    <p className="mt-10"><Link href="/wikirush?play=1" className="inline-flex rounded-2xl bg-[#6978f5] px-7 py-4 text-lg font-black text-white shadow-lg hover:bg-[#5866df]">▶ Play WikiRush free</Link></p>
+    <p className="mt-10"><Link href="/wikirush#play" className="inline-flex rounded-2xl bg-[#6978f5] px-7 py-4 text-lg font-black text-white shadow-lg hover:bg-[#5866df]">▶ Play WikiRush free</Link></p>
   </main>;
 }

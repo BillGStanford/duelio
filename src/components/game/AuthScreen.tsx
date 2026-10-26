@@ -73,7 +73,7 @@ export default function AuthScreen() {
             <h1 className="gx-h mt-3 text-3xl">Hi, {acct.name}!</h1>
             <p className="mt-1 text-sm text-white/65">You are signed in. Your points save automatically.</p>
             <div className="mt-6 grid gap-3">
-              <Link href="/wikirush?play=1" className="gx-btn gx-btn-lg !text-xl">▶ PLAY</Link>
+              <Link href="/wikirush#play" className="gx-btn gx-btn-lg !text-xl">▶ PLAY</Link>
               <Link href="/profile" className="gx-btn gx-btn-ghost">My profile</Link>
               <button type="button" onClick={signOut} className="text-sm font-semibold text-white/60 hover:text-white">Sign out</button>
             </div>
@@ -104,7 +104,7 @@ export default function AuthScreen() {
               {error && <p role="alert" className="rounded-xl bg-rose-500/15 p-3 text-sm font-semibold text-rose-200">{error}</p>}
               <button disabled={busy} className="gx-btn gx-btn-gold w-full !text-lg">{busy ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}</button>
             </form>
-            <p className="mt-5 text-center text-sm text-white/55">Just want to look? <Link href="/wikirush?play=1" className="font-bold text-white underline">Play one free game</Link></p>
+            <p className="mt-5 text-center text-sm text-white/55">Just want to look? <Link href="/wikirush#play" className="font-bold text-white underline">Play one free game</Link></p>
           </>}
         </div>
       </div>

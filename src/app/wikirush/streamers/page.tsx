@@ -31,6 +31,6 @@ export default function Streamers() {
       <li>Hit Play. Finish the game, then copy the chat challenge.</li>
       <li>Paste it in chat: everyone plays your exact pages. Compare scores, rematch, repeat.</li>
     </ol>
-    <p className="mt-10"><Link href="/wikirush?play=1&stream=1" className="inline-flex rounded-2xl bg-[#6978f5] px-7 py-4 text-lg font-black text-white shadow-lg hover:bg-[#5866df]">▶ Play now</Link></p>
+    <p className="mt-10"><Link href="/wikirush?stream=1#play" className="inline-flex rounded-2xl bg-[#6978f5] px-7 py-4 text-lg font-black text-white shadow-lg hover:bg-[#5866df]">▶ Play now</Link></p>
   </main>;
 }
