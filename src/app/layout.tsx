@@ -2,11 +2,22 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import Script from 'next/script';
 import './globals.css';
-import Logo from '@/components/Logo';
+import localFont from 'next/font/local';
+import GameNav from '@/components/game/GameNav';
 import PageView from '@/components/PageView';
 import MatchupWelcomeModal from '@/components/MatchupWelcomeModal';
 import DiscordFloatingButton from '@/components/DiscordFloatingButton';
 import { SITE_URL, THREADLINE_HOME } from '@/lib/site';
+
+const poppins = localFont({
+  src: [
+    { path: '../assets/Poppins-Regular.ttf', weight: '400' },
+    { path: '../assets/Poppins-Medium.ttf', weight: '500' },
+    { path: '../assets/Poppins-Bold.ttf', weight: '700' },
+  ],
+  variable: '--font-poppins',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -19,23 +30,23 @@ export const metadata: Metadata = {
     type: 'website',
     title: 'WikiRush: The Wikipedia Link Race Game',
     description: 'Get from one Wikipedia page to another using only links. Free, instant, and built to share. Play the Daily Challenge.',
-    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
+    images: [{ url: '/game/og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'WikiRush: The Wikipedia Link Race Game',
     description: 'Get from one Wikipedia page to another using only links. Free, instant, and built to share.',
-    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
+    images: [{ url: '/game/og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
   },
   other: { 'google-adsense-account': 'ca-pub-5222388837833339' },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#EEF0F6' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0b0f1f' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="font-sans">
+      <body className={`${poppins.variable} font-sans`}>
         <Script
           id="google-adsense"
           strategy="beforeInteractive"
@@ -55,33 +66,23 @@ gtag('config', 'G-5HEWDYYCEC');`}
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-ink focus:px-3 focus:py-2 focus:text-white">
           Skip to content
         </a>
-        <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
-          <Link href="/" className="flex items-center gap-2 text-2xl font-extrabold tracking-tight">
-            <Logo />
-            Duelio
-          </Link>
-          <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
-            <Link href="/wikirush" className="rounded-lg bg-[#6978f5] px-3 py-2 font-extrabold text-white">WikiRush ↗</Link>
-            <Link href="/matchups" className="font-bold">Duel</Link>
-            <Link href="/#debates" className="font-bold">Dilemma</Link>
-            <Link href="/submit" className="font-bold">Submit</Link>
-            <Link href="/leaderboard" className="hidden md:inline-flex font-bold">Ranks</Link>
-            <Link href="/profile" className="hidden md:inline-flex font-bold">Profile</Link>
-            <Link href="/settings" className="hidden md:inline-flex font-bold">Settings</Link>
-          </nav>
-        </header>
+        <GameNav />
         <div id="main">{children}</div>
-        <footer className="mx-auto mt-24 max-w-5xl border-t-4 border-ink px-5 py-8 text-[0.95rem] text-mute">
-          <p className="flex flex-wrap gap-x-6 gap-y-2">
-            <Link href="/guidelines" className="underline underline-offset-4 hover:text-ink">Community guidelines</Link>
-            <Link href="/submit" className="underline underline-offset-4 hover:text-ink">Submit a dilemma</Link>
-            <Link href="/matchups" className="underline underline-offset-4 hover:text-ink">Matchup board</Link>
-            <span>
-              Discussions powered by{' '}
-              <a href={THREADLINE_HOME} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-ink">Threadline</a>.
-            </span>
-          </p>
-        </footer>
+        <div className="gx-foot-wrap"><footer className="gx-foot">
+          <div className="gx-foot-in">
+            <p className="gx-foot-brand">Duelio</p>
+            <nav aria-label="Footer" className="gx-foot-links">
+              <Link href="/wikirush">WikiRush</Link>
+              <Link href="/wikirush/how-to-play">How to play</Link>
+              <Link href="/matchups">Duel</Link>
+              <Link href="/#debates">Dilemma</Link>
+              <Link href="/leaderboard">Leaderboard</Link>
+              <Link href="/submit">Submit</Link>
+              <Link href="/guidelines">Guidelines</Link>
+            </nav>
+            <p className="gx-foot-note">Discussions powered by{' '}<a href={THREADLINE_HOME} target="_blank" rel="noopener noreferrer">Threadline</a>. Wikipedia text is shared under CC BY-SA.</p>
+          </div>
+        </footer></div>
         <MatchupWelcomeModal />
         <DiscordFloatingButton />
         <PageView />

@@ -111,3 +111,6 @@ create table if not exists public.wikirush_featured (
 );
 alter table public.wikirush_featured enable row level security; -- no policies: service role only
 alter table public.wikirush_featured add column if not exists day integer; -- "Day N Challenge" release number
+
+-- Optional avatar choice (1-12) shown on the leaderboard. The app works without it.
+alter table public.wiki_profiles add column if not exists avatar smallint;

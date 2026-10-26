@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Generates the WikiRush brand art used by the recording overlay and the social card.
+"""Generates the WikiRush brand art used by the watermark and legacy social card.
 
 Run:  python3 scripts/make-wikirush-art.py      (needs: pip install pillow numpy)
 Writes public/wikirush/:
   wr-mark.png          transparent watermark mark (split circle + link path)
-  wr-bg-landscape.jpg  1280x720  recording intro/outro background
-  wr-bg-vertical.jpg   720x1280  vertical "reel" background
   wr-og.png            1200x630  social card for /wikirush
 Deterministic: the same script always writes the same pixels.
 """
@@ -102,12 +100,6 @@ def make_bg(w, h, seed, with_text=False):
 def main():
     mark = draw_mark(256)
     mark.save(os.path.join(OUT, 'wr-mark.png'), optimize=True)
-
-    land = make_bg(1280, 720, 11)
-    land.convert('RGB').save(os.path.join(OUT, 'wr-bg-landscape.jpg'), quality=88, optimize=True)
-
-    vert = make_bg(720, 1280, 23)
-    vert.convert('RGB').save(os.path.join(OUT, 'wr-bg-vertical.jpg'), quality=88, optimize=True)
 
     og = make_bg(1200, 630, 7)
     d = ImageDraw.Draw(og)

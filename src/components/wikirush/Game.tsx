@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ArticleView, { type ArticleHandle } from './ArticleView';
 import Confetti from './Confetti';
 import { planRounds, type RoundPlan } from '@/lib/wikirush/rounds';
@@ -9,19 +9,14 @@ import { linkedTitles, normTitle } from '@/lib/wikirush/titles';
 import { articles, resolveRound, resolveWildRound, wikipediaUrl, type LoadedRound } from '@/lib/wikirush/wiki';
 import { buildChallengeUrl, buildShareText, emojiRow, formatScore, settingsLabel } from '@/lib/wikirush/share';
 import { sfx } from '@/lib/wikirush/sfx';
-import { clock, type OverlayState } from '@/lib/wikirush/overlay';
-import { downloadRecording, type RecordingResult, type RunRecorder } from '@/lib/wikirush/recorder';
 import { randomSeed } from '@/lib/wikirush/rng';
 import { pointsForGame } from '@/lib/wikirush/levels';
 import type { ChallengeParams, GameSettings, GameSummary, RoundResult } from '@/lib/wikirush/types';
 
 type Phase = 'loading' | 'intro' | 'countdown' | 'playing' | 'roundEnd' | 'final' | 'error';
-type RecState = { state: 'off' | 'recording' | 'saving' | 'done' | 'failed'; result?: RecordingResult; message?: string };
 
 type Props = {
   settings: GameSettings;
-  recorder: RunRecorder | null;
-  overlayRef: MutableRefObject<OverlayState>;
   sound: boolean;
   playerName?: string;
   challenge?: ChallengeParams | null;
@@ -50,7 +45,7 @@ function useCountUp(value: number, ms = 900, active = true) {
   return shown;
 }
 
-export default function Game({ settings, recorder, overlayRef, sound, playerName, challenge, stream, onBegin, onFinish, onExit, onPlayAgain }: Props) {
+export default function Game({ settings, sound, playerName, challenge, stream, onBegin, onFinish, onExit, onPlayAgain }: Props) {
   const limitMs = settings.seconds * 1000;
   const [phase, setPhase] = useState<Phase>('loading');
   const [roundIdx, setRoundIdx] = useState(0);
@@ -69,7 +64,6 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
   const [error, setError] = useState('');
   const [burst, setBurst] = useState(0);
   const [summary, setSummary] = useState<GameSummary | null>(null);
-  const [rec, setRec] = useState<RecState>({ state: recorder ? 'recording' : 'off' });
   const [saveNote, setSaveNote] = useState('');
   const [confirmExit, setConfirmExit] = useState(false);
   const [showTarget, setShowTarget] = useState(false);
@@ -140,14 +134,13 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
       setRound(r); setRoundIdx(i); setMsLeft(limitMs);
       setPage({ title: r.start.title, html: r.startHtml });
       setTrail([r.start.title]); setClicks(0); setRadarUsed(false); setLastResult(null);
-      void recorder?.setTargetThumb(r.target.thumbnail);
       setPhase('intro');
       if (i + 1 < rounds && settings.mode !== 'wild') void load(i + 1).catch(() => {});
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load this round.');
       setPhase('error');
     }
-  }, [load, limitMs, recorder, rounds, settings.mode]);
+  }, [load, limitMs, rounds, settings.mode]);
 
   useEffect(() => { void openRound(0); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
@@ -290,37 +283,14 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     const total = s.results.reduce((a, r) => a + r.score, 0);
     const sum: GameSummary = { settings, results: s.results, total, max: maxScore(early ? Math.max(1, s.results.length) : rounds), finishedAt: new Date().toISOString() };
     setSummary(sum); setPhase('final'); sfx.final(); setBurst(b => b + 1);
-    // A run quit early is not a complete game, so it is not ranked; the video is still yours.
-    if (early) setSaveNote('You quit early, so this run is not ranked. Your video is still ready.');
+    // A run quit early is not a complete game, so it is not ranked.
+    if (early) setSaveNote('You quit early, so this run is not ranked.');
     else Promise.resolve(onFinish(sum)).then(note => { if (note) setSaveNote(note); }).catch(() => {});
-    if (recorder) {
-      setRec({ state: 'saving' });
-      recorder.finish(sum).then(result => {
-        if (result) setRec({ state: 'done', result }); // the popup on the results screen asks whether to download
-        else setRec({ state: 'failed', message: 'Nothing was recorded.' });
-      }).catch(e => setRec({ state: 'failed', message: e instanceof Error ? e.message : 'Recording failed.' }));
-    }
-  }, [onFinish, recorder, rounds, settings]);
-
-  /** Quit mid-run but keep the footage: ends the round, plays the outro and offers the download. */
-  const quitWithVideo = useCallback(() => {
-    setConfirmExit(false);
-    if (g.current.live) endRound('gave-up');
-    finishGame(true);
-  }, [endRound, finishGame]);
+  }, [onFinish, rounds, settings]);
 
   const nextRound = useCallback(() => {
     if (roundIdx + 1 < rounds) void openRound(roundIdx + 1); else finishGame(false);
   }, [finishGame, openRound, roundIdx, rounds]);
-
-  // Recorder stopped from the browser's own "Stop sharing" bar: keep playing, drop the footage.
-  useEffect(() => {
-    if (!recorder) return;
-    recorder.onEndedEarly = () => { setRec({ state: 'failed', message: 'Screen sharing was stopped, so this run was not recorded.' }); recorder.cancel(); };
-    return () => { recorder.onEndedEarly = undefined; };
-  }, [recorder]);
-
-  useEffect(() => () => { if (recorder && !g.current.finished) recorder.cancel(); }, [recorder]);
 
   // Keyboard: Enter advances between rounds.
   useEffect(() => {
@@ -332,18 +302,6 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [phase, beginCountdown, nextRound, confirmExit]);
-
-  // ---------- overlay state for the recorder ----------
-  useEffect(() => {
-    overlayRef.current = {
-      phase: phase === 'loading' || phase === 'error' ? 'idle' : phase,
-      modeLabel: settingsLabel(settings),
-      roundIdx, rounds,
-      startTitle: round?.start.title ?? '', targetTitle: round?.target.title ?? '', targetDesc: round?.target.description,
-      currentTitle: page?.title ?? '', msLeft, limitMs, clicks, path: trail,
-      totalScore: results.reduce((a, r) => a + r.score, 0), countdown, lastResult, summary,
-    };
-  });
 
   // ---------- derived ----------
   const total = results.reduce((a, r) => a + r.score, 0);
@@ -414,7 +372,7 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
 
   if (phase === 'final' && summary) {
     return <FinalScreen
-      summary={summary} rec={rec} saveNote={saveNote} challenge={challenge} burst={burst} copied={copied}
+      summary={summary} saveNote={saveNote} challenge={challenge} burst={burst} copied={copied}
       playerName={playerName} challengeLink={challengeLink} stream={!!stream}
       chatText={chatText} onChat={() => void copy(chatText, 'chat')} cardUrl={cardUrl}
       onShare={shareResult} onCopyLink={() => void copy(challengeLink, 'link')}
@@ -445,7 +403,6 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
           </span>
           <span className="ml-auto hidden text-xs font-bold text-white/50 sm:block">{showTarget ? 'Hide' : 'Details'}</span>
         </button>
-        {rec.state === 'recording' && <span role="status" className="shrink-0 self-center rounded-full bg-rose-500/90 px-2.5 py-1 text-[10px] font-black tracking-widest"><span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-white" />REC</span>}
         <div className={`shrink-0 rounded-xl px-3 py-1.5 text-right ${low && phase === 'playing' ? 'bg-red-500/20 text-red-200' : 'bg-white/10'}`} aria-live="off">
           <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Time</p>
           <p className="text-2xl font-black tabular-nums leading-none">{clock(msLeft)}</p>
@@ -520,23 +477,19 @@ export default function Game({ settings, recorder, overlayRef, sound, playerName
     {confirmExit && <div className="absolute inset-0 z-40 grid place-items-center bg-black/60 p-4">
       <div role="alertdialog" aria-label="Leave game" className="wr-pop w-full max-w-sm rounded-3xl bg-white p-6 text-[#101426]">
         <h3 className="text-xl font-black">Leave this run?</h3>
-        <p className="mt-2 text-sm text-slate-600">{rec.state === 'recording' ? 'You can keep the recording of what you played so far, or discard everything.' : 'Your progress will be discarded.'}</p>
+        <p className="mt-2 text-sm text-slate-600">Your progress will be discarded.</p>
         <div className="mt-5 grid gap-2">
           <button autoFocus onClick={() => setConfirmExit(false)} className="rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white">Keep playing</button>
-          {rec.state === 'recording' && <button onClick={quitWithVideo} className="rounded-xl bg-[#6978f5] px-4 py-3 font-extrabold text-white">Quit and download my video</button>}
-          <button onClick={() => { recorder?.cancel(); onExit(); }} className="rounded-xl border border-slate-300 px-4 py-3 font-bold">Leave and discard</button>
+          <button onClick={() => { onExit(); }} className="rounded-xl border border-slate-300 px-4 py-3 font-bold">Leave and discard</button>
         </div>
       </div>
     </div>}
   </div>;
 }
 
-function canShareFile(r: { blob: Blob; filename: string }): boolean {
-  try { return typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([r.blob], r.filename, { type: r.blob.type })] }); } catch { return false; }
-}
-
-async function shareVideo(r: { blob: Blob; filename: string }) {
-  try { await navigator.share({ files: [new File([r.blob], r.filename, { type: r.blob.type })], title: 'My WikiRush run' }); } catch { /* cancelled */ }
+function clock(ms: number): string {
+  const t = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 }
 
 function PageCard({ page, tone }: { page: LoadedRound['start']; tone: 'start' | 'target' }) {
@@ -593,11 +546,10 @@ function RoundEnd({ result, round, roundIdx, rounds, total, burst, onNext }: { r
   </div>;
 }
 
-function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerName, challengeLink, stream, chatText, onChat, cardUrl, onShare, onCopyLink, onAgain, onSameSeed, onExit }: {
-  summary: GameSummary; rec: RecState; saveNote: string; challenge?: ChallengeParams | null; burst: number; copied: string; playerName?: string; challengeLink: string; stream: boolean; chatText: string; onChat(): void; cardUrl: string;
+function FinalScreen({ summary, saveNote, challenge, burst, copied, playerName, challengeLink, stream, chatText, onChat, cardUrl, onShare, onCopyLink, onAgain, onSameSeed, onExit }: {
+  summary: GameSummary; saveNote: string; challenge?: ChallengeParams | null; burst: number; copied: string; playerName?: string; challengeLink: string; stream: boolean; chatText: string; onChat(): void; cardUrl: string;
   onShare(): void; onCopyLink(): void; onAgain(): void; onSameSeed(): void; onExit(): void;
 }) {
-  const [popupClosed, setPopupClosed] = useState(false);
   const rank = rankFor(summary.total, summary.max);
   const shown = useCountUp(summary.total, 1400);
   const pct = Math.round(scoreShare(summary.total, summary.max) * 100);
@@ -606,27 +558,6 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
   const wins = summary.results.filter(r => r.won).length;
   return <div className="fixed inset-0 z-[100] overflow-y-auto bg-[#101426] text-white" role="dialog" aria-modal="true" aria-label="WikiRush results">
     <Confetti burst={burst} big />
-    {rec.state !== 'off' && !popupClosed && (rec.state === 'recording' || rec.state === 'saving' || rec.state === 'done') && <div className="fixed inset-0 z-[130] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Your recording">
-      <div className="wr-pop w-full max-w-lg rounded-3xl bg-white p-5 text-[#101426] shadow-2xl">
-        {rec.state === 'done' && rec.result ? <>
-          <p className="text-xs font-black uppercase tracking-widest text-[#5968ec]">🎥 Your recording is ready</p>
-          <h3 className="mt-1 text-2xl font-black">Download your video?</h3>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video src={rec.result.url} controls autoPlay muted loop playsInline className="mt-3 max-h-[50vh] w-full rounded-xl bg-black" />
-          <p className="mt-2 text-xs text-slate-500">{rec.result.filename} · {(rec.result.bytes / 1048576).toFixed(1)} MB · with the WikiRush overlay</p>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <button autoFocus onClick={() => { downloadRecording(rec.result!); setPopupClosed(true); }} className="rounded-xl bg-[#6978f5] px-4 py-3 font-black text-white hover:bg-[#5866df]">⬇ Download</button>
-            {canShareFile(rec.result) ? <button onClick={() => void shareVideo(rec.result!)} className="rounded-xl border border-slate-300 px-4 py-3 font-black hover:bg-slate-50">Share ↗</button> : <button onClick={() => setPopupClosed(true)} className="rounded-xl border border-slate-300 px-4 py-3 font-black hover:bg-slate-50">No thanks</button>}
-          </div>
-          {canShareFile(rec.result) && <button onClick={() => setPopupClosed(true)} className="mx-auto mt-3 block text-sm font-bold text-slate-500 underline">No thanks</button>}
-        </> : <div className="py-6 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#6978f5]" />
-          <h3 className="mt-4 text-xl font-black">Finishing your video…</h3>
-          <p className="mt-1 text-sm text-slate-500">Adding the WikiRush outro. This takes a few seconds.</p>
-          <button onClick={() => setPopupClosed(true)} className="mt-4 text-sm font-bold text-slate-500 underline">Hide</button>
-        </div>}
-      </div>
-    </div>}
     <div className="relative z-20 mx-auto max-w-2xl px-4 py-8 sm:py-12">
       <p className="text-center text-xs font-black uppercase tracking-[.22em] text-[#aeb7ff]">{summary.settings.mode === 'daily' ? 'Daily challenge' : summary.settings.featuredDay ? `Day ${summary.settings.featuredDay} Challenge` : 'Run complete'} · {settingsLabel(summary.settings)}</p>
       <p className="mt-4 text-center text-7xl font-black tabular-nums tracking-tight sm:text-8xl">{formatScore(shown)}</p>
@@ -648,21 +579,6 @@ function FinalScreen({ summary, rec, saveNote, challenge, burst, copied, playerN
           <p className="mt-1 text-xs leading-relaxed text-white/40">{r.path.join(' → ')}</p>
         </li>)}
       </ol>
-
-      {rec.state !== 'off' && <div className="mt-5 rounded-2xl border border-white/10 bg-white/[.05] p-4">
-        <p className="text-xs font-black uppercase tracking-widest text-[#aeb7ff]">🎥 Your recording</p>
-        {rec.state === 'recording' || rec.state === 'saving' ? <p className="mt-2 text-sm text-white/70">Finishing your video with the Duelio outro… a Download popup appears when it is ready.</p> : null}
-        {rec.state === 'failed' && <p className="mt-2 text-sm text-rose-200">{rec.message || 'Recording failed.'}</p>}
-        {rec.state === 'done' && rec.result && <>
-          <p className="mt-2 text-sm text-white/70">Saved <span className="font-bold text-white">{rec.result.filename}</span> · {(rec.result.bytes / 1048576).toFixed(1)} MB. Ready whenever you are.</p>
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video src={rec.result.url} controls playsInline className="mt-3 max-h-80 w-full rounded-xl bg-black" />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => downloadRecording(rec.result!)} className="rounded-xl border border-white/20 px-4 py-2.5 text-sm font-bold hover:bg-white/10">Download ↓</button>
-            {canShareFile(rec.result) && <button onClick={() => void shareVideo(rec.result!)} className="rounded-xl bg-[#6978f5] px-4 py-2.5 text-sm font-bold hover:bg-[#5866df]">Share video ↗</button>}
-          </div>
-        </>}
-      </div>}
 
       {saveNote && <p role="status" className="mt-4 text-center text-sm text-white/60">{saveNote}</p>}
 

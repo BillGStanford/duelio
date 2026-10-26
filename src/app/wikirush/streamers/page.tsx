@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 const title = 'WikiRush for Streamers: Play Wikipedia Races With Your Chat';
-const description = 'WikiRush is a free Wikipedia game made for streams. Streamer mode, one-link chat challenges, an auto-recorded branded clip, and a daily challenge your whole community can play.';
+const description = 'WikiRush is a free Wikipedia game made for streams. Streamer mode, one-link chat challenges, and a daily challenge your whole community can play.';
 
 export const metadata: Metadata = {
   title: { absolute: title }, description, alternates: { canonical: '/wikirush/streamers' },
-  openGraph: { title, description, type: 'article', siteName: 'Duelio', url: '/wikirush/streamers', images: ['/wikirush/wr-og.png'] },
+  openGraph: { title, description, type: 'article', siteName: 'Duelio', url: '/wikirush/streamers', images: ['/game/og.png'] },
 };
 
 const perks = [
   ['Chat plays along', 'Every game makes a challenge link. Paste it in chat and viewers play the exact same pages, then post their scores to compare.'],
   ['Streamer mode', 'Hides your account name and email on screen. Add ?stream=1 to any WikiRush link to switch it on.'],
-  ['Clip that makes itself', 'Turn on recording and the run, with the WikiRush overlay, shows a Download popup when the game ends. Upload it straight to TikTok, Shorts or Reels.'],
+  ['Share card', 'Every finished run makes a clean score card you can download and post, with a link that lets anyone play the same pages.'],
   ['Daily Challenge', 'One shared daily set gives your community a reason to come back every stream.'],
   ['No download, no login to start', 'It runs in the browser, so it works as an OBS browser or window capture. The first game needs no account.'],
 ];

@@ -20,7 +20,6 @@ Score validation enforces duration/elapsed bounds and a server-side points cap. 
 - **Scoring** is integer math mirrored in `src/lib/wikirush/scoring.ts` and `public.wikirush_round_score()`. The server recomputes every round from elapsed time, clicks, radar and near-miss, so a client cannot post an arbitrary total. Plausibility checks reject wins faster than 0.6 s per click.
 - **Daily Challenge** seeds are `daily-YYYY-MM-DD` (UTC). The database accepts a daily only for today's date, one ranked attempt per player; replays are accepted as practice with no points.
 - **Leaderboard points** from v2 games are `total / 10`.
-- **Recording** happens entirely in the player's browser (canvas + MediaRecorder). Nothing is uploaded.
 - Regenerate the brand art with `python3 scripts/make-wikirush-art.py` (needs `pillow` and `numpy`).
 
 ## Guest gate (one free game)

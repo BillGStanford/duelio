@@ -7,7 +7,7 @@ const description = 'Learn how to play WikiRush, the Wikipedia link race game. R
 
 export const metadata: Metadata = {
   title: { absolute: title }, description, alternates: { canonical: '/wikirush/how-to-play' },
-  openGraph: { title, description, type: 'article', siteName: 'Duelio', url: '/wikirush/how-to-play', images: ['/wikirush/wr-og.png'] },
+  openGraph: { title, description, type: 'article', siteName: 'Duelio', url: '/wikirush/how-to-play', images: ['/game/og.png'] },
 };
 
 const steps = [

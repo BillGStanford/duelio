@@ -84,19 +84,15 @@ export function saveStats(stats: WikiStats, storage?: StorageLike | null) {
 }
 
 const PREF_KEY = 'wikirush:v2:prefs';
-export type WikiPrefs = { rounds: number; seconds: number; record: boolean; recordMethod: 'screen' | 'reel'; sound: boolean; name: string; recVer?: number };
-export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 90, record: true, recordMethod: 'screen', sound: true, name: '', recVer: 3 };
+export type WikiPrefs = { rounds: number; seconds: number; sound: boolean; name: string };
+export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 90, sound: true, name: '' };
 
 export function loadPrefs(): WikiPrefs {
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(PREF_KEY) : null;
     const stored = raw ? JSON.parse(raw) : null;
-    const saved: WikiPrefs = { ...DEFAULT_PREFS, ...(stored || {}) };
-    // One-time migration, judged on what was actually STORED (the defaults already carry the new version):
-    // recording on, and real screen capture preferred over the synthetic vertical reel.
-    if (stored && stored.recVer !== 3) { saved.record = true; saved.recordMethod = 'screen'; }
-    saved.recVer = 3;
-    return saved;
+    // Drop fields from older versions (recording was removed) so they never linger in storage.
+    return { rounds: DEFAULT_PREFS.rounds, seconds: DEFAULT_PREFS.seconds, sound: DEFAULT_PREFS.sound, name: DEFAULT_PREFS.name, ...(stored && typeof stored === 'object' ? { rounds: stored.rounds ?? DEFAULT_PREFS.rounds, seconds: stored.seconds ?? DEFAULT_PREFS.seconds, sound: stored.sound ?? DEFAULT_PREFS.sound, name: stored.name ?? DEFAULT_PREFS.name } : {}) };
   } catch { return { ...DEFAULT_PREFS }; }
 }
 

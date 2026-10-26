@@ -19,13 +19,11 @@ type Props = {
   dailyKey: string;
   dailyScore?: number;
   challenge: ChallengeParams | null;
-  canScreen: boolean;
-  canReel: boolean;
   busy: boolean;
   error: string;
   notice: string;
   board: BoardRow[] | null;
-  onStart(mode: GameMode): void;
+  onStart(mode: GameMode | 'hard'): void;
   featured?: Featured[];
   highlightId?: string;
   onStartFeatured?(f: Featured): void;
@@ -41,13 +39,26 @@ function untilNextDaily() {
 function Seg<T extends string | number>({ value, options, onChange, label }: { value: T; options: Array<{ value: T; label: string; hint?: string }>; onChange(v: T): void; label: string }) {
   return <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-2">
     {options.map(o => <button key={String(o.value)} role="radio" aria-checked={o.value === value} onClick={() => onChange(o.value)}
-      className={`rounded-xl border px-3 py-2.5 text-sm font-extrabold transition ${o.value === value ? 'border-[#6978f5] bg-[#eef0ff] text-[#3f4dc9]' : 'border-slate-200 hover:border-slate-400'}`}>
-      {o.label}{o.hint && <span className="block text-[11px] font-bold text-slate-400">{o.hint}</span>}
+      className={`rounded-xl border-2 px-2 py-2.5 text-sm font-bold transition ${o.value === value ? 'border-[#6978f5] bg-[#6978f5]/30 text-white' : 'border-white/15 text-white/75 hover:border-white/40'}`}>
+      {o.label}{o.hint && <span className="block text-[11px] font-semibold text-white/50">{o.hint}</span>}
     </button>)}
   </div>;
 }
 
-export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, canScreen, canReel, busy, error, notice, board, onStart, featured = [], highlightId, onStartFeatured }: Props) {
+/* eslint-disable @next/next/no-img-element */
+function Mode({ img, tag, title, text, onClick, disabled, cta = 'Play' }: { img: string; tag: string; title: string; text: string; onClick(): void; disabled?: boolean; cta?: string }) {
+  return <button type="button" onClick={onClick} disabled={disabled} className="gx-mode group w-full text-left disabled:opacity-60">
+    <img src={img} alt="" loading="lazy" width={960} height={600} />
+    <span className="gx-mode-tag">{tag}</span>
+    <div className="gx-mode-body">
+      <h3 className="text-lg font-bold leading-tight">{title}</h3>
+      <p className="mt-1 text-sm leading-snug text-white/70">{text}</p>
+      <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#aeb7ff] transition group-hover:gap-2 group-hover:text-white">{disabled ? 'Loading…' : cta} <span aria-hidden="true">→</span></span>
+    </div>
+  </button>;
+}
+
+export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, challenge, busy, error, notice, board, onStart, featured = [], highlightId, onStartFeatured }: Props) {
   const [until, setUntil] = useState('');
   useEffect(() => { setUntil(untilNextDaily()); const id = window.setInterval(() => setUntil(untilNextDaily()), 30000); return () => window.clearInterval(id); }, []);
   const streak = liveDailyStreak(stats, dailyKey);
@@ -57,127 +68,82 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
     return { key, label: date.toLocaleDateString('en-US', { weekday: 'narrow', timeZone: 'UTC' }), score: stats.daily[key], today: key === dailyKey };
   });
   const winRate = stats.rounds ? Math.round((stats.wins / stats.rounds) * 100) : 0;
-  const noRecording = !canScreen && !canReel;
-  const method = prefs.recordMethod === 'screen' && !canScreen ? 'reel' : prefs.recordMethod;
 
   return <div className="space-y-6">
-    {challenge && <section className="wr-rise overflow-hidden rounded-3xl bg-gradient-to-r from-[#6978f5] to-[#e75d87] p-[2px]">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-[#101426] p-5 text-white">
+    {challenge && <section className="gx-rise overflow-hidden rounded-3xl bg-gradient-to-r from-[#6978f5] to-[#fb7185] p-[2px]">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-[#0e1330] p-5">
         <div>
-          <p className="text-xs font-black uppercase tracking-[.2em] text-[#aeb7ff]">You’ve been challenged</p>
-          <p className="mt-1 text-xl font-black">{challenge.name ? `${challenge.name} wants you to beat ` : 'Beat '}{typeof challenge.score === 'number' ? <span className="text-amber-300">{formatScore(challenge.score)} pts</span> : 'their run'}</p>
+          <p className="gx-eyebrow">You’ve been challenged</p>
+          <p className="mt-1 text-xl font-bold">{challenge.name ? `${challenge.name} wants you to beat ` : 'Beat '}{typeof challenge.score === 'number' ? <span className="text-[var(--gx-gold)]">{formatScore(challenge.score)} pts</span> : 'their run'}</p>
           <p className="text-sm text-white/60">Same pages · {settingsLabel({ mode: 'challenge', rounds: challenge.rounds, seconds: challenge.seconds })}</p>
         </div>
-        <button disabled={busy} onClick={() => onStart('challenge')} className="rounded-2xl bg-white px-6 py-3.5 font-black text-[#101426] hover:bg-[#eef0ff] disabled:opacity-60">Accept challenge →</button>
+        <button disabled={busy} onClick={() => onStart('challenge')} className="gx-btn gx-btn-gold">Accept challenge →</button>
       </div>
     </section>}
 
     {featured.length > 0 && <section aria-label="Featured challenges">
-      <p className="mb-2 text-xs font-black uppercase tracking-[.2em] text-[#5968ec]">⭐ Featured challenges</p>
+      <p className="gx-eyebrow mb-3">⭐ Featured challenges</p>
       <div className="grid gap-3 sm:grid-cols-2">
-        {featured.map(f => <article key={f.id} id={`feat-${f.id}`} className={`flex flex-col justify-between rounded-3xl border bg-white p-5 ${highlightId === f.id ? 'border-[#6978f5] ring-4 ring-[#6978f5]/25' : 'border-slate-200'}`}>
+        {featured.map(f => <article key={f.id} id={`feat-${f.id}`} className={`gx-card flex flex-col justify-between p-5 ${highlightId === f.id ? '!border-[#6978f5] ring-4 ring-[#6978f5]/30' : ''}`}>
           <div>
-            {f.day > 0 && <p className="text-xs font-black uppercase tracking-[.18em] text-[#e75d87]">Day {f.day} Challenge</p>}
-            <h3 className="text-lg font-black leading-tight">{f.title}</h3>
-            {f.blurb && <p className="mt-1 text-sm text-slate-500">{f.blurb}</p>}
-            <p className="mt-2 text-sm font-bold text-slate-700">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>
+            {f.day > 0 && <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--gx-pink)]">Day {f.day} Challenge</p>}
+            <h3 className="text-lg font-bold leading-tight">{f.title}</h3>
+            {f.blurb && <p className="mt-1 text-sm text-white/65">{f.blurb}</p>}
+            <p className="mt-2 text-sm font-semibold text-white/85">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>
           </div>
-          <button disabled={busy} onClick={() => onStartFeatured?.(f)} className="mt-4 rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white hover:bg-[#1c2240] disabled:opacity-60">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button>
+          <button disabled={busy} onClick={() => onStartFeatured?.(f)} className="gx-btn mt-4">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button>
         </article>)}
       </div>
     </section>}
 
-    <div className="grid gap-4 lg:grid-cols-3">
-      {/* Daily */}
-      <article className="relative flex flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#6978f5] to-[#3b46c4] p-6 text-white shadow-lg shadow-[#6978f5]/20 lg:col-span-2">
-        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" aria-hidden="true" />
-        <div>
-        <p className="text-xs font-black uppercase tracking-[.2em] text-white/70">Daily challenge #{dailyNumber(dailyKey)}</p>
-        <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Same 5 pages for everyone.</h2>
-        <p className="mt-2 max-w-md text-sm text-white/80">One shared set of rounds, reset at midnight UTC. Compare scores with the whole internet and keep your streak alive.</p>
-        </div>
-        <div className="mt-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <button disabled={busy} onClick={() => onStart('daily')} className="rounded-2xl bg-white px-7 py-3.5 text-base font-black text-[#3b46c4] shadow-md hover:-translate-y-0.5 hover:bg-[#f4f5ff] disabled:opacity-60">
-            {busy ? 'Loading…' : dailyScore !== undefined ? 'Play it again' : 'Play today’s daily →'}
-          </button>
-          <span className="rounded-full bg-white/15 px-3 py-1.5 text-sm font-extrabold">🔥 {streak}-day streak</span>
-          {dailyScore !== undefined && <span className="rounded-full bg-white/15 px-3 py-1.5 text-sm font-extrabold">Today: {formatScore(dailyScore)}</span>}
-          <span className="text-xs font-bold text-white/60">New one in {until || '…'}</span>
-        </div>
-        <div className="mt-6 rounded-2xl bg-black/15 p-4" aria-label="Your last 7 days">
-          <p className="text-[11px] font-black uppercase tracking-widest text-white/60">Your week</p>
-          <ol className="mt-2 grid grid-cols-7 gap-2 text-center">
+    {/* Daily mission */}
+    <section aria-label="Daily challenge" className="gx-mode block !cursor-default">
+      <div className="grid md:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+        <img src="/game/mode-daily.jpg" alt="" width={960} height={600} className="h-full min-h-[180px] w-full object-cover md:!aspect-auto" />
+        <div className="p-5 sm:p-6">
+          <p className="gx-eyebrow">Daily challenge #{dailyNumber(dailyKey)}</p>
+          <h2 className="gx-h mt-2 text-3xl">Same 5 pages for everyone</h2>
+          <p className="mt-2 text-sm text-white/70">Reset at midnight UTC. Compare scores with the world and keep your streak alive.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button disabled={busy} onClick={() => onStart('daily')} className="gx-btn gx-btn-gold">{busy ? 'Loading…' : dailyScore !== undefined ? 'Play again (practice)' : '▶ Play today’s daily'}</button>
+            <span className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold">🔥 {streak}-day streak</span>
+            {dailyScore !== undefined && <span className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold">Today: {formatScore(dailyScore)}</span>}
+          </div>
+          <p className="mt-2 text-xs font-semibold text-white/50">New one in {until || '…'}</p>
+          <ol aria-label="Your last 7 days" className="mt-4 grid grid-cols-7 gap-2 text-center">
             {week.map(d => <li key={d.key} className="min-w-0">
-              <span className={`mx-auto grid h-9 w-9 place-items-center rounded-full text-xs font-black ${d.score !== undefined ? 'bg-white text-[#3b46c4]' : d.today ? 'border-2 border-dashed border-white/70 text-white/80' : 'bg-white/10 text-white/40'}`}>{d.score !== undefined ? '✓' : d.today ? '?' : '·'}</span>
-              <span className="mt-1 block text-[10px] font-bold text-white/60">{d.label}</span>
-              {d.score !== undefined && <span className="block truncate text-[10px] font-black tabular-nums text-white">{formatScore(d.score)}</span>}
+              <span className={`mx-auto grid h-9 w-9 place-items-center rounded-full text-xs font-bold ${d.score !== undefined ? 'bg-[var(--gx-gold)] text-[#3a2300]' : d.today ? 'border-2 border-dashed border-white/60 text-white/80' : 'bg-white/10 text-white/40'}`}>{d.score !== undefined ? '✓' : d.today ? '?' : '·'}</span>
+              <span className="mt-1 block text-[10px] font-bold text-white/55">{d.label}</span>
             </li>)}
           </ol>
         </div>
-        </div>
-      </article>
-
-      {/* Quick modes */}
-      <div className="grid gap-4">
-        <article className="rounded-3xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[#6978f5]">Classic</p>
-          <h3 className="mt-1 text-xl font-black">Fresh pages, shareable seed</h3>
-          <p className="mt-1 text-sm text-slate-500">Curated, always winnable. Send a friend the link and they play your exact rounds.</p>
-          <button disabled={busy} onClick={() => onStart('classic')} className="mt-3 w-full rounded-xl bg-[#101426] px-4 py-3 font-extrabold text-white hover:bg-[#1c2240] disabled:opacity-60">Play classic</button>
-        </article>
-        <article className="rounded-3xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[#e75d87]">Wild</p>
-          <h3 className="mt-1 text-xl font-black">Random page, real chaos</h3>
-          <p className="mt-1 text-sm text-slate-500">Start anywhere on Wikipedia. Destination is still a famous page.</p>
-          <button disabled={busy} onClick={() => onStart('wild')} className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 font-extrabold hover:bg-slate-50 disabled:opacity-60">Play wild</button>
-        </article>
       </div>
-    </div>
+    </section>
 
-    {(error || notice) && <p role={error ? 'alert' : 'status'} className={`rounded-xl p-3 text-sm font-semibold ${error ? 'bg-red-50 text-red-700' : 'bg-[#eef0ff] text-[#4857d7]'}`}>{error || notice}</p>}
-
-    {/* Settings + recording */}
-    <section className="grid items-start gap-4 md:grid-cols-2">
-      <div className="rounded-3xl border border-slate-200 bg-white p-5">
-        <h3 className="text-lg font-black">Game settings</h3>
-        <p className="mt-0.5 text-xs text-slate-500">Applies to Classic and Wild. The Daily is always 5 rounds · 90s.</p>
-        <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400">Rounds</p>
-        <div className="mt-2"><Seg label="Rounds" value={prefs.rounds} onChange={v => setPrefs({ ...prefs, rounds: v })} options={ROUND_OPTIONS.map(r => ({ value: r as number, label: r === 1 ? '1 · Practice' : `${r} rounds`, hint: `max ${formatScore(maxScore(r))}` }))} /></div>
-        <p className="mt-4 text-xs font-black uppercase tracking-widest text-slate-400">Pace</p>
-        <div className="mt-2"><Seg label="Seconds per round" value={prefs.seconds} onChange={v => setPrefs({ ...prefs, seconds: v })} options={TIME_OPTIONS.map(t => ({ value: t.seconds as number, label: t.label, hint: t.hint }))} /></div>
-        <label className="mt-4 flex cursor-pointer items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm font-bold">
-          <span>Sound effects</span>
-          <input type="checkbox" checked={prefs.sound} onChange={e => setPrefs({ ...prefs, sound: e.target.checked })} className="h-5 w-5 accent-[#6978f5]" />
-        </label>
+    {/* Free play */}
+    <section aria-label="Free play">
+      <p className="gx-eyebrow mb-3">Free play</p>
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-5">
+        <Mode img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages picked for your level. Share the link and a friend gets your exact rounds." onClick={() => onStart('classic')} disabled={busy} />
+        <Mode img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." onClick={() => onStart('hard')} disabled={busy} />
+        <Mode img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still a famous one." onClick={() => onStart('wild')} disabled={busy} />
       </div>
+    </section>
 
-      <div className={`rounded-3xl border p-5 transition ${prefs.record ? 'border-[#e75d87]/60 bg-[#fff5f8]' : 'border-slate-200 bg-white'}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-black">🎥 Record my run</h3>
-            <p className="mt-0.5 text-sm text-slate-500">Makes a video with the Duelio intro, watermark and score outro. It ends when the game does, then a popup lets you download it.</p>
-          </div>
-          <button role="switch" aria-checked={prefs.record && !noRecording} disabled={noRecording} aria-label="Record my run" onClick={() => setPrefs({ ...prefs, record: !prefs.record })}
-            className={`relative mt-1 h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40 ${prefs.record && !noRecording ? 'bg-[#e75d87]' : 'bg-slate-300'}`}>
-            <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${prefs.record && !noRecording ? 'left-[22px]' : 'left-0.5'}`} />
-          </button>
-        </div>
-        {noRecording && <p className="mt-3 rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-800">This browser can’t record video. Try Chrome, Edge, Safari 14.1+ or Firefox.</p>}
-        {prefs.record && !noRecording && <div className="wr-rise mt-4 space-y-2">
-          <button disabled={!canScreen} onClick={() => setPrefs({ ...prefs, recordMethod: 'screen' })} aria-pressed={method === 'screen'}
-            className={`w-full rounded-xl border p-3 text-left disabled:opacity-50 ${method === 'screen' ? 'border-[#e75d87] bg-white' : 'border-slate-200 bg-white/60'}`}>
-            <p className="text-sm font-black">Screen capture · landscape</p>
-            <p className="text-xs text-slate-500">{canScreen ? 'Records the actual game, with our overlay on top. Your browser will ask what to share: pick “This tab”.' : 'Not available on this device.'}</p>
-          </button>
-          <button disabled={!canReel} onClick={() => setPrefs({ ...prefs, recordMethod: 'reel' })} aria-pressed={method === 'reel'}
-            className={`w-full rounded-xl border p-3 text-left disabled:opacity-50 ${method === 'reel' ? 'border-[#e75d87] bg-white' : 'border-slate-200 bg-white/60'}`}>
-            <p className="text-sm font-black">Vertical reel · 9:16</p>
-            <p className="text-xs text-slate-500">A branded, share-ready scene drawn from your run. No permission prompt, works on phones. Made for TikTok, Reels and Shorts.</p>
-          </button>
-          <p className="text-xs text-slate-500">Nothing is uploaded. The video is built and saved on your device.</p>
-        </div>}
-      </div>
+    {(error || notice) && <p role={error ? 'alert' : 'status'} className={`rounded-xl p-3 text-sm font-semibold ${error ? 'bg-rose-500/15 text-rose-200' : 'bg-[#6978f5]/20 text-[#d6dbff]'}`}>{error || notice}</p>}
+
+    {/* Settings */}
+    <section className="gx-card p-5 sm:p-6">
+      <h3 className="text-lg font-bold">Game settings</h3>
+      <p className="mt-0.5 text-xs text-white/55">For Quick, Hard and Wild. The Daily is always 5 rounds · 90s.</p>
+      <p className="gx-label mt-4">Rounds</p>
+      <Seg label="Rounds" value={prefs.rounds} onChange={v => setPrefs({ ...prefs, rounds: v })} options={ROUND_OPTIONS.map(r => ({ value: r as number, label: r === 1 ? 'Practice' : `${r} rounds`, hint: `max ${formatScore(maxScore(r))}` }))} />
+      <p className="gx-label mt-4">Pace</p>
+      <Seg label="Seconds per round" value={prefs.seconds} onChange={v => setPrefs({ ...prefs, seconds: v })} options={TIME_OPTIONS.map(t => ({ value: t.seconds as number, label: t.label, hint: t.hint }))} />
+      <label className="mt-4 flex cursor-pointer items-center justify-between rounded-xl bg-white/[.07] px-4 py-3 text-sm font-bold">
+        <span>Sound effects</span>
+        <input type="checkbox" checked={prefs.sound} onChange={e => setPrefs({ ...prefs, sound: e.target.checked })} className="h-5 w-5 accent-[#6978f5]" />
+      </label>
     </section>
 
     {/* Stats */}
@@ -188,25 +154,25 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
         ['🏆', stats.bestScore ? formatScore(stats.bestScore) : '—', 'best 5-round'],
         ['⚡', stats.fastestMs ? `${(stats.fastestMs / 1000).toFixed(1)}s` : '—', 'fastest arrival'],
         ['🎯', stats.rounds ? `${winRate}%` : '—', 'pages reached'],
-      ].map(([icon, value, label]) => <div key={label} className="rounded-2xl border border-slate-200 bg-white p-4">
-        <p className="text-lg">{icon}</p><p className="mt-1 text-2xl font-black tabular-nums">{value}</p><p className="text-xs font-bold text-slate-500">{label}</p>
+      ].map(([icon, value, label]) => <div key={label} className="gx-card p-4">
+        <p className="text-lg">{icon}</p><p className="mt-1 text-2xl font-bold tabular-nums">{value}</p><p className="text-xs font-semibold text-white/55">{label}</p>
       </div>)}
     </section>
 
-    {board && board.length > 0 && <section className="rounded-3xl border border-slate-200 bg-white p-5">
-      <h3 className="text-lg font-black">Today’s daily · top explorers</h3>
-      <ol className="mt-3 divide-y divide-slate-100">
+    {board && board.length > 0 && <section className="gx-card p-5">
+      <h3 className="text-lg font-bold">Today’s daily · top explorers</h3>
+      <ol className="mt-3 divide-y divide-white/10">
         {board.map((r, i) => <li key={`${r.display_name}-${i}`} className="flex items-center justify-between py-2.5 text-sm">
-          <span className="font-bold"><span className="mr-3 inline-block w-6 text-slate-400">{i + 1}</span>{r.display_name}</span><span className="font-black tabular-nums">{formatScore(r.total)}</span>
+          <span className="font-semibold"><span className="mr-3 inline-block w-6 text-white/45">{i + 1}</span>{r.display_name}</span><span className="font-bold tabular-nums text-[var(--gx-gold)]">{formatScore(r.total)}</span>
         </li>)}
       </ol>
     </section>}
 
     {/* How scoring works */}
-    <section className="rounded-3xl bg-[#101426] p-6 text-white">
-      <h3 className="text-xl font-black">How scoring works</h3>
+    <section className="gx-card p-6">
+      <h3 className="text-xl font-bold">How scoring works</h3>
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        {[['2,000', 'for arriving at the destination'], ['up to 2,000', 'for speed. The clock pauses while pages load'], ['up to 1,000', 'for efficiency: fewer clicks, more points'], ['−600', 'if you use Radar to spot the link']].map(([n, t]) => <div key={n} className="rounded-2xl bg-white/[.06] p-4"><p className="text-2xl font-black text-[#aeb7ff]">{n}</p><p className="mt-1 text-sm text-white/70">{t}</p></div>)}
+        {[['2,000', 'for arriving at the destination'], ['up to 2,000', 'for speed. The clock pauses while pages load'], ['up to 1,000', 'for efficiency: fewer clicks, more points'], ['−600', 'if you use Radar to spot the link']].map(([n, t]) => <div key={n} className="rounded-2xl bg-white/[.07] p-4"><p className="text-2xl font-bold text-[#aeb7ff]">{n}</p><p className="mt-1 text-sm text-white/70">{t}</p></div>)}
       </div>
       <p className="mt-4 text-sm text-white/60">Perfect round: 5,000. Time out one click away and you still bank 600. Hubs like countries, years and big cities are your best friends.</p>
     </section>
