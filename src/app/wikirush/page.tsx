@@ -12,9 +12,9 @@ const base: Metadata = {
   alternates: { canonical: '/wikirush' },
   openGraph: {
     title: WR_TITLE, description: WR_DESCRIPTION, type: 'website', siteName: 'Duelio', url: '/wikirush',
-    images: [{ url: '/wikirush/wr-og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
+    images: [{ url: '/game/og.png', width: 1200, height: 630, alt: 'WikiRush by Duelio: the Wikipedia link race game' }],
   },
-  twitter: { card: 'summary_large_image', title: WR_TITLE, description: WR_DESCRIPTION, images: ['/wikirush/wr-og.png'] },
+  twitter: { card: 'summary_large_image', title: WR_TITLE, description: WR_DESCRIPTION, images: ['/game/og.png'] },
 };
 
 export function generateMetadata({ searchParams }: { searchParams?: Record<string, string | string[] | undefined> }): Metadata {

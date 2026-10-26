@@ -9,7 +9,7 @@ export default function SeoContent() {
       WikiRush is a free online Wikipedia game, also known as wikiracing. You start on one Wikipedia article and have to reach another using only the links inside the articles. No search bar, no back-door shortcuts, just your brain and the clock. Think of it as GeoGuessr for Wikipedia: every round drops you somewhere unexpected and rewards a good sense of how the world connects.
     </p>
     <div className="mt-8 grid gap-4 sm:grid-cols-3">
-      {[['Daily Challenge', 'The same five rounds for everyone, every day. Compare scores like you would in Wordle.'], ['Challenge links', 'Send one link and a friend plays the exact same pages. Beat their score or lose the bet.'], ['Record and share', 'Auto-record your run with a branded overlay and get a clip ready for TikTok, Reels or your stream.']].map(([t, d]) =>
+      {[['Daily Challenge', 'The same five rounds for everyone, every day. Compare scores like you would in Wordle.'], ['Challenge links', 'Send one link and a friend plays the exact same pages. Beat their score or lose the bet.'], ['Share your score', 'Download a score card with your rank and route, ready for socials or your stream.']].map(([t, d]) =>
         <div key={t} className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="font-black text-[#101426]">{t}</h3><p className="mt-2 text-sm leading-relaxed">{d}</p></div>)}
     </div>
     <h2 className="mt-12 text-2xl font-black tracking-tight text-[#101426]">WikiRush questions, answered</h2>

@@ -480,14 +480,10 @@ describe('prefs migration', () => {
     (globalThis as unknown as { localStorage: unknown }).localStorage = { getItem: () => value, setItem: () => {} };
     try { fn(); } finally { delete (globalThis as unknown as { localStorage?: unknown }).localStorage; }
   };
-  it('moves old saved prefs to recording on + real screen capture, once', () => {
-    withStore(JSON.stringify({ rounds: 3, record: false, recordMethod: 'reel' }), () => {
+  it('keeps current prefs and drops fields from removed features', () => {
+    withStore(JSON.stringify({ rounds: 3, record: true, recordMethod: 'screen', recVer: 3, sound: false }), () => {
       const p = loadPrefs();
-      expect(p.record).toBe(true); expect(p.recordMethod).toBe('screen'); expect(p.rounds).toBe(3);
-    });
-    withStore(JSON.stringify({ record: false, recordMethod: 'reel', recVer: 3 }), () => {
-      const p = loadPrefs();
-      expect(p.record).toBe(false); expect(p.recordMethod).toBe('reel'); // a choice made after the migration is kept
+      expect(p.rounds).toBe(3); expect(p.sound).toBe(false); expect('record' in p).toBe(false); expect('recVer' in p).toBe(false);
     });
   });
 });

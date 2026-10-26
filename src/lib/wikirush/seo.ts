@@ -16,7 +16,6 @@ export const WR_FAQ: readonly Faq[] = [
   { q: 'How do you play WikiRush?', a: 'You are shown a start page and a destination page. Click links inside the article text to hop between pages until you reach the destination before the timer runs out. Fewer clicks and faster times score more points, up to 5,000 per round.' },
   { q: 'Is WikiRush free?', a: 'Yes. Your first game needs no account. After that, a free account saves your progress, scores and streaks, and puts you on the leaderboard.' },
   { q: 'Is there a daily WikiRush challenge?', a: 'Yes. Everyone in the world gets the same five rounds each day, like a Wordle for Wikipedia. Share your score and compare with friends.' },
-  { q: 'Can I record my WikiRush game?', a: 'Yes. Turn on recording before you start and WikiRush captures the run with a branded overlay, then pops up the finished video with a Download button when the game ends. It is made for TikTok, Reels, Shorts and streams.' },
   { q: 'Can streamers play WikiRush?', a: 'Yes. Streamer mode hides personal details, makes a chat-ready challenge link so viewers can play the exact same pages, and works full screen in OBS.' },
   { q: 'Is WikiRush affiliated with Wikipedia?', a: 'No. WikiRush by Duelio is an independent game that uses article text from Wikipedia under CC BY-SA 4.0 and is not affiliated with the Wikimedia Foundation.' },
 ];
@@ -37,7 +36,7 @@ export function gameJsonLd(base: string = SITE_URL) {
     alternateName: ['Wiki Rush', 'WikiRush by Duelio'],
     description: WR_DESCRIPTION,
     url: `${base}/wikirush`,
-    image: `${base}/wikirush/wr-og.png`,
+    image: `${base}/game/og.png`,
     genre: ['Puzzle', 'Trivia', 'Wikipedia game'],
     applicationCategory: 'GameApplication',
     operatingSystem: 'Any (web browser)',

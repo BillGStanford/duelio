@@ -11,9 +11,11 @@ const config: Config = {
         rule: '#C4C9DC',
         sidea: '#2433E0',
         sideb: '#C81E4B',
+        night: '#0b0f1f',
+        gx: '#6978f5',
       },
       fontFamily: {
-        sans: ['"Avenir Next"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-poppins)', '"Avenir Next"', '"Helvetica Neue"', 'Helvetica', 'Arial', 'system-ui', 'sans-serif'],
       },
     },
   },

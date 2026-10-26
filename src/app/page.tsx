@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import MatchupHome from '@/components/MatchupHome';
 import DuelStrip from '@/components/DuelStrip';
-import MenuHero from '@/components/wikirush/MenuHero';
+import HomeHero from '@/components/game/HomeHero';
+import ModeCard from '@/components/game/ModeCard';
+import TopPlayers from '@/components/game/TopPlayers';
+import { dailyNumber } from '@/lib/wikirush/rounds';
 import JsonLd from '@/components/wikirush/JsonLd';
 import { gameJsonLd, siteJsonLd } from '@/lib/wikirush/seo';
 import { dailyCloseAt, effectiveCloseAt, previousUtcDate, utcDateKey } from '@/lib/daily';
@@ -62,23 +65,45 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
     <main className="pb-16">
       <JsonLd data={siteJsonLd()} />
       <JsonLd data={gameJsonLd()} />
-      <MenuHero
-        footer={<div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-bold text-white/70">
-          <Link href="/wikirush/how-to-play" className="underline underline-offset-4 hover:text-white">How to play</Link>
-          <Link href="/leaderboard" className="underline underline-offset-4 hover:text-white">Leaderboard</Link>
-          <Link href="/matchups" className="underline underline-offset-4 hover:text-white">Duel: settle a GOAT debate</Link>
-          <Link href="/#debates" className="underline underline-offset-4 hover:text-white">Dilemma: pick a side</Link>
-          <span className="w-full text-xs font-semibold text-white/45">{n} published {n === 1 ? 'dilemma' : 'dilemmas'} · No account needed to vote</span>
-        </div>}
-      />
+      <HomeHero dailyKey={today} dailyNumber={dailyNumber(today)} />
 
+      <div className="gx-screen pb-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <section aria-labelledby="modes-h" className="pt-2">
+            <p className="gx-eyebrow">WikiRush</p>
+            <h2 id="modes-h" className="gx-h mt-2 text-3xl sm:text-4xl">Pick your challenge</h2>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              <ModeCard href="/wikirush?daily=1" img="/game/mode-daily.jpg" tag="Same for all" title="Daily Challenge" text="Five rounds. The same pages for everyone, once a day." />
+              <ModeCard href="/wikirush?play=1" img="/game/mode-quick.jpg" tag="Quick" title="Quick Play" text="Fresh pages, picked for your level. Jump straight in." />
+              <ModeCard href="/wikirush?mode=hard" img="/game/mode-hard.jpg" tag="Expert" title="Hard Mode" text="Far-apart pages and no easy hubs. Bring your best route." />
+              <ModeCard href="/wikirush?mode=wild" img="/game/mode-wild.jpg" tag="Chaos" title="Wild" text="Start on a random page. The target is still famous." />
+            </div>
+          </section>
+
+          <section aria-labelledby="more-h" className="mt-14">
+            <p className="gx-eyebrow">More Duelio games</p>
+            <h2 id="more-h" className="gx-h mt-2 text-3xl sm:text-4xl">Pick a side</h2>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-5">
+              <ModeCard wide href="/matchups" img="/game/mode-duel.jpg" tag="Vote" title="Duel" text="Two legends, one vote. Settle the GOAT debate." cta="Vote now" />
+              <ModeCard wide href="/#debates" img="/game/mode-dilemma.jpg" tag="Vote" title="Dilemma" text={`${n} tough ${n === 1 ? 'choice' : 'choices'}. Pick a side and see what the crowd thinks.`} cta="Choose" />
+            </div>
+          </section>
+
+          <div className="mt-14 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,.8fr)]">
+            <section aria-labelledby="how-h" className="gx-card p-6">
+              <h2 id="how-h" className="text-lg font-bold">How to play</h2>
+              <ol className="mt-4 grid gap-4 sm:grid-cols-3">
+                {[['1', 'Read the mission', 'You get a start page and a target page.'], ['2', 'Click links', 'Only links. No search. Think of hubs that lead to your target.'], ['3', 'Beat the clock', 'Fewer clicks and less time means a bigger score.']].map(([k, t, d]) => <li key={k}><span className="grid h-9 w-9 place-items-center rounded-full bg-[#6978f5] font-bold">{k}</span><p className="mt-3 font-bold">{t}</p><p className="mt-1 text-sm text-white/65">{d}</p></li>)}
+              </ol>
+              <Link href="/wikirush/how-to-play" className="mt-5 inline-flex text-sm font-bold text-[#aeb7ff] no-underline hover:text-white">Full guide →</Link>
+            </section>
+            <TopPlayers />
+          </div>
+        </div>
+      </div>
+
+      <div className="gx-sheet pt-10">
       <div className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8">
-        <section aria-label="Explore Duelio" className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Link href="/wikirush" className="group rounded-3xl bg-[#101426] p-6 text-white transition hover:-translate-y-1"><p className="text-xs font-black uppercase tracking-[.16em] text-[#aeb7ff]">01 · Play</p><h2 className="mt-3 text-2xl font-black">WikiRush</h2><p className="mt-2 text-sm leading-relaxed text-white/70">Race across Wikipedia with a full-screen reading view, a live timer, and a destination to find.</p><span className="mt-5 inline-flex font-extrabold">Start a trail ↗</span></Link>
-          <Link href="/leaderboard" className="rounded-3xl border border-rule bg-white p-6 transition hover:-translate-y-1"><p className="text-xs font-black uppercase tracking-[.16em] text-sidea">02 · Compete</p><h2 className="mt-3 text-2xl font-black">Global leaderboard</h2><p className="mt-2 text-sm leading-relaxed text-mute">Compare points, streaks, and runs with the public Duelio community.</p><span className="mt-5 inline-flex font-extrabold">See the rankings →</span></Link>
-          <Link href="/profile" className="rounded-3xl border border-rule bg-white p-6 transition hover:-translate-y-1"><p className="text-xs font-black uppercase tracking-[.16em] text-sideb">03 · Build your name</p><h2 className="mt-3 text-2xl font-black">Profile + referrals</h2><p className="mt-2 text-sm leading-relaxed text-mute">Keep your stats, customize your public name, and invite friends for bonus points.</p><span className="mt-5 inline-flex font-extrabold">Open your profile →</span></Link>
-        </section>
-
         <MatchupHome />
 
         {daily && dailyClosesAt && (
@@ -133,6 +158,7 @@ export default async function Home({ searchParams }: { searchParams?: { q?: stri
             {matchingDilemmas.length === 0 ? <p className="p-8 text-mute">{query ? 'No dilemmas match that search. Try another phrase or submit your own.' : 'No published dilemmas yet. Check back soon or submit one below.'}</p> : matchingDilemmas.map((d) => { const count = counts[d.id] ?? {a:0,b:0}; const close = effectiveCloseAt(d.closesAt, dailyCloseById.get(d.id) ?? null); return <DuelStrip key={d.id} d={d} total={count.a + count.b} closed={isClosed({closesAt:close})} deadHeat={isDeadHeat(count)} hot={isHot(count)} />; })}
           </div>
         </section>
+      </div>
       </div>
     </main>
   );
