@@ -1,12 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
+'use client';
+import { useState } from 'react';
 import type { Featured, PairPreview } from '@/lib/wikirush/featured';
 import { teaserFor } from '@/lib/wikirush/featured';
 
 function Pic({ p, fallback, tone }: { p?: PairPreview; fallback: string; tone: 'start' | 'target' }) {
   const title = p?.title || fallback;
+  const [bad, setBad] = useState(false);
   return <figure className={`min-w-0 flex-1 overflow-hidden rounded-2xl border-2 bg-[#141a36] ${tone === 'target' ? 'border-[#fb7185]/70' : 'border-[#aeb7ff]/60'}`}>
     <div className="grid aspect-[4/3] w-full place-items-center bg-gradient-to-br from-[#2b3370] to-[#141a36]">
-      {p?.image ? <img src={p.image} alt="" loading="lazy" className="h-full w-full object-cover" /> : <span className="text-5xl font-bold text-white/30">{title.slice(0, 1).toUpperCase()}</span>}
+      {p?.image && !bad ? <img src={p.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBad(true)} className="h-full w-full object-cover" /> : <span className="text-5xl font-bold text-white/30">{title.slice(0, 1).toUpperCase()}</span>}
     </div>
     <figcaption className="px-3 py-2"><p className={`text-[10px] font-bold uppercase tracking-[.18em] ${tone === 'target' ? 'text-[#fb7185]' : 'text-[#aeb7ff]'}`}>{tone === 'target' ? 'Find this' : 'Start'}</p><p className="truncate text-sm font-bold">{title}</p></figcaption>
   </figure>;
