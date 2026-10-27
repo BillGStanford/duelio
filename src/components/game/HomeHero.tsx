@@ -25,7 +25,7 @@ export default function HomeHero({ dailyKey, dailyNumber }: { dailyKey: string; 
           <Link href="/wikirush#play" className="gx-btn gx-btn-lg">▶ PLAY</Link>
           <Link href="/wikirush?pick=daily#play" className="gx-btn gx-btn-gold">📅 Daily #{dailyNumber}{done ? ' ✓' : ''}</Link>
         </div>
-        <p className="mt-4 text-sm font-medium text-white/60">Free · your first game needs no account · 90 seconds a round</p>
+        <p className="mt-4 text-sm font-medium text-white/60">Free · your first game needs no account · 3 minutes a round</p>
       </div>
       <div className="relative gx-rise" style={{ animationDelay: '.12s' }}>
         <div className="pointer-events-none absolute -top-16 right-2 hidden sm:block lg:-top-24 lg:right-6"><Pip size={110} float /></div>

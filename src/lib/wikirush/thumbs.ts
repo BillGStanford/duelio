@@ -18,7 +18,7 @@ export async function fetchThumb(title: string): Promise<Thumb> {
     const res = await fetch(`${BASE()}/api/rest_v1/page/summary/${encodeURIComponent(title.replace(/ /g, '_'))}?redirect=true`, { headers: { 'user-agent': UA, accept: 'application/json' }, signal: AbortSignal.timeout(3000), cache: 'no-store' });
     if (res.ok) {
       const d = (await res.json()) as { title?: string; description?: string; thumbnail?: { source?: string }; originalimage?: { source?: string } };
-      thumb = { title: d.title || title, description: d.description, image: d.thumbnail?.source ? upsizeThumb(d.thumbnail.source) : d.originalimage?.source };
+      thumb = { title: d.title || title, description: d.description, image: d.thumbnail?.source || d.originalimage?.source };
     }
   } catch { /* fall back to title only */ }
   cache.set(key, { at: Date.now(), thumb });
