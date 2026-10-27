@@ -54,12 +54,36 @@ export type Article = { title: string; html: string };
 
 // Shared by every round so navigation, Back and prefetching all hit one cache.
 
-export async function fetchArticle(title: string): Promise<Article> {
-  const res = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`, { priority: 'high' } as RequestInit);
-  if (!res.ok) throw new Error(res.status === 404 ? 'That article does not exist.' : 'Wikipedia is slow right now.');
-  const data = (await res.json()) as { title?: string; html?: string };
-  if (!data.html) throw new Error('Empty article');
-  return { title: data.title || title, html: data.html };
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+/** Retries on throttling, server errors and network hiccups so a bad moment never ends a round. */
+export async function fetchArticle(title: string, opts: { background?: boolean } = {}): Promise<Article> {
+  const tries = opts.background ? 2 : 4;
+  let last: Error = new Error('Wikipedia is slow right now.');
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(`/api/wikirush/article?title=${encodeURIComponent(title)}`, {
+        priority: opts.background ? 'low' : 'high',
+        headers: opts.background ? { 'x-wr-prefetch': '1' } : undefined,
+        signal: AbortSignal.timeout(15000),
+      } as RequestInit);
+      if (res.status === 404) throw Object.assign(new Error('That article does not exist.'), { fatal: true });
+      if (res.ok) {
+        const data = (await res.json()) as { title?: string; html?: string };
+        if (data.html) return { title: data.title || title, html: data.html };
+        last = new Error('Empty article');
+      } else if (opts.background && res.status === 429) {
+        throw Object.assign(new Error('busy'), { fatal: true });
+      } else {
+        last = new Error('Wikipedia is slow right now.');
+      }
+    } catch (e) {
+      if ((e as { fatal?: boolean }).fatal) throw e;
+      last = new Error('Wikipedia is slow right now.');
+    }
+    await sleep(300 * (i + 1) ** 2);
+  }
+  throw last;
 }
 
 export const articles = createArticleCache(fetchArticle);
