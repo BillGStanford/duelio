@@ -8,7 +8,7 @@
 import { normTitle } from './titles';
 
 export type CachedArticle = { title: string; html: string };
-export type Fetcher = (title: string) => Promise<CachedArticle>;
+export type Fetcher = (title: string, opts?: { background?: boolean }) => Promise<CachedArticle>;
 
 export type ArticleCacheOptions = {
   /** Resolved articles kept in memory (least recently used are dropped first). */
@@ -17,7 +17,7 @@ export type ArticleCacheOptions = {
   concurrency?: number;
 };
 
-export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 8 }: ArticleCacheOptions = {}) {
+export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 4 }: ArticleCacheOptions = {}) {
   const ready = new Map<string, CachedArticle>(); // insertion order = recency
   const inflight = new Map<string, Promise<CachedArticle>>();
   let queue: string[] = [];
@@ -39,14 +39,14 @@ export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 8
     }
   }
 
-  function load(title: string): Promise<CachedArticle> {
+  function load(title: string, background = false): Promise<CachedArticle> {
     const k = key(title);
     const hit = ready.get(k);
     if (hit) { ready.delete(k); ready.set(k, hit); return Promise.resolve(hit); }
     const pending = inflight.get(k);
     if (pending) return pending;
     titles.set(k, title);
-    const p = fetcher(title).then(
+    const p = fetcher(title, { background }).then(
       article => { inflight.delete(k); remember(k, article); return article; },
       error => { inflight.delete(k); throw error; },
     );
@@ -59,7 +59,7 @@ export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 8
       const k = queue.shift() as string;
       if (ready.has(k) || inflight.has(k)) continue;
       active++;
-      load(titles.get(k) || k).catch(() => {}).finally(() => { active--; pump(); });
+      load(titles.get(k) || k, true).catch(() => {}).finally(() => { active--; pump(); });
     }
   }
 
@@ -73,7 +73,7 @@ export function createArticleCache(fetcher: Fetcher, { max = 96, concurrency = 8
       return ready.has(k) || inflight.has(k);
     },
     /** Queue links in order. A new call replaces what was still waiting from the previous page. */
-    prefetchMany(list: string[], limit = 90) {
+    prefetchMany(list: string[], limit = 40) {
       queue = [];
       for (const t of list) {
         if (queue.length >= limit) break;
