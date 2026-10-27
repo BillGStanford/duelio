@@ -85,7 +85,7 @@ export function saveStats(stats: WikiStats, storage?: StorageLike | null) {
 
 const PREF_KEY = 'wikirush:v2:prefs';
 export type WikiPrefs = { rounds: number; seconds: number; sound: boolean; name: string };
-export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 90, sound: true, name: '' };
+export const DEFAULT_PREFS: WikiPrefs = { rounds: 5, seconds: 180, sound: true, name: '' };
 
 export function loadPrefs(): WikiPrefs {
   try {

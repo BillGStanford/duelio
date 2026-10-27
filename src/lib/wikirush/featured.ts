@@ -1,5 +1,6 @@
 // "Detail challenges": rounds hand-built on the admin desk (exact start page -> exact target page).
 export type FeaturedPair = { start: string; target: string; blurb?: string };
+export type PairPreview = { title: string; description?: string; image?: string };
 export type Featured = {
   id: string;
   /** Release number shown as "Day N Challenge". */
@@ -10,6 +11,8 @@ export type Featured = {
   seconds: number;
   active: boolean;
   createdAt: string;
+  /** First-round photos, filled in by /api/wikirush/featured. */
+  preview?: { start: PairPreview; target: PairPreview };
 };
 export type FeaturedInput = Omit<Featured, 'id' | 'createdAt' | 'day'> & { day?: number };
 
@@ -42,3 +45,6 @@ export function cleanFeatured(raw: { title?: unknown; blurb?: unknown; pairs?: u
 }
 
 export const featuredSeed = (id: string) => `feat-${id.replace(/[^a-z0-9]/gi, '').slice(0, 16).toLowerCase()}`;
+
+/** One line that sells a challenge: the first round's teaser, then the challenge blurb. */
+export const teaserFor = (f: Pick<Featured, 'blurb' | 'pairs'>) => f.pairs[0]?.blurb || f.blurb || `Can you get from ${f.pairs[0]?.start} to ${f.pairs[0]?.target} using only links?`;

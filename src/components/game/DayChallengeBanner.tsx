@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { Featured } from '@/lib/wikirush/featured';
 import ChallengeBoard from './ChallengeBoard';
+import PairPics from './PairPics';
 import ShareChallenge from './ShareChallenge';
 
 /** Advertises the newest Day N Challenge: play, share, and the top scores. Renders nothing when none is live. */
@@ -23,8 +24,8 @@ export default function DayChallengeBanner() {
         <div>
           <p className="gx-eyebrow !text-[var(--gx-gold)]">{f.day ? `Day ${f.day} Challenge` : 'New challenge'} · live now</p>
           <h2 className="gx-h mt-2 text-3xl sm:text-4xl">{f.title}</h2>
-          {f.blurb && <p className="mt-2 text-white/70">{f.blurb}</p>}
-          <p className="mt-3 text-lg font-semibold">{first.start} <span className="text-[#aeb7ff]">→</span> {first.target}{f.pairs.length > 1 && <span className="text-white/55"> +{f.pairs.length - 1} more</span>}</p>
+          <div className="mt-4 max-w-xl"><PairPics f={f} /></div>
+          {f.pairs.length > 1 && <p className="mt-2 text-sm font-semibold text-white/55">+{f.pairs.length - 1} more round{f.pairs.length === 2 ? '' : 's'}</p>}
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link href={`/wikirush?f=${encodeURIComponent(f.id)}#feat-${f.id}`} className="gx-btn gx-btn-gold">Play the challenge</Link>
             <ShareChallenge f={f} />

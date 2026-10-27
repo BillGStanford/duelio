@@ -59,7 +59,7 @@ export const ROUND_OPTIONS = [1, 3, 5] as const;
 export const TIME_OPTIONS = [
   { seconds: 45, label: 'Blitz', hint: '45s' },
   { seconds: 90, label: 'Standard', hint: '90s' },
-  { seconds: 180, label: 'Chill', hint: '3 min' },
+  { seconds: 180, label: 'Relaxed', hint: '3 min' },
 ] as const;
 
 export const DAILY_SETTINGS = { rounds: 5, seconds: 90 } as const;
