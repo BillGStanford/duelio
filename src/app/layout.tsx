@@ -3,6 +3,8 @@ import Link from 'next/link';
 import Script from 'next/script';
 import './globals.css';
 import localFont from 'next/font/local';
+import { Suspense } from 'react';
+import ReferralCapture from '@/components/game/ReferralCapture';
 import GameNav from '@/components/game/GameNav';
 import PageView from '@/components/PageView';
 import MatchupWelcomeModal from '@/components/MatchupWelcomeModal';
@@ -67,6 +69,7 @@ gtag('config', 'G-5HEWDYYCEC');`}
           Skip to content
         </a>
         <GameNav />
+        <Suspense fallback={null}><ReferralCapture /></Suspense>
         <div id="main">{children}</div>
         <div className="gx-foot-wrap"><footer className="gx-foot">
           <div className="gx-foot-in">
