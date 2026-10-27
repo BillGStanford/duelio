@@ -12,6 +12,7 @@ import type { Featured } from '@/lib/wikirush/featured';
 import type { RecordRow } from '@/lib/wikirush/records';
 import { fmtMs } from '@/lib/wikirush/records';
 import ChallengeBoard from '@/components/game/ChallengeBoard';
+import PairPics from '@/components/game/PairPics';
 import ShareChallenge from '@/components/game/ShareChallenge';
 
 export type BoardRow = { display_name: string; total: number };
@@ -109,8 +110,8 @@ export default function Lobby({ prefs, setPrefs, stats, dailyKey, dailyScore, ch
           <div>
             {f.day > 0 && <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--gx-pink)]">Day {f.day} Challenge</p>}
             <h3 className="text-lg font-bold leading-tight">{f.title}</h3>
-            {f.blurb && <p className="mt-1 text-sm text-white/65">{f.blurb}</p>}
-            <p className="mt-2 text-sm font-semibold text-white/85">{f.pairs[0].start} → {f.pairs[0].target}{f.pairs.length > 1 ? ` +${f.pairs.length - 1} more` : ''}</p>
+            <div className="mt-3"><PairPics f={f} /></div>
+            {f.pairs.length > 1 && <p className="mt-2 text-xs font-semibold text-white/55">+{f.pairs.length - 1} more round{f.pairs.length === 2 ? '' : 's'}</p>}
           </div>
           <div className="mt-4"><p className="gx-label">Top scores</p><ChallengeBoard featuredId={f.id} limit={3} /></div>
           <div className="mt-4 flex flex-wrap gap-2"><button disabled={busy} onClick={() => onStartFeatured?.(f)} className="gx-btn">▶ Play · {f.pairs.length} round{f.pairs.length === 1 ? '' : 's'}</button><ShareChallenge f={f} className="gx-btn gx-btn-ghost" /></div>
