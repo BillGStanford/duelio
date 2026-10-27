@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { AVATAR_COUNT, avatarSrc, useAccount } from '@/lib/account';
 import { ensureWikiProfile, getWikiClient } from '@/lib/wikirush-client';
 import { Avatar, Pip } from './Art';
+import { cleanRef, forgetRef, storedRef } from '@/lib/referral';
 
 function nice(msg: string): string {
   const m = msg.toLowerCase();
@@ -21,18 +22,22 @@ export default function AuthScreen() {
   const router = useRouter();
   const params = useSearchParams();
   const acct = useAccount();
-  const rawNext = params.get('next') || '/';
+  const rawNext = params.get('next') || (cleanRef(params.get('ref')) ? '/wikirush' : '/');
   const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
-  const [mode, setMode] = useState<'in' | 'up'>(params.get('mode') === 'signup' ? 'up' : 'in');
+  const incoming = cleanRef(params.get('ref'));
+  const [mode, setMode] = useState<'in' | 'up'>(params.get('mode') === 'signup' || incoming ? 'up' : 'in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(1);
-  const [ref, setRef] = useState(params.get('ref') || '');
-  const [showRef, setShowRef] = useState(!!params.get('ref'));
+  const [ref, setRef] = useState(incoming);
+  const [showRef, setShowRef] = useState(!!incoming);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   useEffect(() => { setAvatar(1 + Math.floor(Math.random() * AVATAR_COUNT)); }, []);
+  // A code remembered from an earlier visit to an invite link fills in too.
+  useEffect(() => { if (!incoming) { const r = storedRef(); if (r) { setRef(r); setShowRef(true); } } }, [incoming]);
+  const invited = !!ref.trim();
 
   async function submit(e: FormEvent) {
     e.preventDefault(); setError('');
@@ -46,6 +51,9 @@ export default function AuthScreen() {
         if (!data.session) { setError('Almost there: check your email to confirm your account, then sign in.'); setMode('in'); return; }
         await ensureWikiProfile(client, data.session.user);
         await client.from('wiki_profiles').update({ avatar }).eq('user_id', data.session.user.id); // optional column
+        const code = cleanRef(ref);
+        if (code) { try { await client.rpc('claim_wikirush_referral', { p_referral_code: code }); } catch { /* WikiRush retries from the account metadata */ } }
+        forgetRef();
       } else {
         const { error: err } = await client.auth.signInWithPassword({ email, password });
         if (err) { setError(nice(err.message)); return; }
@@ -78,6 +86,7 @@ export default function AuthScreen() {
               <button type="button" onClick={signOut} className="text-sm font-semibold text-white/60 hover:text-white">Sign out</button>
             </div>
           </div> : <>
+            {invited && mode === 'up' && <p className="mb-3 rounded-2xl bg-[#fbbf24]/15 p-3 text-center text-sm font-bold text-[#fde68a]">🎁 A friend invited you. Join and you both get +100 points.</p>}
             <h1 className="gx-h text-center text-3xl">{mode === 'up' ? 'Create your player' : 'Welcome back'}</h1>
             <p className="mt-1 text-center text-sm text-white/65">{mode === 'up' ? 'Free. Save points, level up and join the leaderboard.' : 'Sign in to keep your points and level.'}</p>
             <div role="tablist" aria-label="Sign in or sign up" className="mt-5 grid grid-cols-2 rounded-2xl bg-white/[.07] p-1">
